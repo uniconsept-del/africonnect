@@ -12,7 +12,7 @@
         .font-serif { font-family: 'Playfair Display', serif; }
         .font-sans { font-family: 'Lato', sans-serif; }
 
-        /* The Dark Room State */
+        /* The Dark Room State - FIXED: Added transition */
         body {
             background-color: #020202;
             overflow-x: hidden;
@@ -46,7 +46,7 @@
             background-position: 45% 40%;
         }
 
-        /* The Lamp Light Cone - Top Left */
+        /* The Lamp Light Cone - Top Left - FIXED: Added opacity transition */
         #lamp-light {
             position: fixed;
             top: 0;
@@ -56,13 +56,18 @@
             pointer-events: none;
             background: radial-gradient(circle at 10% 10%, rgba(255, 223, 150, 0.15) 0%, rgba(0, 0, 0, 0.98) 40%);
             opacity: 0;
-            transition: opacity 0.1s;
+            transition: opacity 1.5s ease-in-out; /* FIXED: Smooth transition */
             z-index: 40;
             mix-blend-mode: screen;
         }
 
-        /* The Dark Overlay */
-        #darkness-overlay {
+        /* FIXED: Light on state for lamp-light */
+        body.lights-on #lamp-light {
+            opacity: 1;
+        }
+
+        /* The Dark Overlay - FIXED: Changed from ID to class for lower specificity, added transition */
+        .darkness-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -71,17 +76,18 @@
             background: radial-gradient(circle at 10% 10%, rgba(10,10,10,0.2) 0%, rgba(0,0,0,1) 50%);
             pointer-events: none;
             z-index: 30;
-            transition: opacity 1.5s ease-in-out;
+            transition: opacity 1.5s ease-in-out; /* FIXED: Added transition */
+            opacity: 1;
         }
 
-        body.lights-on #darkness-overlay {
+        body.lights-on .darkness-overlay {
             opacity: 0;
         }
 
-        /* Interface Containers */
+        /* Interface Containers - FIXED: Ensure proper transition */
         #interface-container {
             opacity: 0;
-            transition: opacity 2s ease-in-out;
+            transition: opacity 2s ease-in-out, filter 2s ease-in-out, transform 2s ease-in-out;
             filter: blur(5px);
             transform: scale(0.98);
         }
@@ -92,7 +98,7 @@
             transform: scale(1);
         }
 
-        /* Dark Welcome */
+        /* Dark Welcome - FIXED: Added transition */
         #dark-welcome {
             position: fixed;
             top: 0;
@@ -106,6 +112,7 @@
             justify-content: center;
             pointer-events: none;
             transition: opacity 1s ease;
+            opacity: 1; /* FIXED: Explicit initial state */
         }
 
         body.lights-on #dark-welcome {
@@ -2646,7 +2653,8 @@
     </div>
 
     <div id="lamp-light"></div>
-    <div id="darkness-overlay"></div>
+    <!-- FIXED: Changed from id="darkness-overlay" to class="darkness-overlay" -->
+    <div class="darkness-overlay" id="darknessOverlay"></div>
 
     <!-- Dark Welcome -->
     <div id="dark-welcome">
@@ -3341,6 +3349,72 @@
 
     <script>
         // ==========================================
+        // LAMP LOGIC - FIXED
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const touchLamp = document.getElementById('touchLamp');
+            const ropeSwitch = document.getElementById('ropeSwitch');
+            const body = document.body;
+            let isLightOn = false;
+
+            function toggleLight() {
+                isLightOn = !isLightOn;
+                
+                // Animate rope pull
+                ropeSwitch.classList.add('pulled');
+                setTimeout(() => {
+                    ropeSwitch.classList.remove('pulled');
+                }, 300);
+                
+                if (isLightOn) {
+                    body.classList.add('lights-on');
+                } else {
+                    body.classList.remove('lights-on');
+                }
+            }
+
+            touchLamp.addEventListener('click', toggleLight);
+        });
+
+        // ==========================================
+        // GLOBAL DATABASE - SIMULATED CROSS-DEVICE STORAGE
+        // ==========================================
+        
+        // This acts as a "server" database that all devices share via localStorage
+        const GLOBAL_DB_KEYS = {
+            USERS: 'afriConnect_global_users',
+            MESSAGES: 'afriConnect_global_messages',
+            MATCHES: 'afriConnect_global_matches',
+            CHATS: 'afriConnect_global_chats',
+            ADVERTS: 'afriConnect_global_adverts',
+            NOTIFICATIONS: 'afriConnect_global_notifications'
+        };
+
+        // Initialize global database if not exists
+        function initGlobalDatabase() {
+            Object.values(GLOBAL_DB_KEYS).forEach(key => {
+                if (!localStorage.getItem(key)) {
+                    localStorage.setItem(key, JSON.stringify({}));
+                }
+            });
+        }
+
+        // Get data from global database
+        function getGlobalData(key) {
+            try {
+                return JSON.parse(localStorage.getItem(key)) || {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        // Save data to global database
+        function setGlobalData(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
+        // ==========================================
         // NETWORK STATUS CHECK
         // ==========================================
         
@@ -3362,6 +3436,8 @@
         window.addEventListener('online', () => {
             document.getElementById('offlineOverlay').classList.remove('active');
             showToast("Back online! 🎉");
+            // Sync data when back online
+            syncCurrentUserData();
         });
         
         window.addEventListener('offline', () => {
@@ -3377,16 +3453,21 @@
 
         // Initialize auth on page load
         function initAuth() {
+            initGlobalDatabase();
+            
             // Check for existing session
             const session = localStorage.getItem('afriConnect_session');
             if (session) {
                 try {
-                    currentUser = JSON.parse(session);
-                    // Verify user still exists in users database
-                    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-                    if (users[currentUser.username]) {
-                        // Update current user data with stored data
-                        currentUser = users[currentUser.username];
+                    const sessionData = JSON.parse(session);
+                    // Verify user still exists in global database
+                    const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
+                    
+                    if (users[sessionData.username]) {
+                        // Get fresh data from global database
+                        currentUser = users[sessionData.username];
+                        // Update session with fresh data
+                        localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
                         enterApp();
                     } else {
                         // User was deleted or doesn't exist, clear session
@@ -3424,7 +3505,7 @@
             document.getElementById('signupSuccess').style.display = 'none';
         }
 
-        // Handle Login - FIXED
+        // Handle Login - FIXED WITH GLOBAL DATABASE
         function handleLogin(e) {
             e.preventDefault();
             
@@ -3437,8 +3518,8 @@
             const password = document.getElementById('loginPassword').value;
             const errorDiv = document.getElementById('loginError');
             
-            // Get users from localStorage
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            // Get users from global database
+            const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
             
             if (!users[username]) {
                 errorDiv.textContent = 'Account does not exist. Please sign up first.';
@@ -3452,15 +3533,18 @@
                 return;
             }
             
-            // Login successful - FIXED: Store complete user data
+            // Login successful - Get fresh data from global database
             currentUser = users[username];
             localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+            
+            // Sync matches and chats from global database
+            syncUserDataFromGlobal(currentUser.username);
             
             showToast('Welcome back! 🎉');
             enterApp();
         }
 
-        // Handle Signup - FIXED
+        // Handle Signup - FIXED WITH GLOBAL DATABASE
         function handleSignup(e) {
             e.preventDefault();
             
@@ -3487,8 +3571,8 @@
                 return;
             }
             
-            // Get existing users
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            // Get existing users from global database
+            const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
             
             if (users[username]) {
                 errorDiv.textContent = 'Username already exists. Please choose another.';
@@ -3496,7 +3580,7 @@
                 return;
             }
             
-            // Create new user - FIXED: Ensure all fields are properly initialized
+            // Create new user with ALL necessary fields
             const newUser = {
                 username: username,
                 password: password,
@@ -3519,12 +3603,26 @@
                 chats: [],
                 adverts: [],
                 notifications: [],
-                friends: [] // NEW: Friends list
+                friends: [],
+                createdAt: new Date().toISOString()
             };
             
-            // Save user
+            // Save to global database
             users[username] = newUser;
-            localStorage.setItem('afriConnect_users', JSON.stringify(users));
+            setGlobalData(GLOBAL_DB_KEYS.USERS, users);
+            
+            // Initialize user's matches and chats in global database
+            const globalMatches = getGlobalData(GLOBAL_DB_KEYS.MATCHES);
+            globalMatches[username] = [];
+            setGlobalData(GLOBAL_DB_KEYS.MATCHES, globalMatches);
+            
+            const globalChats = getGlobalData(GLOBAL_DB_KEYS.CHATS);
+            globalChats[username] = [];
+            setGlobalData(GLOBAL_DB_KEYS.CHATS, globalChats);
+            
+            const globalMessages = getGlobalData(GLOBAL_DB_KEYS.MESSAGES);
+            globalMessages[username] = {};
+            setGlobalData(GLOBAL_DB_KEYS.MESSAGES, globalMessages);
             
             // Auto login
             currentUser = newUser;
@@ -3537,6 +3635,43 @@
                 showToast('Welcome to AfriConnect! 🎉');
                 enterApp();
             }, 1000);
+        }
+
+        // Sync user data from global database
+        function syncUserDataFromGlobal(username) {
+            const globalMatches = getGlobalData(GLOBAL_DB_KEYS.MATCHES);
+            const globalChats = getGlobalData(GLOBAL_DB_KEYS.CHATS);
+            const globalMessages = getGlobalData(GLOBAL_DB_KEYS.MESSAGES);
+            
+            if (currentUser) {
+                currentUser.matches = globalMatches[username] || [];
+                currentUser.chats = globalChats[username] || [];
+                
+                // Update session
+                localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+                
+                // Update users database
+                const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
+                users[username] = currentUser;
+                setGlobalData(GLOBAL_DB_KEYS.USERS, users);
+            }
+        }
+
+        // Sync current user data to global database
+        function syncCurrentUserData() {
+            if (!currentUser) return;
+            
+            const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
+            users[currentUser.username] = currentUser;
+            setGlobalData(GLOBAL_DB_KEYS.USERS, users);
+            
+            const globalMatches = getGlobalData(GLOBAL_DB_KEYS.MATCHES);
+            globalMatches[currentUser.username] = currentUser.matches || [];
+            setGlobalData(GLOBAL_DB_KEYS.MATCHES, globalMatches);
+            
+            const globalChats = getGlobalData(GLOBAL_DB_KEYS.CHATS);
+            globalChats[currentUser.username] = currentUser.chats || [];
+            setGlobalData(GLOBAL_DB_KEYS.CHATS, globalChats);
         }
 
         // Enter the main app
@@ -3555,16 +3690,32 @@
             initMarket();
             updateNotificationBadge();
             
-            // Show ENIOLA welcome after 3 seconds (delayed and subtle)
+            // Start periodic sync
+            startPeriodicSync();
+            
+            // Show ENIOLA welcome after 3 seconds
             setTimeout(() => {
-                if (Math.random() > 0.5) { // Only show 50% of the time
+                if (Math.random() > 0.5) {
                     showEniolaWelcome();
                 }
             }, 3000);
         }
 
+        // Periodic sync to keep data updated across devices
+        function startPeriodicSync() {
+            // Sync every 5 seconds to simulate real-time updates
+            setInterval(() => {
+                if (currentUser) {
+                    syncUserDataFromGlobal(currentUser.username);
+                    initMatches();
+                    initChats();
+                }
+            }, 5000);
+        }
+
         // Logout
         function logout() {
+            syncCurrentUserData();
             currentUser = null;
             localStorage.removeItem('afriConnect_session');
             document.getElementById('swipe-interface').classList.remove('active');
@@ -3626,11 +3777,8 @@
             currentUser.profile.ageMax = document.getElementById('ageMax').value;
             currentUser.profile.lookingFor = document.getElementById('lookingFor').value;
             
-            // Update storage
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-            users[currentUser.username] = currentUser;
-            localStorage.setItem('afriConnect_users', JSON.stringify(users));
-            localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+            // Update global database
+            syncCurrentUserData();
             
             // Update UI
             document.getElementById('menuUserName').textContent = currentUser.profile.name;
@@ -3650,7 +3798,7 @@
                 return;
             }
             
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
             const allProfiles = getAllDiscoverableProfiles();
             
             // Filter users by name
@@ -3712,11 +3860,8 @@
                 });
             }
             
-            // Save to storage
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-            users[currentUser.username] = currentUser;
-            localStorage.setItem('afriConnect_users', JSON.stringify(users));
-            localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+            // Save to global database
+            syncCurrentUserData();
         }
 
         function getUserAvatar(userName) {
@@ -3734,33 +3879,6 @@
                 resultsContainer.classList.remove('active');
             }
         });
-
-        // ==========================================
-        // LAMP LOGIC
-        // ==========================================
-        
-        const touchLamp = document.getElementById('touchLamp');
-        const ropeSwitch = document.getElementById('ropeSwitch');
-        const body = document.body;
-        let isLightOn = false;
-
-        function toggleLight() {
-            isLightOn = !isLightOn;
-            
-            // Animate rope pull
-            ropeSwitch.classList.add('pulled');
-            setTimeout(() => {
-                ropeSwitch.classList.remove('pulled');
-            }, 300);
-            
-            if (isLightOn) {
-                body.classList.add('lights-on');
-            } else {
-                body.classList.remove('lights-on');
-            }
-        }
-
-        touchLamp.addEventListener('click', toggleLight);
 
         // ==========================================
         // ENIOLA BOT - MINIMAL
@@ -3831,7 +3949,7 @@
             ]
         };
 
-        // Chat History Storage
+        // Chat History Storage - Now uses global database
         let chatHistories = {};
         let groupChatHistories = {};
 
@@ -4494,8 +4612,8 @@
         // ==========================================
         
         function getAllDiscoverableProfiles() {
-            // Get all registered users from localStorage
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            // Get all registered users from global database
+            const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
             const allProfiles = [...profiles]; // Start with hardcoded profiles
             
             // Add registered users who aren't the current user
@@ -4644,7 +4762,8 @@
                 school: profile.school,
                 phone: profile.phone,
                 photos: profile.photos,
-                isBot: profile.isBot || false
+                isBot: profile.isBot || false,
+                username: profile.username || profile.name.toLowerCase().replace(/\s+/g, '')
             };
             
             matches.unshift(newMatch);
@@ -4663,7 +4782,8 @@
                 phone: profile.phone,
                 age: profile.age,
                 photos: profile.photos,
-                isBot: profile.isBot || false
+                isBot: profile.isBot || false,
+                username: profile.username || profile.name.toLowerCase().replace(/\s+/g, '')
             };
             
             // Check if chat already exists
@@ -4675,13 +4795,34 @@
                 ];
             }
             
-            // Save to currentUser
+            // Save to global database
             if (currentUser) {
                 currentUser.matches = matches;
                 currentUser.chats = chats;
-                const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                
+                // Update global matches
+                const globalMatches = getGlobalData(GLOBAL_DB_KEYS.MATCHES);
+                globalMatches[currentUser.username] = matches;
+                setGlobalData(GLOBAL_DB_KEYS.MATCHES, globalMatches);
+                
+                // Update global chats
+                const globalChats = getGlobalData(GLOBAL_DB_KEYS.CHATS);
+                globalChats[currentUser.username] = chats;
+                setGlobalData(GLOBAL_DB_KEYS.CHATS, globalChats);
+                
+                // Update global messages
+                const globalMessages = getGlobalData(GLOBAL_DB_KEYS.MESSAGES);
+                if (!globalMessages[currentUser.username]) {
+                    globalMessages[currentUser.username] = {};
+                }
+                globalMessages[currentUser.username][profile.name] = chatHistories[profile.name];
+                setGlobalData(GLOBAL_DB_KEYS.MESSAGES, globalMessages);
+                
+                // Update users database
+                const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
                 users[currentUser.username] = currentUser;
-                localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                setGlobalData(GLOBAL_DB_KEYS.USERS, users);
+                
                 localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
             }
             
@@ -4748,6 +4889,16 @@
         function addNotification(notification) {
             notifications.unshift(notification);
             updateNotificationBadge();
+            
+            // Save to global database
+            if (currentUser) {
+                const globalNotifications = getGlobalData(GLOBAL_DB_KEYS.NOTIFICATIONS);
+                if (!globalNotifications[currentUser.username]) {
+                    globalNotifications[currentUser.username] = [];
+                }
+                globalNotifications[currentUser.username].push(notification);
+                setGlobalData(GLOBAL_DB_KEYS.NOTIFICATIONS, globalNotifications);
+            }
         }
 
         function handleNotificationClick(id) {
@@ -4798,12 +4949,30 @@
             notifications = notifications.filter(n => n.id !== id);
             renderNotifications();
             updateNotificationBadge();
+            
+            // Update global database
+            if (currentUser) {
+                const globalNotifications = getGlobalData(GLOBAL_DB_KEYS.NOTIFICATIONS);
+                if (globalNotifications[currentUser.username]) {
+                    globalNotifications[currentUser.username] = notifications;
+                    setGlobalData(GLOBAL_DB_KEYS.NOTIFICATIONS, globalNotifications);
+                }
+            }
         }
 
         function markAllNotificationsRead() {
             notifications.forEach(n => n.read = true);
             renderNotifications();
             updateNotificationBadge();
+            
+            // Update global database
+            if (currentUser) {
+                const globalNotifications = getGlobalData(GLOBAL_DB_KEYS.NOTIFICATIONS);
+                if (globalNotifications[currentUser.username]) {
+                    globalNotifications[currentUser.username] = notifications;
+                    setGlobalData(GLOBAL_DB_KEYS.NOTIFICATIONS, globalNotifications);
+                }
+            }
         }
 
         function updateNotificationBadge() {
@@ -4823,8 +4992,8 @@
         // ==========================================
         
         function getAllNearbyPeople() {
-            // Get all registered users from localStorage
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            // Get all registered users from global database
+            const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
             const allNearby = [...nearbyPeople]; // Start with hardcoded nearby people
             
             // Add registered users who aren't the current user
@@ -4887,7 +5056,7 @@
             if (!person) return;
             
             // Get full profile if it's a registered user
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
             const userData = Object.values(users).find(u => (u.profile.name || u.username) === name);
             
             const profile = userData ? {
@@ -5068,6 +5237,10 @@
         let currentViewingItem = null;
 
         function initMarket() {
+            // Load from global database
+            const globalAdverts = getGlobalData(GLOBAL_DB_KEYS.ADVERTS);
+            marketItems = Object.values(globalAdverts).flat() || [];
+            
             if (currentUser && currentUser.adverts) {
                 myAdverts = currentUser.adverts;
             }
@@ -5303,12 +5476,22 @@
             
             myAdverts.unshift(newAdvert);
             
-            // Save to user account
+            // Save to global database
             if (currentUser) {
                 currentUser.adverts = myAdverts;
-                const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                
+                const globalAdverts = getGlobalData(GLOBAL_DB_KEYS.ADVERTS);
+                if (!globalAdverts[currentUser.username]) {
+                    globalAdverts[currentUser.username] = [];
+                }
+                globalAdverts[currentUser.username].push(newAdvert);
+                setGlobalData(GLOBAL_DB_KEYS.ADVERTS, globalAdverts);
+                
+                // Update users database
+                const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
                 users[currentUser.username] = currentUser;
-                localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                setGlobalData(GLOBAL_DB_KEYS.USERS, users);
+                
                 localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
             }
             
@@ -5352,12 +5535,21 @@
             if (confirm('Are you sure you want to delete this advert?')) {
                 myAdverts = myAdverts.filter(a => a.id !== id);
                 
-                // Update user account
+                // Update global database
                 if (currentUser) {
                     currentUser.adverts = myAdverts;
-                    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                    
+                    const globalAdverts = getGlobalData(GLOBAL_DB_KEYS.ADVERTS);
+                    if (globalAdverts[currentUser.username]) {
+                        globalAdverts[currentUser.username] = myAdverts;
+                        setGlobalData(GLOBAL_DB_KEYS.ADVERTS, globalAdverts);
+                    }
+                    
+                    // Update users database
+                    const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
                     users[currentUser.username] = currentUser;
-                    localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                    setGlobalData(GLOBAL_DB_KEYS.USERS, users);
+                    
                     localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
                 }
                 
@@ -5528,13 +5720,23 @@
                 const chatIndex = chats.findIndex(c => c.name === name);
                 if (chatIndex > -1) chats.splice(chatIndex, 1);
                 
-                // Update storage
+                // Update global database
                 if (currentUser) {
                     currentUser.matches = matches;
                     currentUser.chats = chats;
-                    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                    
+                    const globalMatches = getGlobalData(GLOBAL_DB_KEYS.MATCHES);
+                    globalMatches[currentUser.username] = matches;
+                    setGlobalData(GLOBAL_DB_KEYS.MATCHES, globalMatches);
+                    
+                    const globalChats = getGlobalData(GLOBAL_DB_KEYS.CHATS);
+                    globalChats[currentUser.username] = chats;
+                    setGlobalData(GLOBAL_DB_KEYS.CHATS, globalChats);
+                    
+                    const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
                     users[currentUser.username] = currentUser;
-                    localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                    setGlobalData(GLOBAL_DB_KEYS.USERS, users);
+                    
                     localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
                 }
                 
@@ -5544,7 +5746,7 @@
         }
 
         // ==========================================
-        // CHAT FUNCTIONS - FIXED
+        // CHAT FUNCTIONS - FIXED FOR CROSS-DEVICE MESSAGING
         // ==========================================
         
         function openChat(name) {
@@ -5567,19 +5769,33 @@
                     phone: match.phone,
                     age: match.age,
                     photos: match.photos,
-                    isBot: match.isBot || false
+                    isBot: match.isBot || false,
+                    username: match.username || match.name.toLowerCase().replace(/\s+/g, '')
                 };
                 chats.unshift(chat);
                 chatHistories[name] = [
                     { text: "You matched! Say hello 👋", sent: false, time: "Just now" }
                 ];
                 
-                // Save to storage
+                // Save to global database
                 if (currentUser) {
                     currentUser.chats = chats;
-                    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                    
+                    const globalChats = getGlobalData(GLOBAL_DB_KEYS.CHATS);
+                    globalChats[currentUser.username] = chats;
+                    setGlobalData(GLOBAL_DB_KEYS.CHATS, globalChats);
+                    
+                    const globalMessages = getGlobalData(GLOBAL_DB_KEYS.MESSAGES);
+                    if (!globalMessages[currentUser.username]) {
+                        globalMessages[currentUser.username] = {};
+                    }
+                    globalMessages[currentUser.username][name] = chatHistories[name];
+                    setGlobalData(GLOBAL_DB_KEYS.MESSAGES, globalMessages);
+                    
+                    const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
                     users[currentUser.username] = currentUser;
-                    localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                    setGlobalData(GLOBAL_DB_KEYS.USERS, users);
+                    
                     localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
                 }
                 
@@ -5597,10 +5813,82 @@
             document.getElementById('chatAvatar').src = chat.img;
             document.getElementById('chatBox').classList.add('active');
             
+            // Load messages from global database
+            loadMessagesFromGlobal(name);
             renderMessages(name);
             
             chat.unread = 0;
             initChats();
+            
+            // Start polling for new messages
+            startMessagePolling(name);
+        }
+
+        function startMessagePolling(chatPartnerName) {
+            // Poll for new messages every 3 seconds
+            const pollInterval = setInterval(() => {
+                if (!currentChatUser || currentChatUser.name !== chatPartnerName) {
+                    clearInterval(pollInterval);
+                    return;
+                }
+                
+                loadMessagesFromGlobal(chatPartnerName);
+                renderMessages(chatPartnerName);
+            }, 3000);
+        }
+
+        function loadMessagesFromGlobal(partnerName) {
+            if (!currentUser) return;
+            
+            // Get messages from global database
+            const globalMessages = getGlobalData(GLOBAL_DB_KEYS.MESSAGES);
+            
+            // Load current user's messages with this partner
+            if (globalMessages[currentUser.username] && globalMessages[currentUser.username][partnerName]) {
+                chatHistories[partnerName] = globalMessages[currentUser.username][partnerName];
+            }
+            
+            // FIXED: Also check if partner has sent messages to current user
+            // Find partner's username
+            const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
+            const partnerUser = Object.values(users).find(u => {
+                const profileName = u.profile.name || u.username;
+                return profileName === partnerName && u.username !== currentUser.username;
+            });
+            
+            if (partnerUser) {
+                const partnerUsername = partnerUser.username;
+                
+                // Check if partner has messages for current user
+                if (globalMessages[partnerUsername] && globalMessages[partnerUsername][currentUser.profile.name || currentUser.username]) {
+                    const partnerMessages = globalMessages[partnerUsername][currentUser.profile.name || currentUser.username];
+                    
+                    // Merge messages, avoiding duplicates
+                    if (!chatHistories[partnerName]) {
+                        chatHistories[partnerName] = [];
+                    }
+                    
+                    partnerMessages.forEach(msg => {
+                        // Check if message already exists
+                        const exists = chatHistories[partnerName].some(m => 
+                            m.text === msg.text && m.time === msg.time && m.sent === !msg.sent
+                        );
+                        
+                        if (!exists && msg.sent) {
+                            // Partner's sent message is received by current user
+                            chatHistories[partnerName].push({
+                                text: msg.text,
+                                sent: false,
+                                time: msg.time
+                            });
+                        }
+                    });
+                    
+                    // Save merged messages back to global
+                    globalMessages[currentUser.username][partnerName] = chatHistories[partnerName];
+                    setGlobalData(GLOBAL_DB_KEYS.MESSAGES, globalMessages);
+                }
+            }
         }
 
         function openChatFromProfile(name) {
@@ -5639,11 +5927,13 @@
                 chatHistories[currentChatUser.name] = [];
             }
             
-            chatHistories[currentChatUser.name].push({
+            const newMessage = {
                 text: text,
                 sent: true,
                 time: time
-            });
+            };
+            
+            chatHistories[currentChatUser.name].push(newMessage);
             
             // Update chat preview
             const chat = chats.find(c => c.name === currentChatUser.name);
@@ -5651,15 +5941,111 @@
                 chat.message = text;
                 chat.time = "Just now";
                 initChats();
+            }
+            
+            // Save to global database - CRITICAL FIX
+            if (currentUser) {
+                const globalMessages = getGlobalData(GLOBAL_DB_KEYS.MESSAGES);
                 
-                // Save to storage
-                if (currentUser) {
-                    currentUser.chats = chats;
-                    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-                    users[currentUser.username] = currentUser;
-                    localStorage.setItem('afriConnect_users', JSON.stringify(users));
-                    localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+                // Save to current user's messages
+                if (!globalMessages[currentUser.username]) {
+                    globalMessages[currentUser.username] = {};
                 }
+                globalMessages[currentUser.username][currentChatUser.name] = chatHistories[currentChatUser.name];
+                
+                // FIXED: Also save to partner's messages so they can receive it
+                const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
+                const partnerUser = Object.values(users).find(u => {
+                    const profileName = u.profile.name || u.username;
+                    return profileName === currentChatUser.name && u.username !== currentUser.username;
+                });
+                
+                if (partnerUser) {
+                    const partnerUsername = partnerUser.username;
+                    
+                    if (!globalMessages[partnerUsername]) {
+                        globalMessages[partnerUsername] = {};
+                    }
+                    
+                    // Get current user's display name
+                    const myDisplayName = currentUser.profile.name || currentUser.username;
+                    
+                    if (!globalMessages[partnerUsername][myDisplayName]) {
+                        globalMessages[partnerUsername][myDisplayName] = [];
+                    }
+                    
+                    // Add message to partner's inbox (as received message)
+                    globalMessages[partnerUsername][myDisplayName].push({
+                        text: text,
+                        sent: false, // Partner receives it
+                        time: time
+                    });
+                    
+                    // Update partner's chats list
+                    const globalChats = getGlobalData(GLOBAL_DB_KEYS.CHATS);
+                    if (!globalChats[partnerUsername]) {
+                        globalChats[partnerUsername] = [];
+                    }
+                    
+                    const partnerChatIndex = globalChats[partnerUsername].findIndex(c => c.name === myDisplayName);
+                    if (partnerChatIndex >= 0) {
+                        globalChats[partnerUsername][partnerChatIndex].message = text;
+                        globalChats[partnerUsername][partnerChatIndex].time = "Just now";
+                        globalChats[partnerUsername][partnerChatIndex].unread = (globalChats[partnerUsername][partnerChatIndex].unread || 0) + 1;
+                    } else {
+                        // Create new chat entry for partner
+                        globalChats[partnerUsername].unshift({
+                            name: myDisplayName,
+                            message: text,
+                            time: "Just now",
+                            unread: 1,
+                            img: currentUser.profile.photos[0] || AFRICA_MAP_URL,
+                            bio: currentUser.profile.bio || '',
+                            job: currentUser.profile.job || '',
+                            company: currentUser.profile.company || '',
+                            school: currentUser.profile.school || '',
+                            phone: currentUser.profile.phone || '',
+                            age: currentUser.profile.age || 24,
+                            photos: currentUser.profile.photos || [AFRICA_MAP_URL],
+                            isBot: false,
+                            username: currentUser.username
+                        });
+                    }
+                    
+                    setGlobalData(GLOBAL_DB_KEYS.CHATS, globalChats);
+                    
+                    // Add notification for partner
+                    const globalNotifications = getGlobalData(GLOBAL_DB_KEYS.NOTIFICATIONS);
+                    if (!globalNotifications[partnerUsername]) {
+                        globalNotifications[partnerUsername] = [];
+                    }
+                    
+                    globalNotifications[partnerUsername].unshift({
+                        id: Date.now(),
+                        type: 'message',
+                        user: myDisplayName,
+                        avatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
+                        text: `New message from <strong>${myDisplayName}</strong>: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`,
+                        time: 'Just now',
+                        read: false
+                    });
+                    
+                    setGlobalData(GLOBAL_DB_KEYS.NOTIFICATIONS, globalNotifications);
+                }
+                
+                setGlobalData(GLOBAL_DB_KEYS.MESSAGES, globalMessages);
+                
+                // Update current user's chats in global
+                const globalChats = getGlobalData(GLOBAL_DB_KEYS.CHATS);
+                globalChats[currentUser.username] = chats;
+                setGlobalData(GLOBAL_DB_KEYS.CHATS, globalChats);
+                
+                // Update current user
+                const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
+                users[currentUser.username] = currentUser;
+                setGlobalData(GLOBAL_DB_KEYS.USERS, users);
+                
+                localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
             }
             
             input.value = '';
@@ -5683,9 +6069,11 @@
         // ==========================================
         
         function initMatches() {
-            // Load from currentUser if available
-            if (currentUser && currentUser.matches) {
-                matches = currentUser.matches;
+            // Load from global database
+            if (currentUser) {
+                const globalMatches = getGlobalData(GLOBAL_DB_KEYS.MATCHES);
+                matches = globalMatches[currentUser.username] || currentUser.matches || [];
+                currentUser.matches = matches;
             }
             
             const grid = document.getElementById('matchesGrid');
@@ -5707,10 +6095,17 @@
         }
 
         function initChats() {
-            // Load from currentUser if available
-            if (currentUser && currentUser.chats) {
-                chats = currentUser.chats;
-                initializeChatHistories();
+            // Load from global database
+            if (currentUser) {
+                const globalChats = getGlobalData(GLOBAL_DB_KEYS.CHATS);
+                chats = globalChats[currentUser.username] || currentUser.chats || [];
+                currentUser.chats = chats;
+                
+                // Load messages
+                const globalMessages = getGlobalData(GLOBAL_DB_KEYS.MESSAGES);
+                if (globalMessages[currentUser.username]) {
+                    chatHistories = globalMessages[currentUser.username];
+                }
             }
             
             const list = document.getElementById('chatList');
@@ -5810,10 +6205,12 @@
                         } else {
                             currentUser.profile.photos.unshift(e.target.result);
                         }
-                        // Update storage
-                        const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                        
+                        // Update global database
+                        const users = getGlobalData(GLOBAL_DB_KEYS.USERS);
                         users[currentUser.username] = currentUser;
-                        localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                        setGlobalData(GLOBAL_DB_KEYS.USERS, users);
+                        
                         localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
                     } else {
                         if (userProfile.photos.length > 0) {
