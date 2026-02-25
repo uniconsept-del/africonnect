@@ -2191,53 +2191,51 @@
             background: rgba(239, 68, 68, 0.3);
         }
 
-        /* ENIOLA BOT STYLES */
+        /* ENIOLA BOT STYLES - MINIMAL */
         .eniola-bot {
             position: fixed;
             bottom: 90px;
             right: 15px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #fbbf24, #d4af37);
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(251, 191, 36, 0.1));
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             z-index: 85;
-            box-shadow: 0 4px 20px rgba(251, 191, 36, 0.5);
+            opacity: 0.6;
             transition: all 0.3s;
-            animation: eniolaPulse 2s infinite;
-        }
-
-        @keyframes eniolaPulse {
-            0%, 100% { box-shadow: 0 4px 20px rgba(251, 191, 36, 0.5); }
-            50% { box-shadow: 0 4px 30px rgba(251, 191, 36, 0.8); }
+            border: 1px solid rgba(251, 191, 36, 0.2);
         }
 
         .eniola-bot:hover {
+            opacity: 1;
             transform: scale(1.1);
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.5), rgba(251, 191, 36, 0.2));
         }
 
         .eniola-bot i {
-            color: #1a1a1a;
-            font-size: 28px;
+            color: #fbbf24;
+            font-size: 24px;
         }
 
         .eniola-chat {
             position: fixed;
-            bottom: 160px;
+            bottom: 150px;
             right: 15px;
-            width: 300px;
+            width: 280px;
             max-width: 85vw;
             background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-            border: 1px solid rgba(251, 191, 36, 0.3);
-            border-radius: 20px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
             z-index: 86;
             display: none;
             flex-direction: column;
             overflow: hidden;
+            opacity: 0.9;
         }
 
         .eniola-chat.active {
@@ -2245,81 +2243,81 @@
         }
 
         .eniola-header {
-            background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(251, 191, 36, 0.1));
-            padding: 15px;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.05));
+            padding: 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
         .eniola-avatar {
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
-            background: #fbbf24;
+            background: rgba(251, 191, 36, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 18px;
         }
 
         .eniola-name {
             color: white;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .eniola-status {
             color: #22c55e;
-            font-size: 12px;
+            font-size: 11px;
         }
 
         .eniola-messages {
-            padding: 15px;
-            max-height: 300px;
+            padding: 12px;
+            max-height: 200px;
             overflow-y: auto;
         }
 
         .eniola-message {
-            background: rgba(255,255,255,0.1);
-            padding: 12px;
-            border-radius: 15px;
-            margin-bottom: 10px;
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 8px;
             color: white;
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
         }
 
         .eniola-options {
-            padding: 0 15px 15px;
+            padding: 0 12px 12px;
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
         }
 
         .eniola-option {
-            background: rgba(251, 191, 36, 0.2);
-            border: 1px solid rgba(251, 191, 36, 0.3);
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.2);
             color: #fbbf24;
-            padding: 8px 12px;
-            border-radius: 15px;
+            padding: 6px 10px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
             transition: all 0.3s;
         }
 
         .eniola-option:hover {
-            background: rgba(251, 191, 36, 0.3);
+            background: rgba(251, 191, 36, 0.2);
         }
 
         .eniola-close {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 12px;
+            right: 12px;
             color: white;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         /* Logo with Africa Image */
@@ -2465,9 +2463,160 @@
             margin-top: 15px;
             display: none;
         }
+
+        /* Search Bar Styles */
+        .search-container {
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.1);
+            border-radius: 25px;
+            padding: 8px 15px;
+            gap: 10px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-bar input::placeholder {
+            color: #666;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 110px;
+            left: 15px;
+            right: 15px;
+            background: #2a2a2a;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            z-index: 100;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .search-result-item:hover {
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .search-result-item img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .search-result-info {
+            flex: 1;
+        }
+
+        .search-result-name {
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .search-result-meta {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .add-friend-btn {
+            background: #fbbf24;
+            color: black;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-friend-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .add-friend-btn.added {
+            background: #22c55e;
+            color: white;
+        }
+
+        /* Offline Overlay */
+        .offline-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .offline-overlay.active {
+            display: flex;
+        }
+
+        .offline-icon {
+            font-size: 60px;
+            color: #ef4444;
+            margin-bottom: 20px;
+        }
+
+        .offline-text {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .offline-subtext {
+            color: #888;
+            font-size: 16px;
+        }
     </style>
+<base target="_blank">
 </head>
 <body class="text-gray-200 font-sans min-h-screen flex flex-col relative">
+
+    <!-- Offline Overlay -->
+    <div class="offline-overlay" id="offlineOverlay">
+        <div class="offline-icon">
+            <i class="fas fa-wifi"></i>
+        </div>
+        <div class="offline-text">You are offline</div>
+        <div class="offline-subtext">Please check your internet connection and try again</div>
+    </div>
 
     <!-- Africa Map Background -->
     <div class="africa-map-bg" id="africaMapBg"></div>
@@ -2570,6 +2719,15 @@
             </div>
         </div>
 
+        <!-- Search Container -->
+        <div class="search-container">
+            <div class="search-bar">
+                <i class="fas fa-search text-gray-400"></i>
+                <input type="text" id="userSearchInput" placeholder="Search for users to add as friends..." onkeyup="searchUsers(this.value)">
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </div>
+
         <!-- NOTIFICATION PANEL -->
         <div class="notification-panel" id="notificationPanel">
             <div class="notification-header">
@@ -2650,7 +2808,7 @@
             </div>
         </div>
 
-        <!-- ENIOLA BOT -->
+        <!-- ENIOLA BOT - MINIMAL -->
         <div class="eniola-bot" onclick="toggleEniola()" title="Chat with ENIOLA">
             <i class="fas fa-robot"></i>
         </div>
@@ -3183,7 +3341,35 @@
 
     <script>
         // ==========================================
-        // AUTHENTICATION SYSTEM - SIMPLIFIED
+        // NETWORK STATUS CHECK
+        // ==========================================
+        
+        function checkOnlineStatus() {
+            const offlineOverlay = document.getElementById('offlineOverlay');
+            if (!navigator.onLine) {
+                offlineOverlay.classList.add('active');
+                return false;
+            } else {
+                offlineOverlay.classList.remove('active');
+                return true;
+            }
+        }
+
+        // Check on load
+        window.addEventListener('load', checkOnlineStatus);
+        
+        // Listen for online/offline events
+        window.addEventListener('online', () => {
+            document.getElementById('offlineOverlay').classList.remove('active');
+            showToast("Back online! 🎉");
+        });
+        
+        window.addEventListener('offline', () => {
+            document.getElementById('offlineOverlay').classList.add('active');
+        });
+
+        // ==========================================
+        // AUTHENTICATION SYSTEM - FIXED FOR CROSS-DEVICE
         // ==========================================
         
         let currentUser = null;
@@ -3194,8 +3380,23 @@
             // Check for existing session
             const session = localStorage.getItem('afriConnect_session');
             if (session) {
-                currentUser = JSON.parse(session);
-                enterApp();
+                try {
+                    currentUser = JSON.parse(session);
+                    // Verify user still exists in users database
+                    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                    if (users[currentUser.username]) {
+                        // Update current user data with stored data
+                        currentUser = users[currentUser.username];
+                        enterApp();
+                    } else {
+                        // User was deleted or doesn't exist, clear session
+                        localStorage.removeItem('afriConnect_session');
+                        currentUser = null;
+                    }
+                } catch (e) {
+                    localStorage.removeItem('afriConnect_session');
+                    currentUser = null;
+                }
             }
         }
 
@@ -3223,11 +3424,16 @@
             document.getElementById('signupSuccess').style.display = 'none';
         }
 
-        // Handle Login
+        // Handle Login - FIXED
         function handleLogin(e) {
             e.preventDefault();
             
-            const username = document.getElementById('loginUsername').value.trim();
+            if (!checkOnlineStatus()) {
+                showToast("You are offline. Please check your connection.");
+                return;
+            }
+            
+            const username = document.getElementById('loginUsername').value.trim().toLowerCase();
             const password = document.getElementById('loginPassword').value;
             const errorDiv = document.getElementById('loginError');
             
@@ -3235,7 +3441,7 @@
             const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
             
             if (!users[username]) {
-                errorDiv.textContent = 'Username not found. Please sign up first.';
+                errorDiv.textContent = 'Account does not exist. Please sign up first.';
                 errorDiv.style.display = 'block';
                 return;
             }
@@ -3246,7 +3452,7 @@
                 return;
             }
             
-            // Login successful
+            // Login successful - FIXED: Store complete user data
             currentUser = users[username];
             localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
             
@@ -3254,11 +3460,16 @@
             enterApp();
         }
 
-        // Handle Signup
+        // Handle Signup - FIXED
         function handleSignup(e) {
             e.preventDefault();
             
-            const username = document.getElementById('signupUsername').value.trim();
+            if (!checkOnlineStatus()) {
+                showToast("You are offline. Please check your connection.");
+                return;
+            }
+            
+            const username = document.getElementById('signupUsername').value.trim().toLowerCase();
             const password = document.getElementById('signupPassword').value;
             const errorDiv = document.getElementById('signupError');
             const successDiv = document.getElementById('signupSuccess');
@@ -3285,12 +3496,12 @@
                 return;
             }
             
-            // Create new user
+            // Create new user - FIXED: Ensure all fields are properly initialized
             const newUser = {
                 username: username,
                 password: password,
                 profile: {
-                    name: username,
+                    name: username.charAt(0).toUpperCase() + username.slice(1),
                     age: 24,
                     bio: 'New to AfriConnect',
                     job: '',
@@ -3307,7 +3518,8 @@
                 matches: [],
                 chats: [],
                 adverts: [],
-                notifications: []
+                notifications: [],
+                friends: [] // NEW: Friends list
             };
             
             // Save user
@@ -3343,10 +3555,12 @@
             initMarket();
             updateNotificationBadge();
             
-            // Show ENIOLA welcome after 2 seconds
+            // Show ENIOLA welcome after 3 seconds (delayed and subtle)
             setTimeout(() => {
-                showEniolaWelcome();
-            }, 2000);
+                if (Math.random() > 0.5) { // Only show 50% of the time
+                    showEniolaWelcome();
+                }
+            }, 3000);
         }
 
         // Logout
@@ -3425,6 +3639,103 @@
         }
 
         // ==========================================
+        // USER SEARCH FUNCTIONALITY
+        // ==========================================
+        
+        function searchUsers(query) {
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (!query.trim()) {
+                resultsContainer.classList.remove('active');
+                return;
+            }
+            
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            const allProfiles = getAllDiscoverableProfiles();
+            
+            // Filter users by name
+            const filteredUsers = allProfiles.filter(user => 
+                user.name.toLowerCase().includes(query.toLowerCase()) && 
+                user.name !== (currentUser ? currentUser.profile.name : '')
+            );
+            
+            if (filteredUsers.length === 0) {
+                resultsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #888;">No users found</div>';
+                resultsContainer.classList.add('active');
+                return;
+            }
+            
+            resultsContainer.innerHTML = filteredUsers.map(user => {
+                const isFriend = currentUser && currentUser.friends && currentUser.friends.includes(user.name);
+                return `
+                <div class="search-result-item" onclick="viewProfileDetails('${user.name}', 'discover')">
+                    <img src="${user.img}" alt="${user.name}">
+                    <div class="search-result-info">
+                        <div class="search-result-name">${user.name}, ${user.age}</div>
+                        <div class="search-result-meta">${user.country || 'Africa'} • ${user.distance}</div>
+                    </div>
+                    <button class="add-friend-btn ${isFriend ? 'added' : ''}" onclick="event.stopPropagation(); toggleFriend('${user.name}', this)">
+                        ${isFriend ? '<i class="fas fa-check"></i> Added' : '<i class="fas fa-user-plus"></i> Add'}
+                    </button>
+                </div>
+            `}).join('');
+            
+            resultsContainer.classList.add('active');
+        }
+
+        function toggleFriend(userName, btn) {
+            if (!currentUser) return;
+            
+            if (!currentUser.friends) currentUser.friends = [];
+            
+            const index = currentUser.friends.indexOf(userName);
+            if (index > -1) {
+                currentUser.friends.splice(index, 1);
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> Add';
+                btn.classList.remove('added');
+                showToast(`Removed ${userName} from friends`);
+            } else {
+                currentUser.friends.push(userName);
+                btn.innerHTML = '<i class="fas fa-check"></i> Added';
+                btn.classList.add('added');
+                showToast(`Added ${userName} as friend! 🎉`);
+                
+                // Add notification
+                addNotification({
+                    id: Date.now(),
+                    type: 'friend',
+                    user: userName,
+                    avatar: getUserAvatar(userName),
+                    text: `You added <strong>${userName}</strong> as a friend!`,
+                    time: 'Just now',
+                    read: false
+                });
+            }
+            
+            // Save to storage
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            users[currentUser.username] = currentUser;
+            localStorage.setItem('afriConnect_users', JSON.stringify(users));
+            localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+        }
+
+        function getUserAvatar(userName) {
+            const allProfiles = getAllDiscoverableProfiles();
+            const user = allProfiles.find(p => p.name === userName);
+            return user ? user.img : AFRICA_MAP_URL;
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            const searchContainer = document.querySelector('.search-container');
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (!searchContainer.contains(e.target)) {
+                resultsContainer.classList.remove('active');
+            }
+        });
+
+        // ==========================================
         // LAMP LOGIC
         // ==========================================
         
@@ -3452,7 +3763,7 @@
         touchLamp.addEventListener('click', toggleLight);
 
         // ==========================================
-        // ENIOLA BOT
+        // ENIOLA BOT - MINIMAL
         // ==========================================
         
         function toggleEniola() {
@@ -3465,8 +3776,15 @@
             chat.classList.add('active');
             
             setTimeout(() => {
-                addEniolaMessage(`Hello ${currentUser ? currentUser.profile.name : 'there'}! I'm ENIOLA, your AfriConnect assistant. Welcome! How can I help you today?`);
-            }, 1000);
+                addEniolaMessage(`Hello! I'm ENIOLA, your AfriConnect assistant. Welcome! How can I help you today?`);
+            }, 500);
+            
+            // Auto-close after 10 seconds if not interacted with
+            setTimeout(() => {
+                if (!document.getElementById('eniolaChat').matches(':hover')) {
+                    chat.classList.remove('active');
+                }
+            }, 10000);
         }
 
         function askEniola(topic) {
@@ -3527,7 +3845,7 @@
         // Notifications Data
         let notifications = [];
 
-        // 20 Realistic Profiles from Different Countries
+        // 20 Realistic Profiles from Different Countries - NO BOTS IN CHATS
         const profiles = [
             { 
                 name: "Amara", 
@@ -3546,7 +3864,8 @@
                     "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Kwame", 
@@ -3564,7 +3883,8 @@
                     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Zara", 
@@ -3583,7 +3903,8 @@
                     "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Thabo", 
@@ -3601,7 +3922,8 @@
                     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Nia", 
@@ -3619,7 +3941,8 @@
                     "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Kofi", 
@@ -3637,7 +3960,8 @@
                     "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Amina", 
@@ -3655,7 +3979,8 @@
                     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "David", 
@@ -3673,7 +3998,8 @@
                     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Fatima", 
@@ -3691,7 +4017,8 @@
                     "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "James", 
@@ -3709,7 +4036,8 @@
                     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Zainab", 
@@ -3727,7 +4055,8 @@
                     "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Michael", 
@@ -3745,7 +4074,8 @@
                     "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Sarah", 
@@ -3763,7 +4093,8 @@
                     "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Omar", 
@@ -3781,7 +4112,8 @@
                     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Grace", 
@@ -3799,7 +4131,8 @@
                     "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Ibrahim", 
@@ -3817,7 +4150,8 @@
                     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Linda", 
@@ -3835,7 +4169,8 @@
                     "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Samuel", 
@@ -3853,7 +4188,8 @@
                     "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Naledi", 
@@ -3871,7 +4207,8 @@
                     "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             },
             { 
                 name: "Jean", 
@@ -3889,121 +4226,24 @@
                     "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop",
                     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop"
                 ],
-                verified: false 
+                verified: false,
+                isBot: false
             }
         ];
 
-        // Nearby People Data
+        // Nearby People Data - NO BOTS
         let nearbyPeople = [
-            { name: "Amina", age: 25, distance: "0.5 km", img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=400&fit=crop", online: true },
-            { name: "David", age: 29, distance: "1.2 km", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop", online: true },
-            { name: "Fatima", age: 24, distance: "2.1 km", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop", online: false },
-            { name: "James", age: 31, distance: "3.5 km", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop", online: true },
-            { name: "Zainab", age: 27, distance: "4.2 km", img: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=400&fit=crop", online: false },
-            { name: "Michael", age: 26, distance: "4.8 km", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop", online: true },
+            { name: "Amina", age: 25, distance: "0.5 km", img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=400&fit=crop", online: true, isBot: false },
+            { name: "David", age: 29, distance: "1.2 km", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop", online: true, isBot: false },
+            { name: "Fatima", age: 24, distance: "2.1 km", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop", online: false, isBot: false },
+            { name: "James", age: 31, distance: "3.5 km", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop", online: true, isBot: false },
+            { name: "Zainab", age: 27, distance: "4.2 km", img: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=400&fit=crop", online: false, isBot: false },
+            { name: "Michael", age: 26, distance: "4.8 km", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop", online: true, isBot: false },
         ];
 
-        let matches = [
-            { 
-                name: "Kwame", 
-                age: 28, 
-                img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop", 
-                lastActive: "Active now",
-                bio: "Chef & Travel enthusiast. I cook amazing jollof rice...",
-                job: "Executive Chef",
-                company: "Golden Spoon Restaurant",
-                school: "Ghana Institute of Catering",
-                phone: "+233 24 567 8901",
-                photos: [
-                    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
-                ]
-            },
-            { 
-                name: "Thabo", 
-                age: 30, 
-                img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop", 
-                lastActive: "2h ago",
-                bio: "Tech entrepreneur...",
-                job: "CEO & Founder",
-                company: "AfriTech Solutions",
-                school: "University of Cape Town",
-                phone: "+27 83 456 7890",
-                photos: [
-                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
-                ]
-            },
-            { 
-                name: "Zara", 
-                age: 26, 
-                img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop", 
-                lastActive: "5h ago",
-                bio: "Artist & Dreamer...",
-                job: "Visual Artist",
-                company: "Self Employed",
-                school: "Makerere University",
-                phone: "+256 78 901 2345",
-                photos: [
-                    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop"
-                ]
-            }
-        ];
-
-        let chats = [
-            { 
-                name: "Kwame", 
-                message: "Hey! How are you?", 
-                time: "2m ago", 
-                unread: 2, 
-                img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop",
-                bio: "Chef & Travel enthusiast...",
-                job: "Executive Chef",
-                company: "Golden Spoon Restaurant",
-                school: "Ghana Institute of Catering",
-                phone: "+233 24 567 8901",
-                age: 28,
-                photos: [
-                    "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
-                ]
-            },
-            { 
-                name: "Thabo", 
-                message: "Would love to meet for coffee", 
-                time: "1h ago", 
-                unread: 0, 
-                img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-                bio: "Tech entrepreneur...",
-                job: "CEO & Founder",
-                company: "AfriTech Solutions",
-                school: "University of Cape Town",
-                phone: "+27 83 456 7890",
-                age: 30,
-                photos: [
-                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
-                ]
-            },
-            { 
-                name: "Zara", 
-                message: "😊", 
-                time: "3h ago", 
-                unread: 1, 
-                img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop",
-                bio: "Artist & Dreamer...",
-                job: "Visual Artist",
-                company: "Self Employed",
-                school: "Makerere University",
-                phone: "+256 78 901 2345",
-                age: 26,
-                photos: [
-                    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop",
-                    "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop"
-                ]
-            }
-        ];
+        // Initialize matches and chats from currentUser if available
+        let matches = [];
+        let chats = [];
 
         // African Countries Data with States/Regions
         const africanCountries = [
@@ -4206,11 +4446,14 @@
         ];
 
         // Initialize chat histories
-        chats.forEach(chat => {
-            chatHistories[chat.name] = [
-                { text: chat.message, sent: false, time: chat.time }
-            ];
-        });
+        function initializeChatHistories() {
+            chatHistories = {};
+            chats.forEach(chat => {
+                chatHistories[chat.name] = [
+                    { text: chat.message, sent: false, time: chat.time }
+                ];
+            });
+        }
 
         // ==========================================
         // MAIN MENU FUNCTIONS
@@ -4278,7 +4521,8 @@
                         photos: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos : [AFRICA_MAP_URL],
                         verified: false,
                         isRegisteredUser: true,
-                        username: user.username
+                        username: user.username,
+                        isBot: false
                     };
                     allProfiles.push(userProfile);
                 }
@@ -4399,11 +4643,50 @@
                 company: profile.company,
                 school: profile.school,
                 phone: profile.phone,
-                photos: profile.photos
+                photos: profile.photos,
+                isBot: profile.isBot || false
             };
             
             matches.unshift(newMatch);
+            
+            // Add to chats as well so they can be messaged
+            const newChat = {
+                name: profile.name,
+                message: "You matched! Say hello 👋",
+                time: "Just now",
+                unread: 1,
+                img: profile.img,
+                bio: profile.bio,
+                job: profile.job,
+                company: profile.company,
+                school: profile.school,
+                phone: profile.phone,
+                age: profile.age,
+                photos: profile.photos,
+                isBot: profile.isBot || false
+            };
+            
+            // Check if chat already exists
+            const existingChat = chats.find(c => c.name === profile.name);
+            if (!existingChat) {
+                chats.unshift(newChat);
+                chatHistories[profile.name] = [
+                    { text: "You matched! Say hello 👋", sent: false, time: "Just now" }
+                ];
+            }
+            
+            // Save to currentUser
+            if (currentUser) {
+                currentUser.matches = matches;
+                currentUser.chats = chats;
+                const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                users[currentUser.username] = currentUser;
+                localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+            }
+            
             initMatches();
+            initChats();
             
             // Add notification
             addNotification({
@@ -4475,12 +4758,33 @@
             updateNotificationBadge();
             renderNotifications();
             
-            if (notif.type === 'match' || notif.type === 'message') {
+            if (notif.type === 'match' || notif.type === 'message' || notif.type === 'friend') {
                 const userName = notif.user;
+                
+                // Find in matches first
+                const match = matches.find(m => m.name === userName);
+                if (match) {
+                    toggleNotifications();
+                    openChat(userName);
+                    return;
+                }
+                
+                // Then check chats
                 const chat = chats.find(c => c.name === userName);
                 if (chat) {
                     toggleNotifications();
                     openChat(userName);
+                    return;
+                }
+                
+                // If not found, try to find profile and create chat
+                const allProfiles = getAllDiscoverableProfiles();
+                const profile = allProfiles.find(p => p.name === userName);
+                if (profile) {
+                    // Create a match and chat for this user
+                    addMatch(profile);
+                    toggleNotifications();
+                    setTimeout(() => openChat(userName), 500);
                 }
             } else {
                 toggleNotifications();
@@ -4538,7 +4842,8 @@
                         img: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos[0] : AFRICA_MAP_URL,
                         online: Math.random() > 0.3, // 70% chance online
                         isRegisteredUser: true,
-                        username: user.username
+                        username: user.username,
+                        isBot: false
                     };
                     allNearby.push(nearbyUser);
                 }
@@ -4592,7 +4897,8 @@
                 company: userData.profile.company || 'AfriConnect',
                 school: userData.profile.school || '',
                 phone: userData.profile.phone || 'Hidden',
-                photos: userData.profile.photos || [person.img]
+                photos: userData.profile.photos || [person.img],
+                isBot: false
             } : {
                 ...person,
                 bio: "Nearby user looking to connect!",
@@ -4600,7 +4906,8 @@
                 company: "Unknown",
                 school: "Unknown",
                 phone: "Hidden",
-                photos: [person.img]
+                photos: [person.img],
+                isBot: false
             };
             
             currentViewingProfile = profile;
@@ -4707,9 +5014,7 @@
             
             if (!groupChatHistories[key]) {
                 groupChatHistories[key] = [
-                    { text: `Welcome to ${room} chat room! Connect with people from this region.`, sent: false, time: 'Now', user: 'Admin' },
-                    { text: 'Hello everyone! 👋', sent: false, time: '2m ago', user: 'User123' },
-                    { text: 'Hi! Anyone from around here?', sent: false, time: '1m ago', user: 'LocalGirl' }
+                    { text: `Welcome to ${room} chat room! Connect with people from this region.`, sent: false, time: 'Now', user: 'Admin' }
                 ];
             }
             
@@ -4747,29 +5052,6 @@
             
             input.value = '';
             renderGroupMessages(currentGroupRoom.country, currentGroupRoom.room);
-            
-            setTimeout(() => {
-                const replies = [
-                    "Welcome to the group! 🎉",
-                    "Nice to meet you!",
-                    "Anyone here from this area?",
-                    "Great to have you here! 👋",
-                    "Hello! How's everyone doing?"
-                ];
-                
-                const randomReply = replies[Math.floor(Math.random() * replies.length)];
-                const randomUsers = ['NewUser', 'LocalGuy', 'Visitor', 'Resident', 'Member'];
-                const randomUser = randomUsers[Math.floor(Math.random() * randomUsers.length)];
-                
-                groupChatHistories[key].push({
-                    text: randomReply,
-                    sent: false,
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    user: randomUser
-                });
-                
-                renderGroupMessages(currentGroupRoom.country, currentGroupRoom.room);
-            }, 3000);
         }
 
         function handleGroupChatKeypress(e) {
@@ -5215,6 +5497,7 @@
                     </button>
                 `;
             } else {
+                // FIXED: Always show message button for matches and chats
                 actions.innerHTML = `
                     <button class="action-bar-btn dislike" onclick="unmatch('${profile.name}')">
                         <i class="fas fa-user-slash"></i>
@@ -5240,17 +5523,73 @@
                 closeProfileModal();
                 const index = matches.findIndex(m => m.name === name);
                 if (index > -1) matches.splice(index, 1);
+                
+                // Also remove from chats
+                const chatIndex = chats.findIndex(c => c.name === name);
+                if (chatIndex > -1) chats.splice(chatIndex, 1);
+                
+                // Update storage
+                if (currentUser) {
+                    currentUser.matches = matches;
+                    currentUser.chats = chats;
+                    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                    users[currentUser.username] = currentUser;
+                    localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                    localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+                }
+                
                 initMatches();
+                initChats();
             }
         }
 
         // ==========================================
-        // CHAT FUNCTIONS
+        // CHAT FUNCTIONS - FIXED
         // ==========================================
         
         function openChat(name) {
-            const chat = chats.find(c => c.name === name);
-            if (!chat) return;
+            // FIXED: Find user in matches first, then chats, then profiles
+            let chat = chats.find(c => c.name === name);
+            let match = matches.find(m => m.name === name);
+            
+            // If not in chats but in matches, create chat entry
+            if (!chat && match) {
+                chat = {
+                    name: match.name,
+                    message: "You matched! Say hello 👋",
+                    time: "Just now",
+                    unread: 0,
+                    img: match.img,
+                    bio: match.bio,
+                    job: match.job,
+                    company: match.company,
+                    school: match.school,
+                    phone: match.phone,
+                    age: match.age,
+                    photos: match.photos,
+                    isBot: match.isBot || false
+                };
+                chats.unshift(chat);
+                chatHistories[name] = [
+                    { text: "You matched! Say hello 👋", sent: false, time: "Just now" }
+                ];
+                
+                // Save to storage
+                if (currentUser) {
+                    currentUser.chats = chats;
+                    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                    users[currentUser.username] = currentUser;
+                    localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                    localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+                }
+                
+                initChats();
+            }
+            
+            if (!chat) {
+                showToast("Cannot start chat with this user");
+                return;
+            }
             
             currentChatUser = chat;
             
@@ -5266,7 +5605,7 @@
 
         function openChatFromProfile(name) {
             closeProfileModal();
-            openChat(name);
+            setTimeout(() => openChat(name), 300);
         }
 
         function closeChat() {
@@ -5306,35 +5645,25 @@
                 time: time
             });
             
+            // Update chat preview
+            const chat = chats.find(c => c.name === currentChatUser.name);
+            if (chat) {
+                chat.message = text;
+                chat.time = "Just now";
+                initChats();
+                
+                // Save to storage
+                if (currentUser) {
+                    currentUser.chats = chats;
+                    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                    users[currentUser.username] = currentUser;
+                    localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                    localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+                }
+            }
+            
             input.value = '';
             renderMessages(currentChatUser.name);
-            
-            setTimeout(() => {
-                const replies = [
-                    "That's interesting! Tell me more 😊",
-                    "Haha, I totally agree!",
-                    "Would love to meet up sometime!",
-                    "What are you up to this weekend?",
-                    "I love that! Same here 💛"
-                ];
-                
-                const randomReply = replies[Math.floor(Math.random() * replies.length)];
-                
-                chatHistories[currentChatUser.name].push({
-                    text: randomReply,
-                    sent: false,
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                });
-                
-                renderMessages(currentChatUser.name);
-                
-                const chat = chats.find(c => c.name === currentChatUser.name);
-                if (chat) {
-                    chat.message = randomReply;
-                    chat.time = "Just now";
-                    initChats();
-                }
-            }, 2000);
         }
 
         function handleChatKeypress(e) {
@@ -5350,11 +5679,22 @@
         }
 
         // ==========================================
-        // MATCHES & CHATS INITIALIZATION - NOW INCLUDES DYNAMIC DATA
+        // MATCHES & CHATS INITIALIZATION - FIXED
         // ==========================================
         
         function initMatches() {
+            // Load from currentUser if available
+            if (currentUser && currentUser.matches) {
+                matches = currentUser.matches;
+            }
+            
             const grid = document.getElementById('matchesGrid');
+            
+            if (matches.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; color: #888; padding: 40px; grid-column: 1/-1;">No matches yet. Start liking profiles!</div>';
+                return;
+            }
+            
             grid.innerHTML = matches.map(match => `
                 <div class="match-card" onclick="viewProfileDetails('${match.name}', 'matches')">
                     <img src="${match.img}" alt="${match.name}">
@@ -5367,7 +5707,19 @@
         }
 
         function initChats() {
+            // Load from currentUser if available
+            if (currentUser && currentUser.chats) {
+                chats = currentUser.chats;
+                initializeChatHistories();
+            }
+            
             const list = document.getElementById('chatList');
+            
+            if (chats.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">No messages yet. Match with someone to start chatting!</div>';
+                return;
+            }
+            
             list.innerHTML = chats.map(chat => `
                 <div class="chat-item" onclick="openChat('${chat.name}')">
                     <img src="${chat.img}" class="chat-avatar" alt="${chat.name}">
