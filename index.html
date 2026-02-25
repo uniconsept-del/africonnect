@@ -2709,7 +2709,7 @@
             <div class="p-3 border-b border-white/10 flex justify-between items-center">
                 <div>
                     <h2 class="text-lg font-bold text-white">People Nearby</h2>
-                    <p class="text-xs text-gray-400">12 people within 5 km</p>
+                    <p class="text-xs text-gray-400" id="nearbyCountText">12 people within 5 km</p>
                 </div>
                 <select class="text-xs" onchange="filterNearby(this.value)">
                     <option value="5">Within 5 km</option>
@@ -3894,7 +3894,7 @@
         ];
 
         // Nearby People Data
-        const nearbyPeople = [
+        let nearbyPeople = [
             { name: "Amina", age: 25, distance: "0.5 km", img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=400&fit=crop", online: true },
             { name: "David", age: 29, distance: "1.2 km", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop", online: true },
             { name: "Fatima", age: 24, distance: "2.1 km", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop", online: false },
@@ -3903,7 +3903,7 @@
             { name: "Michael", age: 26, distance: "4.8 km", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop", online: true },
         ];
 
-        const matches = [
+        let matches = [
             { 
                 name: "Kwame", 
                 age: 28, 
@@ -3951,7 +3951,7 @@
             }
         ];
 
-        const chats = [
+        let chats = [
             { 
                 name: "Kwame", 
                 message: "Hey! How are you?", 
@@ -4247,11 +4247,49 @@
         }
 
         // ==========================================
-        // DISCOVERY FUNCTIONS
+        // DISCOVERY FUNCTIONS - NOW INCLUDES ALL USERS
         // ==========================================
         
+        function getAllDiscoverableProfiles() {
+            // Get all registered users from localStorage
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            const allProfiles = [...profiles]; // Start with hardcoded profiles
+            
+            // Add registered users who aren't the current user
+            Object.values(users).forEach(user => {
+                if (currentUser && user.username === currentUser.username) return; // Skip current user
+                
+                // Check if this user is already in profiles (by username)
+                const exists = allProfiles.some(p => p.name === user.username);
+                if (!exists) {
+                    // Convert user object to profile format
+                    const userProfile = {
+                        name: user.profile.name || user.username,
+                        age: user.profile.age || 24,
+                        bio: user.profile.bio || 'New to AfriConnect',
+                        distance: `${Math.floor(Math.random() * 20) + 1} km`,
+                        job: user.profile.job || 'Member',
+                        company: user.profile.company || 'AfriConnect',
+                        school: user.profile.school || '',
+                        phone: user.profile.phone || '',
+                        country: 'Africa',
+                        gender: user.profile.gender === 'man' ? 'male' : (user.profile.gender === 'woman' ? 'female' : 'other'),
+                        img: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos[0] : AFRICA_MAP_URL,
+                        photos: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos : [AFRICA_MAP_URL],
+                        verified: false,
+                        isRegisteredUser: true,
+                        username: user.username
+                    };
+                    allProfiles.push(userProfile);
+                }
+            });
+            
+            return allProfiles;
+        }
+
         function initDiscovery() {
-            renderDiscoveryGrid(profiles);
+            const allProfiles = getAllDiscoverableProfiles();
+            renderDiscoveryGrid(allProfiles);
         }
 
         function renderDiscoveryGrid(profileList) {
@@ -4287,14 +4325,17 @@
         }
 
         function filterDiscovery(filter) {
-            let filtered = profiles;
+            const allProfiles = getAllDiscoverableProfiles();
+            let filtered = allProfiles;
+            
             if (filter === 'male') {
-                filtered = profiles.filter(p => p.gender === 'male');
+                filtered = allProfiles.filter(p => p.gender === 'male');
             } else if (filter === 'female') {
-                filtered = profiles.filter(p => p.gender === 'female');
+                filtered = allProfiles.filter(p => p.gender === 'female');
             } else if (filter === 'verified') {
-                filtered = profiles.filter(p => p.verified);
+                filtered = allProfiles.filter(p => p.verified);
             }
+            
             renderDiscoveryGrid(filtered);
         }
 
@@ -4308,6 +4349,18 @@
             showToast(`Liked ${name}! 💛`);
             const card = event.target.closest('.grid-profile-card');
             card.style.border = '2px solid #22c55e';
+            
+            // Add to matches if it's a registered user (simulated mutual like)
+            const allProfiles = getAllDiscoverableProfiles();
+            const likedProfile = allProfiles.find(p => p.name === name);
+            
+            if (likedProfile && likedProfile.isRegisteredUser) {
+                // Simulate a match after a delay
+                setTimeout(() => {
+                    addMatch(likedProfile);
+                }, 2000);
+            }
+            
             setTimeout(() => {
                 card.style.display = 'none';
             }, 500);
@@ -4317,9 +4370,53 @@
             showToast(`Super Liked ${name}! ⭐`);
             const card = event.target.closest('.grid-profile-card');
             card.style.border = '2px solid #3b82f6';
+            
+            // Add to matches immediately for super like
+            const allProfiles = getAllDiscoverableProfiles();
+            const likedProfile = allProfiles.find(p => p.name === name);
+            
+            if (likedProfile) {
+                addMatch(likedProfile);
+            }
+            
             setTimeout(() => {
                 card.style.display = 'none';
             }, 500);
+        }
+
+        function addMatch(profile) {
+            // Check if already in matches
+            const exists = matches.some(m => m.name === profile.name);
+            if (exists) return;
+            
+            const newMatch = {
+                name: profile.name,
+                age: profile.age,
+                img: profile.img,
+                lastActive: "Active now",
+                bio: profile.bio,
+                job: profile.job,
+                company: profile.company,
+                school: profile.school,
+                phone: profile.phone,
+                photos: profile.photos
+            };
+            
+            matches.unshift(newMatch);
+            initMatches();
+            
+            // Add notification
+            addNotification({
+                id: Date.now(),
+                type: 'match',
+                user: profile.name,
+                avatar: profile.img,
+                text: `You matched with <strong>${profile.name}</strong>! Start chatting now.`,
+                time: 'Just now',
+                read: false
+            });
+            
+            showToast(`It's a Match with ${profile.name}! 🎉`);
         }
 
         // ==========================================
@@ -4363,6 +4460,11 @@
                     <i class="fas fa-times notification-delete" onclick="event.stopPropagation(); deleteNotification(${notif.id})"></i>
                 </div>
             `).join('');
+        }
+
+        function addNotification(notification) {
+            notifications.unshift(notification);
+            updateNotificationBadge();
         }
 
         function handleNotificationClick(id) {
@@ -4413,12 +4515,48 @@
         }
 
         // ==========================================
-        // NEARBY FUNCTIONS
+        // NEARBY FUNCTIONS - NOW INCLUDES ALL USERS
         // ==========================================
         
+        function getAllNearbyPeople() {
+            // Get all registered users from localStorage
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            const allNearby = [...nearbyPeople]; // Start with hardcoded nearby people
+            
+            // Add registered users who aren't the current user
+            Object.values(users).forEach(user => {
+                if (currentUser && user.username === currentUser.username) return; // Skip current user
+                
+                // Check if this user is already in nearbyPeople
+                const exists = allNearby.some(p => p.name === (user.profile.name || user.username));
+                if (!exists) {
+                    const distance = (Math.random() * 5).toFixed(1);
+                    const nearbyUser = {
+                        name: user.profile.name || user.username,
+                        age: user.profile.age || 24,
+                        distance: `${distance} km`,
+                        img: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos[0] : AFRICA_MAP_URL,
+                        online: Math.random() > 0.3, // 70% chance online
+                        isRegisteredUser: true,
+                        username: user.username
+                    };
+                    allNearby.push(nearbyUser);
+                }
+            });
+            
+            return allNearby;
+        }
+
         function initNearby() {
+            const allNearby = getAllNearbyPeople();
+            renderNearbyGrid(allNearby);
+        }
+
+        function renderNearbyGrid(peopleList) {
             const grid = document.getElementById('nearbyGrid');
-            grid.innerHTML = nearbyPeople.map(person => `
+            document.getElementById('nearbyCountText').textContent = `${peopleList.length} people within 5 km`;
+            
+            grid.innerHTML = peopleList.map(person => `
                 <div class="nearby-card" onclick="viewNearbyProfile('${person.name}')">
                     <img src="${person.img}" alt="${person.name}">
                     <div class="nearby-distance">${person.distance}</div>
@@ -4435,13 +4573,27 @@
 
         function filterNearby(distance) {
             showToast(`Showing people within ${distance} km`);
+            // In a real app, this would filter by actual distance
         }
 
         function viewNearbyProfile(name) {
-            const person = nearbyPeople.find(p => p.name === name);
+            const allNearby = getAllNearbyPeople();
+            const person = allNearby.find(p => p.name === name);
             if (!person) return;
             
-            const profile = {
+            // Get full profile if it's a registered user
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            const userData = Object.values(users).find(u => (u.profile.name || u.username) === name);
+            
+            const profile = userData ? {
+                ...person,
+                bio: userData.profile.bio || 'New to AfriConnect',
+                job: userData.profile.job || 'Member',
+                company: userData.profile.company || 'AfriConnect',
+                school: userData.profile.school || '',
+                phone: userData.profile.phone || 'Hidden',
+                photos: userData.profile.photos || [person.img]
+            } : {
                 ...person,
                 bio: "Nearby user looking to connect!",
                 job: "Unknown",
@@ -4940,12 +5092,15 @@
         let currentViewingProfile = null;
 
         function viewProfileDetails(name, source) {
-            let profile;
-            if (source === 'discover') {
-                profile = profiles.find(p => p.name === name);
-            } else if (source === 'matches') {
+            const allProfiles = getAllDiscoverableProfiles();
+            let profile = allProfiles.find(p => p.name === name);
+            
+            if (!profile) {
+                // Check in matches
                 profile = matches.find(m => m.name === name);
-            } else if (source === 'messages') {
+            }
+            if (!profile) {
+                // Check in chats
                 profile = chats.find(c => c.name === name);
             }
             
@@ -5195,7 +5350,7 @@
         }
 
         // ==========================================
-        // MATCHES & CHATS INITIALIZATION
+        // MATCHES & CHATS INITIALIZATION - NOW INCLUDES DYNAMIC DATA
         // ==========================================
         
         function initMatches() {
