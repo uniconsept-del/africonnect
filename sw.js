@@ -1,4 +1,4 @@
-const CACHE_NAME = 'africonnect-v1';
+const CACHE_NAME = 'africonnect-v3';
 const ASSETS = [
   './',
   './index.html',
