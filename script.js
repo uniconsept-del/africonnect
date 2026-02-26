@@ -904,20 +904,70 @@ function initializeChatHistories() {
 }
 
 // ==========================================
+// NAVIGATION & BACK BUTTON SYSTEM
+// ==========================================
+
+// Stack of navigation states for back button support
+const _navHistory = [];
+let _ignorePopState = false;
+
+function _pushNav(state) {
+    _navHistory.push(state);
+    history.pushState(state, '');
+}
+
+// Master "go back" — closes the topmost thing open
+function navigateBack() {
+    // Priority: close modals/panels before going between sections
+    if (_isVisible('chatBox')) { closeChat(); return; }
+    if (_isVisible('groupChatBox')) { closeGroupChat(); return; }
+    if (_isVisible('profileModal')) { closeProfileModal(); return; }
+    if (_isVisible('marketDetailModal')) { closeMarketDetail(); return; }
+    if (_isVisible('createAdvertModal')) { closeCreateAdvert(); return; }
+    if (_isVisible('notificationPanel')) {
+        document.getElementById('notificationPanel').classList.remove('active');
+        return;
+    }
+    if (_isVisible('mainMenuPanel')) { toggleMainMenu(); return; }
+    // If on a section other than Discover, go back to Discover
+    const active = document.querySelector('.app-section.active');
+    if (active && active.id !== 'section-swipe') {
+        showSection('swipe', true);
+        return;
+    }
+    // Nothing else to close — let the browser handle it
+    history.back();
+}
+
+function _isVisible(id) {
+    const el = document.getElementById(id);
+    return el && (el.classList.contains('active') || el.style.display === 'flex');
+}
+
+// Browser back/forward button handler
+window.addEventListener('popstate', () => {
+    if (_ignorePopState) return;
+    _ignorePopState = true;
+    navigateBack();
+    setTimeout(() => { _ignorePopState = false; }, 50);
+});
+
+// ==========================================
 // MAIN MENU FUNCTIONS
 // ==========================================
 
 function toggleMainMenu() {
     const overlay = document.getElementById('mainMenuOverlay');
     const panel = document.getElementById('mainMenuPanel');
-    
+    const opening = !panel.classList.contains('active');
     overlay.classList.toggle('active');
     panel.classList.toggle('active');
+    if (opening) _pushNav({ type: 'menu' });
 }
 
 function showSectionFromMenu(section) {
     toggleMainMenu();
-    showSection(section);
+    showSection(section, true);
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (section === 'swipe') document.querySelectorAll('.nav-item')[0].classList.add('active');
     else if (section === 'nearby') document.querySelectorAll('.nav-item')[1].classList.add('active');
@@ -925,14 +975,44 @@ function showSectionFromMenu(section) {
     else if (section === 'messages') document.querySelectorAll('.nav-item')[3].classList.add('active');
 }
 
-function showSection(section) {
+function showSection(section, pushState = true) {
     document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    
     document.getElementById(`section-${section}`).classList.add('active');
-    if (event && event.currentTarget) {
+    if (typeof event !== 'undefined' && event && event.currentTarget) {
         event.currentTarget.classList.add('active');
     }
+    if (pushState) _pushNav({ type: 'section', section });
+}
+
+// ==========================================
+// VERIFICATION BADGE HELPER
+// ==========================================
+
+function getVerificationBadge(profile) {
+    const tier = profile.verificationBadge || (profile.verified ? 'silver' : null);
+    if (!tier || tier === 'none') return '';
+    const badges = {
+        silver:  { icon: '🥈', label: 'Silver Verified',  color: '#94a3b8' },
+        gold:    { icon: '🥇', label: 'Gold Verified',    color: '#fbbf24' },
+        diamond: { icon: '💎', label: 'Diamond Verified', color: '#67e8f9' }
+    };
+    const b = badges[tier];
+    if (!b) return '';
+    return `<span title="${b.label}" style="font-size:12px; cursor:default;">${b.icon}</span>`;
+}
+
+function getVerificationBadgeFull(profile) {
+    const tier = profile.verificationBadge || (profile.verified ? 'silver' : null);
+    if (!tier || tier === 'none') return '';
+    const badges = {
+        silver:  { icon: '🥈', label: 'Silver Verified',  color: '#94a3b8' },
+        gold:    { icon: '🥇', label: 'Gold Verified',    color: '#fbbf24' },
+        diamond: { icon: '💎', label: 'Diamond Verified', color: '#67e8f9' }
+    };
+    const b = badges[tier];
+    if (!b) return '';
+    return `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(0,0,0,0.4);border:1px solid ${b.color}40;border-radius:20px;padding:2px 8px;font-size:11px;color:${b.color};">${b.icon} ${b.label}</span>`;
 }
 
 // ==========================================
@@ -967,6 +1047,7 @@ function getAllDiscoverableProfiles() {
                 img: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos[0] : AFRICA_MAP_URL,
                 photos: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos : [AFRICA_MAP_URL],
                 verified: false,
+                verificationBadge: user.verificationBadge || null,
                 isRegisteredUser: true,
                 username: user.username,
                 isBot: false
@@ -1008,13 +1089,14 @@ function renderDiscoveryGrid(profileList) {
         const verifiedBadge = profile.verified ? 
             `<span class="verification-badge"><i class="fas fa-check-circle"></i></span>` : '';
         
+        const badgeIcon = getVerificationBadge(profile);
         return `
         <div class="grid-profile-card" onclick="viewProfileDetails('${profile.name}', 'discover')">
             <img src="${profile.img}" class="grid-profile-image" alt="${profile.name}">
+            ${badgeIcon ? `<div style="position:absolute;top:4px;left:4px;z-index:2;">${badgeIcon}</div>` : ''}
             <div class="grid-profile-info">
                 <div class="flex items-center mb-1">
                     <h3 class="text-sm font-bold text-white">${profile.name}, ${profile.age}</h3>
-                    ${verifiedBadge}
                 </div>
                 <p class="text-yellow-500 text-xs mb-1"><i class="fas fa-map-marker-alt mr-1"></i>${profile.distance}</p>
                 <p class="text-gray-400 text-xs">${profile.country}</p>
@@ -1533,6 +1615,7 @@ function openGroupChat(country, room) {
     
     chatBox.classList.add('active');
     renderGroupMessages(country, room);
+    _pushNav({ type: 'groupChat' });
 }
 
 function closeGroupChat() {
@@ -1755,6 +1838,7 @@ function viewMarketItem(id) {
     
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+    _pushNav({ type: 'marketDetail' });
 }
 
 function closeMarketDetail() {
@@ -1779,6 +1863,7 @@ function openCreateAdvert() {
     advertImages = [];
     document.getElementById('advertForm').reset();
     document.getElementById('advertImagePreview').innerHTML = '';
+    _pushNav({ type: 'createAdvert' });
 }
 
 function closeCreateAdvert() {
@@ -1948,6 +2033,7 @@ function viewProfileDetails(name, source) {
             <div class="profile-hero-info">
                 <h2 class="text-3xl font-bold text-white mb-2">${profile.name}, ${profile.age}</h2>
                 <p class="text-yellow-400 text-sm"><i class="fas fa-map-marker-alt mr-2"></i>${profile.distance || 'Nearby'} • ${profile.job}</p>
+                ${getVerificationBadgeFull(profile)}
             </div>
         </div>
         
@@ -2037,6 +2123,7 @@ function viewProfileDetails(name, source) {
     
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+    _pushNav({ type: 'profileModal' });
 }
 
 function closeProfileModal() {
@@ -2239,6 +2326,7 @@ async function openChat(name) {
     document.getElementById('chatName').textContent = chat.name;
     document.getElementById('chatAvatar').src = chat.img;
     document.getElementById('chatBox').classList.add('active');
+    _pushNav({ type: 'chat', name });
     
     renderMessages(name);
     

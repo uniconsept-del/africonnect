@@ -586,6 +586,51 @@
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Verification Badge Picker ── */
+        .verify-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px); z-index: 9000;
+            display: flex; align-items: center; justify-content: center;
+            display: none;
+        }
+        .verify-modal-overlay.show { display: flex; }
+        .verify-modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+        .verify-modal h3 { font-size:18px; font-weight:800; margin-bottom:6px; }
+        .verify-modal p { font-size:12px; color:var(--text-dim); margin-bottom:24px; }
+        .badge-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .badge-option {
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--surface2);
+        }
+        .badge-option:hover { border-color: var(--gold); background: rgba(251,191,36,0.08); }
+        .badge-option.selected { border-color: var(--gold); background: rgba(251,191,36,0.15); }
+        .badge-option .badge-icon { font-size: 26px; margin-bottom: 6px; }
+        .badge-option .badge-name { font-size: 10px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; }
+        .badge-none .badge-icon { font-size:20px; opacity:0.4; }
+        .badge-modal-actions { display:flex; gap:10px; justify-content:flex-end; }
+
+        /* Inline badge display in table */
+        .user-badge { font-size: 14px; cursor: pointer; }
+        .user-badge:hover { transform: scale(1.2); display:inline-block; }
     </style>
 </head>
 <body>
@@ -766,7 +811,7 @@
                                 <th>Username</th>
                                 <th>Age</th>
                                 <th>Gender</th>
-                                <th>Bio</th>
+                                <th>Badge</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -934,6 +979,36 @@
 
 <div id="adminToast"></div>
 
+<!-- ── Verification Badge Modal ── -->
+<div class="verify-modal-overlay" id="verifyModalOverlay">
+    <div class="verify-modal">
+        <h3>Set Verification Badge</h3>
+        <p id="verifyModalTarget">Choose a badge tier for <strong></strong></p>
+        <div class="badge-options">
+            <div class="badge-option badge-none" onclick="selectBadge('none')" data-badge="none">
+                <div class="badge-icon">✕</div>
+                <div class="badge-name" style="color:#666;">None</div>
+            </div>
+            <div class="badge-option" onclick="selectBadge('silver')" data-badge="silver">
+                <div class="badge-icon">🥈</div>
+                <div class="badge-name" style="color:#94a3b8;">Silver</div>
+            </div>
+            <div class="badge-option" onclick="selectBadge('gold')" data-badge="gold">
+                <div class="badge-icon">🥇</div>
+                <div class="badge-name" style="color:#fbbf24;">Gold</div>
+            </div>
+            <div class="badge-option" onclick="selectBadge('diamond')" data-badge="diamond">
+                <div class="badge-icon">💎</div>
+                <div class="badge-name" style="color:#67e8f9;">Diamond</div>
+            </div>
+        </div>
+        <div class="badge-modal-actions">
+            <button class="btn btn-ghost" onclick="closeVerifyModal()">Cancel</button>
+            <button class="btn btn-gold" onclick="applyVerificationBadge()">Apply Badge</button>
+        </div>
+    </div>
+</div>
+
 <!-- Firebase SDK (same config as main app) -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1084,6 +1159,9 @@ function renderUsersTable(users, dashboardOnly = false) {
         const initial = name.charAt(0).toUpperCase();
         const photo = u.profile?.photos?.[0];
         const genderBadge = u.profile?.gender === 'man' ? 'badge-blue' : 'badge-yellow';
+        const badge = u.verificationBadge || 'none';
+        const badgeIcon = badge === 'silver' ? '🥈' : badge === 'gold' ? '🥇' : badge === 'diamond' ? '💎' : '';
+        const badgeLabel = badge !== 'none' ? `<span class="badge ${badge === 'silver' ? 'badge-gray' : badge === 'gold' ? 'badge-yellow' : 'badge-blue'}" style="font-size:10px;">${badgeIcon} ${badge.toUpperCase()}</span>` : '<span style="color:#444;font-size:11px;">—</span>';
 
         return `<tr>
             <td>
@@ -1091,17 +1169,20 @@ function renderUsersTable(users, dashboardOnly = false) {
                     ${photo ? `<img src="${photo}" class="user-thumb" onerror="this.style.display='none'">` :
                               `<div class="user-thumb-placeholder">${initial}</div>`}
                     <div>
-                        <div style="font-weight:700; font-size:13px;">${name}</div>
-                        <div style="font-size:11px; color:#666;">${u.profile?.bio?.substring(0, 40) || '—'}...</div>
+                        <div style="font-weight:700; font-size:13px;">${name} ${badgeIcon ? `<span style="font-size:13px;">${badgeIcon}</span>` : ''}</div>
+                        <div style="font-size:11px; color:#666;">${(u.profile?.bio || '').substring(0, 40) || '—'}...</div>
                     </div>
                 </div>
             </td>
             <td><span style="font-family:monospace; font-size:12px; color:#fbbf24;">@${u.username}</span></td>
             ${!dashboardOnly ? `<td>${u.profile?.age || '—'}</td>` : ''}
             <td><span class="badge ${genderBadge}">${u.profile?.gender || '—'}</span></td>
-            ${!dashboardOnly ? `<td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#888; font-size:12px;">${u.profile?.bio || '—'}</td>` : ''}
-            <td>
-                <button class="btn btn-danger" onclick="deleteUser('${u.username}')" style="font-size:10px; padding:4px 8px;">
+            ${!dashboardOnly ? `<td>${badgeLabel}</td>` : ''}
+            <td style="white-space:nowrap;">
+                ${!dashboardOnly ? `<button class="btn btn-ghost" onclick="openVerifyModal('${u.username}', '${name}')" style="font-size:10px; padding:4px 8px; margin-right:4px;" title="Set verification badge">
+                    🏅 Badge
+                </button>` : ''}
+                <button class="btn btn-danger" onclick="deleteUser('${u.username}')" style="font-size:10px; padding:4px 8px;" title="Delete user">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -1304,6 +1385,61 @@ function showAdminToast(msg) {
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
+
+// ── Verification Badge System ──────────────────────────────────
+let _verifyTarget = null; // { username, name }
+let _selectedBadge = 'none';
+
+function openVerifyModal(username, name) {
+    _verifyTarget = { username, name };
+    // Show current badge
+    const user = allUsersData[username];
+    _selectedBadge = user?.verificationBadge || 'none';
+    // Update UI
+    document.getElementById('verifyModalTarget').innerHTML = `Choose a badge tier for <strong>@${username}</strong>`;
+    document.querySelectorAll('.badge-option').forEach(el => {
+        el.classList.remove('selected');
+        if (el.dataset.badge === _selectedBadge) el.classList.add('selected');
+    });
+    document.getElementById('verifyModalOverlay').classList.add('show');
+}
+
+function closeVerifyModal() {
+    document.getElementById('verifyModalOverlay').classList.remove('show');
+    _verifyTarget = null;
+}
+
+function selectBadge(tier) {
+    _selectedBadge = tier;
+    document.querySelectorAll('.badge-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.badge === tier);
+    });
+}
+
+async function applyVerificationBadge() {
+    if (!_verifyTarget) return;
+    const { username, name } = _verifyTarget;
+    try {
+        if (_selectedBadge === 'none') {
+            await window._adminRemove(window._adminRef(window._adminDb, `users/${username}/verificationBadge`));
+        } else {
+            await window._adminSet(window._adminRef(window._adminDb, `users/${username}/verificationBadge`), _selectedBadge);
+        }
+        const icon = _selectedBadge === 'silver' ? '🥈' : _selectedBadge === 'gold' ? '🥇' : _selectedBadge === 'diamond' ? '💎' : '';
+        const label = _selectedBadge === 'none' ? 'Badge removed' : `${icon} ${_selectedBadge.charAt(0).toUpperCase() + _selectedBadge.slice(1)} badge assigned`;
+        showAdminToast(`${label} for @${username}`);
+        addActivity(`${label} → @${username}`, _selectedBadge === 'diamond' ? '#67e8f9' : _selectedBadge === 'gold' ? '#fbbf24' : '#94a3b8');
+        closeVerifyModal();
+        loadUsers();
+    } catch (e) {
+        showAdminToast('Error: ' + e.message);
+    }
+}
+
+// Close modal on overlay click
+document.getElementById('verifyModalOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('verifyModalOverlay')) closeVerifyModal();
+});
 </script>
 </body>
 </html>

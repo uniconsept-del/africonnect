@@ -344,9 +344,14 @@
 
         <!-- GROUP CHAT SECTION -->
         <div id="section-groups" class="app-section">
-            <div class="p-3 border-b border-white/10">
-                <h2 class="text-lg font-bold text-white">African Community Groups</h2>
-                <p class="text-xs text-gray-400">Join chat rooms by country & region</p>
+            <div class="section-header">
+                <button class="back-btn" onclick="navigateBack()" title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div>
+                    <h2 class="text-lg font-bold text-white">Community Groups</h2>
+                    <p class="text-xs text-gray-400">Join chat rooms by country & region</p>
+                </div>
             </div>
             <div class="p-3" id="groupsContainer"></div>
         </div>
@@ -370,9 +375,14 @@
 
         <!-- AFRICAN MARKET ZONE SECTION -->
         <div id="section-market" class="app-section">
-            <div class="market-header">
-                <h2 class="text-xl font-bold text-yellow-500">African Market Zone</h2>
-                <p class="text-xs text-gray-400">Buy, sell & connect with African vendors</p>
+            <div class="section-header">
+                <button class="back-btn" onclick="navigateBack()" title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div>
+                    <h2 class="text-xl font-bold text-yellow-500">African Market Zone</h2>
+                    <p class="text-xs text-gray-400">Buy, sell & connect with African vendors</p>
+                </div>
             </div>
             
             <div class="market-search">
@@ -416,6 +426,9 @@
             <input type="file" id="avatarUpload" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
 
             <div class="profile-header">
+                <button class="back-btn profile-back-btn" onclick="navigateBack()" title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
                 <div class="profile-menu-btn" onclick="toggleProfileMenu()">
                     <i class="fas fa-ellipsis-v text-white"></i>
                 </div>
