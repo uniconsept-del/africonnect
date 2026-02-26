@@ -167,9 +167,16 @@ async function handleLogin(e) {
     const btn = e.target.querySelector('button[type="submit"]');
     if (btn) { btn.disabled = true; btn.textContent = 'Logging in...'; }
     
+    const withTimeout = (promise, ms) => Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+    ]);
+
     try {
         if (window._firebaseReady) {
-            const snapshot = await window._dbGet(window._dbRef(window._db, `users/${username}`));
+            const snapshot = await withTimeout(
+                window._dbGet(window._dbRef(window._db, `users/${username}`)), 8000
+            );
             if (!snapshot.exists()) {
                 errorDiv.textContent = 'Account does not exist. Please sign up first.';
                 errorDiv.style.display = 'block';
@@ -184,6 +191,10 @@ async function handleLogin(e) {
                 return;
             }
             currentUser = userData;
+            // Cache locally for fast restore
+            const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            localUsers[username] = userData;
+            localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
         } else {
             // Fallback to localStorage
             const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
@@ -204,14 +215,21 @@ async function handleLogin(e) {
         
         localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
         showToast('Welcome back! 🎉');
+        if (btn) { btn.disabled = false; btn.textContent = 'Login'; }
         enterApp();
         subscribeToIncomingMessages();
     } catch (err) {
-        errorDiv.textContent = 'Login error. Please try again.';
+        console.error('Login error:', err);
+        if (err.message === 'timeout') {
+            errorDiv.textContent = '⚠️ Connection timed out. Check your Firebase database rules — go to Firebase Console → Realtime Database → Rules → set read/write to true → Publish.';
+        } else if (err.message && err.message.includes('permission')) {
+            errorDiv.textContent = '⚠️ Permission denied. Go to Firebase Console → Realtime Database → Rules → set read/write to true → Publish.';
+        } else {
+            errorDiv.textContent = 'Login error: ' + (err.message || 'Please try again.');
+        }
         errorDiv.style.display = 'block';
-        console.error(err);
+        if (btn) { btn.disabled = false; btn.textContent = 'Login'; }
     }
-    if (btn) { btn.disabled = false; btn.textContent = 'Login'; }
 }
 
 async function handleSignup(e) {
@@ -245,7 +263,7 @@ async function handleSignup(e) {
     
     // Validate username (no special chars that break Firebase paths)
     if (!/^[a-z0-9_]+$/.test(username)) {
-        errorDiv.textContent = 'Username can only contain letters, numbers, and underscores.';
+        errorDiv.textContent = 'Username can only contain letters, numbers, and underscores. No spaces or special characters.';
         errorDiv.style.display = 'block';
         if (btn) { btn.disabled = false; btn.textContent = 'Sign Up'; }
         return;
@@ -278,8 +296,16 @@ async function handleSignup(e) {
     
     try {
         if (window._firebaseReady) {
+            // Wrap Firebase calls with a timeout so it never hangs forever
+            const withTimeout = (promise, ms) => Promise.race([
+                promise,
+                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+            ]);
+
             // Check if username already exists in Firebase
-            const snapshot = await window._dbGet(window._dbRef(window._db, `users/${username}`));
+            const snapshot = await withTimeout(
+                window._dbGet(window._dbRef(window._db, `users/${username}`)), 8000
+            );
             if (snapshot.exists()) {
                 errorDiv.textContent = 'Username already exists. Please choose another.';
                 errorDiv.style.display = 'block';
@@ -287,7 +313,9 @@ async function handleSignup(e) {
                 return;
             }
             // Save to Firebase
-            await window._dbSet(window._dbRef(window._db, `users/${username}`), newUser);
+            await withTimeout(
+                window._dbSet(window._dbRef(window._db, `users/${username}`), newUser), 8000
+            );
         } else {
             // Fallback to localStorage
             const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
@@ -302,10 +330,15 @@ async function handleSignup(e) {
         }
         
         currentUser = newUser;
+        // Also cache in localStorage for fast session restore
+        const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+        localUsers[username] = newUser;
+        localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
         localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
         
         successDiv.textContent = 'Account created successfully! Redirecting...';
         successDiv.style.display = 'block';
+        if (btn) { btn.disabled = false; btn.textContent = 'Sign Up'; }
         
         setTimeout(() => {
             showToast('Welcome to AfriConnect! 🎉');
@@ -313,11 +346,17 @@ async function handleSignup(e) {
             subscribeToIncomingMessages();
         }, 1000);
     } catch (err) {
-        errorDiv.textContent = 'Error creating account. Please try again.';
+        console.error('Signup error:', err);
+        if (err.message === 'timeout') {
+            errorDiv.textContent = '⚠️ Connection timed out. Check your Firebase database rules — go to Firebase Console → Realtime Database → Rules → set read/write to true → Publish.';
+        } else if (err.code === 'PERMISSION_DENIED' || (err.message && err.message.includes('permission'))) {
+            errorDiv.textContent = '⚠️ Permission denied. Go to Firebase Console → Realtime Database → Rules → set read/write to true → Publish.';
+        } else {
+            errorDiv.textContent = 'Error creating account: ' + (err.message || 'Please try again.');
+        }
         errorDiv.style.display = 'block';
-        console.error(err);
+        if (btn) { btn.disabled = false; btn.textContent = 'Sign Up'; }
     }
-    if (btn) { btn.disabled = false; btn.textContent = 'Sign Up'; }
 }
 
 function enterApp() {
