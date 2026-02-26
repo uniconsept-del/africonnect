@@ -99,18 +99,30 @@ function checkOnlineStatus() {
 let currentUser = null;
 const AFRICA_MAP_URL = 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg';
 
-function initAuth() {
+async function initAuth() {
     const session = localStorage.getItem('afriConnect_session');
     if (session) {
         try {
-            currentUser = JSON.parse(session);
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-            if (users[currentUser.username]) {
-                currentUser = users[currentUser.username];
-                enterApp();
+            const saved = JSON.parse(session);
+            if (window._firebaseReady) {
+                const snapshot = await window._dbGet(window._dbRef(window._db, `users/${saved.username}`));
+                if (snapshot.exists()) {
+                    currentUser = snapshot.val();
+                    enterApp();
+                } else {
+                    localStorage.removeItem('afriConnect_session');
+                    currentUser = null;
+                }
             } else {
-                localStorage.removeItem('afriConnect_session');
-                currentUser = null;
+                // Firebase not configured yet - fall back to localStorage
+                const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                if (users[saved.username]) {
+                    currentUser = users[saved.username];
+                    enterApp();
+                } else {
+                    localStorage.removeItem('afriConnect_session');
+                    currentUser = null;
+                }
             }
         } catch (e) {
             localStorage.removeItem('afriConnect_session');
@@ -141,7 +153,7 @@ function switchAuthTab(tab) {
     document.getElementById('signupSuccess').style.display = 'none';
 }
 
-function handleLogin(e) {
+async function handleLogin(e) {
     e.preventDefault();
     
     if (!checkOnlineStatus()) {
@@ -152,29 +164,57 @@ function handleLogin(e) {
     const username = document.getElementById('loginUsername').value.trim().toLowerCase();
     const password = document.getElementById('loginPassword').value;
     const errorDiv = document.getElementById('loginError');
+    const btn = e.target.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Logging in...'; }
     
-    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-    
-    if (!users[username]) {
-        errorDiv.textContent = 'Account does not exist. Please sign up first.';
+    try {
+        if (window._firebaseReady) {
+            const snapshot = await window._dbGet(window._dbRef(window._db, `users/${username}`));
+            if (!snapshot.exists()) {
+                errorDiv.textContent = 'Account does not exist. Please sign up first.';
+                errorDiv.style.display = 'block';
+                if (btn) { btn.disabled = false; btn.textContent = 'Login'; }
+                return;
+            }
+            const userData = snapshot.val();
+            if (userData.password !== password) {
+                errorDiv.textContent = 'Incorrect password. Please try again.';
+                errorDiv.style.display = 'block';
+                if (btn) { btn.disabled = false; btn.textContent = 'Login'; }
+                return;
+            }
+            currentUser = userData;
+        } else {
+            // Fallback to localStorage
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            if (!users[username]) {
+                errorDiv.textContent = 'Account does not exist. Please sign up first.';
+                errorDiv.style.display = 'block';
+                if (btn) { btn.disabled = false; btn.textContent = 'Login'; }
+                return;
+            }
+            if (users[username].password !== password) {
+                errorDiv.textContent = 'Incorrect password. Please try again.';
+                errorDiv.style.display = 'block';
+                if (btn) { btn.disabled = false; btn.textContent = 'Login'; }
+                return;
+            }
+            currentUser = users[username];
+        }
+        
+        localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
+        showToast('Welcome back! 🎉');
+        enterApp();
+        subscribeToIncomingMessages();
+    } catch (err) {
+        errorDiv.textContent = 'Login error. Please try again.';
         errorDiv.style.display = 'block';
-        return;
+        console.error(err);
     }
-    
-    if (users[username].password !== password) {
-        errorDiv.textContent = 'Incorrect password. Please try again.';
-        errorDiv.style.display = 'block';
-        return;
-    }
-    
-    currentUser = users[username];
-    localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
-    
-    showToast('Welcome back! 🎉');
-    enterApp();
+    if (btn) { btn.disabled = false; btn.textContent = 'Login'; }
 }
 
-function handleSignup(e) {
+async function handleSignup(e) {
     e.preventDefault();
     
     if (!checkOnlineStatus()) {
@@ -186,24 +226,28 @@ function handleSignup(e) {
     const password = document.getElementById('signupPassword').value;
     const errorDiv = document.getElementById('signupError');
     const successDiv = document.getElementById('signupSuccess');
+    const btn = e.target.querySelector('button[type="submit"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Creating account...'; }
     
     if (username.length < 3) {
         errorDiv.textContent = 'Username must be at least 3 characters.';
         errorDiv.style.display = 'block';
+        if (btn) { btn.disabled = false; btn.textContent = 'Sign Up'; }
         return;
     }
     
     if (password.length < 4) {
         errorDiv.textContent = 'Password must be at least 4 characters.';
         errorDiv.style.display = 'block';
+        if (btn) { btn.disabled = false; btn.textContent = 'Sign Up'; }
         return;
     }
     
-    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-    
-    if (users[username]) {
-        errorDiv.textContent = 'Username already exists. Please choose another.';
+    // Validate username (no special chars that break Firebase paths)
+    if (!/^[a-z0-9_]+$/.test(username)) {
+        errorDiv.textContent = 'Username can only contain letters, numbers, and underscores.';
         errorDiv.style.display = 'block';
+        if (btn) { btn.disabled = false; btn.textContent = 'Sign Up'; }
         return;
     }
     
@@ -232,19 +276,48 @@ function handleSignup(e) {
         friends: []
     };
     
-    users[username] = newUser;
-    localStorage.setItem('afriConnect_users', JSON.stringify(users));
-    
-    currentUser = newUser;
-    localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
-    
-    successDiv.textContent = 'Account created successfully! Redirecting...';
-    successDiv.style.display = 'block';
-    
-    setTimeout(() => {
-        showToast('Welcome to AfriConnect! 🎉');
-        enterApp();
-    }, 1000);
+    try {
+        if (window._firebaseReady) {
+            // Check if username already exists in Firebase
+            const snapshot = await window._dbGet(window._dbRef(window._db, `users/${username}`));
+            if (snapshot.exists()) {
+                errorDiv.textContent = 'Username already exists. Please choose another.';
+                errorDiv.style.display = 'block';
+                if (btn) { btn.disabled = false; btn.textContent = 'Sign Up'; }
+                return;
+            }
+            // Save to Firebase
+            await window._dbSet(window._dbRef(window._db, `users/${username}`), newUser);
+        } else {
+            // Fallback to localStorage
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            if (users[username]) {
+                errorDiv.textContent = 'Username already exists. Please choose another.';
+                errorDiv.style.display = 'block';
+                if (btn) { btn.disabled = false; btn.textContent = 'Sign Up'; }
+                return;
+            }
+            users[username] = newUser;
+            localStorage.setItem('afriConnect_users', JSON.stringify(users));
+        }
+        
+        currentUser = newUser;
+        localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
+        
+        successDiv.textContent = 'Account created successfully! Redirecting...';
+        successDiv.style.display = 'block';
+        
+        setTimeout(() => {
+            showToast('Welcome to AfriConnect! 🎉');
+            enterApp();
+            subscribeToIncomingMessages();
+        }, 1000);
+    } catch (err) {
+        errorDiv.textContent = 'Error creating account. Please try again.';
+        errorDiv.style.display = 'block';
+        console.error(err);
+    }
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign Up'; }
 }
 
 function enterApp() {
@@ -261,6 +334,10 @@ function enterApp() {
     initChats();
     initMarket();
     updateNotificationBadge();
+    
+    // Load all Firebase users and subscribe to real-time messages
+    loadFirebaseUsers();
+    subscribeToIncomingMessages();
     
     setTimeout(() => {
         if (Math.random() > 0.5) {
@@ -311,7 +388,7 @@ function loadUserProfile() {
     renderPhotoGrid();
 }
 
-function saveProfile() {
+async function saveProfile() {
     if (!currentUser) return;
     
     currentUser.profile.name = document.getElementById('profileName').value;
@@ -326,10 +403,14 @@ function saveProfile() {
     currentUser.profile.ageMax = document.getElementById('ageMax').value;
     currentUser.profile.lookingFor = document.getElementById('lookingFor').value;
     
+    if (window._firebaseReady) {
+        await window._dbSet(window._dbRef(window._db, `users/${currentUser.username}`), currentUser);
+    }
+    // Also keep localStorage as cache
     const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
     users[currentUser.username] = currentUser;
     localStorage.setItem('afriConnect_users', JSON.stringify(users));
-    localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+    localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
     
     document.getElementById('menuUserName').textContent = currentUser.profile.name;
     
@@ -829,13 +910,18 @@ function showSection(section) {
 // ==========================================
 
 function getAllDiscoverableProfiles() {
+    // Combine hardcoded profiles with registered users from localStorage
     const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
     const allProfiles = [...profiles];
     
-    Object.values(users).forEach(user => {
+    // Add users from _firebaseUsersCache if available (populated by loadFirebaseUsers)
+    const firebaseUsers = window._firebaseUsersCache || {};
+    const mergedUsers = Object.assign({}, users, firebaseUsers);
+    
+    Object.values(mergedUsers).forEach(user => {
         if (currentUser && user.username === currentUser.username) return;
         
-        const exists = allProfiles.some(p => p.name === user.username);
+        const exists = allProfiles.some(p => p.name === (user.profile && user.profile.name ? user.profile.name : user.username));
         if (!exists) {
             const userProfile = {
                 name: user.profile.name || user.username,
@@ -860,6 +946,25 @@ function getAllDiscoverableProfiles() {
     });
     
     return allProfiles;
+}
+
+async function loadFirebaseUsers() {
+    if (!window._firebaseReady) return;
+    try {
+        const snapshot = await window._dbGet(window._dbRef(window._db, 'users'));
+        if (snapshot.exists()) {
+            window._firebaseUsersCache = snapshot.val();
+            // Also merge into localStorage for offline use
+            const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            Object.assign(localUsers, window._firebaseUsersCache);
+            localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
+            // Refresh discovery grid
+            initDiscovery();
+            initNearby();
+        }
+    } catch (err) {
+        console.warn('Could not load Firebase users:', err);
+    }
 }
 
 function initDiscovery() {
@@ -1854,7 +1959,7 @@ function unmatch(name) {
 // CHAT FUNCTIONS
 // ==========================================
 
-function openChat(name) {
+async function openChat(name) {
     let chat = chats.find(c => c.name === name);
     let match = matches.find(m => m.name === name);
     
@@ -1881,10 +1986,13 @@ function openChat(name) {
         
         if (currentUser) {
             currentUser.chats = chats;
+            if (window._firebaseReady) {
+                await window._dbSet(window._dbRef(window._db, `users/${currentUser.username}/chats`), chats);
+            }
             const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
             users[currentUser.username] = currentUser;
             localStorage.setItem('afriConnect_users', JSON.stringify(users));
-            localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+            localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
         }
         
         initChats();
@@ -1902,6 +2010,30 @@ function openChat(name) {
     document.getElementById('chatBox').classList.add('active');
     
     renderMessages(name);
+    
+    // Try to load shared Firebase chat history (cross-device messages)
+    if (window._firebaseReady && currentUser) {
+        // Find the partner's username
+        try {
+            const allUsersSnap = await window._dbGet(window._dbRef(window._db, 'users'));
+            if (allUsersSnap.exists()) {
+                const allUsersData = allUsersSnap.val();
+                let partnerUsername = null;
+                for (const [uname, udata] of Object.entries(allUsersData)) {
+                    if (uname === currentUser.username) continue;
+                    if ((udata.profile && udata.profile.name === name) || uname === name.toLowerCase()) {
+                        partnerUsername = uname;
+                        break;
+                    }
+                }
+                if (partnerUsername) {
+                    await loadSharedChatHistory(name, partnerUsername);
+                }
+            }
+        } catch (err) {
+            console.warn('Could not load Firebase chat history:', err);
+        }
+    }
     
     chat.unread = 0;
     initChats();
@@ -1931,41 +2063,201 @@ function renderMessages(userName) {
     container.scrollTop = container.scrollHeight;
 }
 
-function sendMessage() {
+async function sendMessage() {
     const input = document.getElementById('chatInput');
     const text = input.value.trim();
     
     if (!text || !currentChatUser) return;
     
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const msgData = {
+        text: text,
+        sent: true,
+        time: time,
+        from: currentUser ? currentUser.username : 'me',
+        timestamp: Date.now()
+    };
     
     if (!chatHistories[currentChatUser.name]) {
         chatHistories[currentChatUser.name] = [];
     }
     
-    chatHistories[currentChatUser.name].push({
-        text: text,
-        sent: true,
-        time: time
-    });
+    chatHistories[currentChatUser.name].push(msgData);
     
     const chat = chats.find(c => c.name === currentChatUser.name);
     if (chat) {
         chat.message = text;
         chat.time = "Just now";
         initChats();
-        
-        if (currentUser) {
-            currentUser.chats = chats;
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-            users[currentUser.username] = currentUser;
-            localStorage.setItem('afriConnect_users', JSON.stringify(users));
-            localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
-        }
     }
     
     input.value = '';
     renderMessages(currentChatUser.name);
+    
+    // Save to Firebase for cross-device delivery
+    if (window._firebaseReady && currentUser) {
+        try {
+            // Determine recipient's username
+            let recipientUsername = null;
+            // Check if the chat target is a registered user
+            const allUsers = (await window._dbGet(window._dbRef(window._db, 'users'))).val() || {};
+            // Find by profile name or username
+            for (const [uname, udata] of Object.entries(allUsers)) {
+                if (uname === currentUser.username) continue;
+                if ((udata.profile && udata.profile.name === currentChatUser.name) || uname === currentChatUser.name.toLowerCase()) {
+                    recipientUsername = uname;
+                    break;
+                }
+            }
+            
+            const chatKey = [currentUser.username, recipientUsername].sort().join('__');
+            
+            const firebaseMsg = {
+                text: text,
+                from: currentUser.username,
+                fromName: currentUser.profile.name,
+                fromAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
+                time: time,
+                timestamp: Date.now()
+            };
+            
+            // Save message to shared chat thread
+            await window._dbPush(window._dbRef(window._db, `chats/${chatKey}/messages`), firebaseMsg);
+            
+            // Update last message for both users
+            await window._dbSet(window._dbRef(window._db, `chats/${chatKey}/meta`), {
+                participants: [currentUser.username, recipientUsername],
+                lastMessage: text,
+                lastTime: time,
+                lastFrom: currentUser.username
+            });
+            
+            // Notify recipient
+            if (recipientUsername) {
+                const notifKey = `inbox_${currentUser.username}_${Date.now()}`;
+                await window._dbPush(window._dbRef(window._db, `users/${recipientUsername}/inboxNotifications`), {
+                    from: currentUser.username,
+                    fromName: currentUser.profile.name,
+                    fromAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
+                    text: text,
+                    time: time,
+                    chatKey: chatKey,
+                    timestamp: Date.now(),
+                    read: false
+                });
+            }
+        } catch (err) {
+            console.warn('Firebase message send error:', err);
+        }
+    }
+    
+    // Also update currentUser.chats in localStorage/Firebase
+    if (currentUser) {
+        currentUser.chats = chats;
+        if (window._firebaseReady) {
+            await window._dbSet(window._dbRef(window._db, `users/${currentUser.username}/chats`), chats);
+        }
+        const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+        users[currentUser.username] = currentUser;
+        localStorage.setItem('afriConnect_users', JSON.stringify(users));
+        localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
+    }
+}
+
+// ==========================================
+// REAL-TIME INCOMING MESSAGE SUBSCRIPTION
+// ==========================================
+
+let _inboxUnsubscribe = null;
+let _activeChatUnsubscribe = null;
+
+async function subscribeToIncomingMessages() {
+    if (!window._firebaseReady || !currentUser) return;
+    
+    // Listen for inbox notifications (new messages from other users)
+    const inboxRef = window._dbRef(window._db, `users/${currentUser.username}/inboxNotifications`);
+    _inboxUnsubscribe = window._dbOnValue(inboxRef, async (snapshot) => {
+        if (!snapshot.exists()) return;
+        const notifs = snapshot.val();
+        
+        for (const [key, notif] of Object.entries(notifs)) {
+            if (notif.read) continue;
+            
+            const senderName = notif.fromName || notif.from;
+            const senderAvatar = notif.fromAvatar || AFRICA_MAP_URL;
+            
+            // Add to chats if not already there
+            const existingChat = chats.find(c => c.name === senderName);
+            if (!existingChat) {
+                const newChat = {
+                    name: senderName,
+                    message: notif.text,
+                    time: notif.time,
+                    unread: 1,
+                    img: senderAvatar,
+                    bio: '',
+                    job: '',
+                    company: '',
+                    school: '',
+                    phone: '',
+                    age: '',
+                    photos: [senderAvatar],
+                    isBot: false
+                };
+                chats.unshift(newChat);
+            } else {
+                existingChat.message = notif.text;
+                existingChat.time = notif.time;
+                existingChat.unread = (existingChat.unread || 0) + 1;
+            }
+            
+            // Add to chat history
+            if (!chatHistories[senderName]) chatHistories[senderName] = [];
+            const alreadyAdded = chatHistories[senderName].some(
+                m => !m.sent && m.text === notif.text && m.time === notif.time
+            );
+            if (!alreadyAdded) {
+                chatHistories[senderName].push({
+                    text: notif.text,
+                    sent: false,
+                    time: notif.time,
+                    from: notif.from
+                });
+            }
+            
+            // Mark notification as read in Firebase
+            await window._dbSet(window._dbRef(window._db, `users/${currentUser.username}/inboxNotifications/${key}/read`), true);
+            
+            // Show toast notification
+            showToast(`💬 New message from ${senderName}`);
+            
+            // If chat is currently open with this sender, re-render
+            if (currentChatUser && currentChatUser.name === senderName) {
+                renderMessages(senderName);
+            }
+        }
+        
+        initChats();
+    });
+}
+
+async function loadSharedChatHistory(chatPartnerName, chatPartnerUsername) {
+    if (!window._firebaseReady || !currentUser || !chatPartnerUsername) return;
+    
+    const chatKey = [currentUser.username, chatPartnerUsername].sort().join('__');
+    const snapshot = await window._dbGet(window._dbRef(window._db, `chats/${chatKey}/messages`));
+    
+    if (!snapshot.exists()) return;
+    
+    const firebaseMsgs = Object.values(snapshot.val()).sort((a, b) => a.timestamp - b.timestamp);
+    
+    chatHistories[chatPartnerName] = firebaseMsgs.map(msg => ({
+        text: msg.text,
+        sent: msg.from === currentUser.username,
+        time: msg.time
+    }));
+    
+    renderMessages(chatPartnerName);
 }
 
 function handleChatKeypress(e) {
@@ -2279,8 +2571,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check online status
     checkOnlineStatus();
     
-    // Initialize auth
-    initAuth();
+    // Initialize auth after Firebase is ready (or immediately if not used)
+    if (window._firebaseReady) {
+        initAuth();
+    } else {
+        window.addEventListener('firebaseReady', () => {
+            initAuth();
+        });
+        // Also try after a short delay in case Firebase loads fast
+        setTimeout(() => {
+            if (!window._firebaseReady) {
+                console.warn('Firebase not configured — using localStorage fallback');
+                initAuth();
+            }
+        }, 2000);
+    }
     
     // Setup online/offline listeners
     window.addEventListener('online', () => {
