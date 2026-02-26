@@ -613,202 +613,191 @@ let currentGroupRoom = null;
 let myAdverts = [];
 let notifications = [];
 
-// African Bot Profiles - 10 diverse real-feeling profiles
+// African Bot Profiles — 20 diverse profiles across Africa
 const profiles = [
     {
-        name: "Amara Osei",
-        age: 26,
+        name: "Amara Osei", age: 26,
         bio: "Graphic designer from Accra who loves Afrobeats, jollof rice debates, and late-night conversations. Looking for someone genuine.",
-        distance: "2 km",
-        job: "Graphic Designer",
-        company: "Kente Creative Studio",
-        school: "KNUST",
-        phone: "+233 24 456 7890",
-        country: "Ghana 🇬🇭",
-        gender: "female",
+        distance: "2 km", job: "Graphic Designer", company: "Kente Creative Studio", school: "KNUST",
+        phone: "+233 24 456 7890", country: "Ghana 🇬🇭", gender: "female",
         img: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=500&fit=crop&crop=face",
-        photos: [
-            "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=500&fit=crop&crop=face",
-            "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=500&fit=crop",
-            "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=500&fit=crop"
-        ],
-        verified: true,
-        isBot: true
+        photos: ["https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
     },
     {
-        name: "Kofi Mensah",
-        age: 29,
-        bio: "Civil engineer building bridges — literally and figuratively. Football fanatic, Arsenal till I die. Based in Kumasi.",
-        distance: "5 km",
-        job: "Civil Engineer",
-        company: "Ghana Infrastructure Co.",
-        school: "University of Ghana",
-        phone: "+233 20 123 4567",
-        country: "Ghana 🇬🇭",
-        gender: "male",
+        name: "Kofi Mensah", age: 29,
+        bio: "Civil engineer building bridges literally and figuratively. Football fanatic, Arsenal till I die. Based in Kumasi.",
+        distance: "5 km", job: "Civil Engineer", company: "Ghana Infrastructure Co.", school: "University of Ghana",
+        phone: "+233 20 123 4567", country: "Ghana 🇬🇭", gender: "male",
         img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face",
-        photos: [
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face",
-            "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=400&h=500&fit=crop"
-        ],
-        verified: false,
-        isBot: true
+        photos: ["https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face"],
+        verified: false, isBot: true
     },
     {
-        name: "Zara Bello",
-        age: 24,
-        bio: "Fashion blogger & content creator from Lagos. Aso-oke enthusiast. If you can't handle a woman who knows what she wants, move along 💅",
-        distance: "1 km",
-        job: "Content Creator",
-        company: "ZaraStyleNG",
-        school: "University of Lagos",
-        phone: "+234 802 345 6789",
-        country: "Nigeria 🇳🇬",
-        gender: "female",
+        name: "Zara Bello", age: 24,
+        bio: "Fashion blogger from Lagos. Aso-oke enthusiast. If you can't handle a woman who knows what she wants, move along 💅",
+        distance: "1 km", job: "Content Creator", company: "ZaraStyleNG", school: "University of Lagos",
+        phone: "+234 802 345 6789", country: "Nigeria 🇳🇬", gender: "female",
         img: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop&crop=face",
-        photos: [
-            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop&crop=face",
-            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop&crop=face"
-        ],
-        verified: true,
-        isBot: true
+        photos: ["https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
     },
     {
-        name: "Emeka Okafor",
-        age: 31,
-        bio: "Naija doctor, Lagos Island General Hospital. I cook better than I prescribe. Looking for my partner in crime and jollof.",
-        distance: "8 km",
-        job: "Medical Doctor",
-        company: "Lagos Island General Hospital",
-        school: "University of Ibadan",
-        phone: "+234 803 567 8901",
-        country: "Nigeria 🇳🇬",
-        gender: "male",
+        name: "Emeka Okafor", age: 31,
+        bio: "Naija doctor at Lagos Island General. I cook better than I prescribe. Looking for my partner in crime and jollof.",
+        distance: "8 km", job: "Medical Doctor", company: "Lagos Island General Hospital", school: "University of Ibadan",
+        phone: "+234 803 567 8901", country: "Nigeria 🇳🇬", gender: "male",
         img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop&crop=face",
-        photos: [
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop&crop=face",
-            "https://images.unsplash.com/photo-1504199367641-aba8151af406?w=400&h=500&fit=crop"
-        ],
-        verified: true,
-        isBot: true
+        photos: ["https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
     },
     {
-        name: "Fatou Diallo",
-        age: 27,
-        bio: "Dakar-born, Nairobi-living. Journalist covering East Africa. Passionate about Pan-Africanism, spoken word, and good coffee.",
-        distance: "3 km",
-        job: "Journalist",
-        company: "Africa Now Media",
-        school: "Université Cheikh Anta Diop",
-        phone: "+254 712 345 678",
-        country: "Senegal 🇸🇳",
-        gender: "female",
+        name: "Fatou Diallo", age: 27,
+        bio: "Dakar-born, Nairobi-living. Journalist covering East Africa. Passionate about Pan-Africanism and good coffee.",
+        distance: "3 km", job: "Journalist", company: "Africa Now Media", school: "Université Cheikh Anta Diop",
+        phone: "+254 712 345 678", country: "Senegal 🇸🇳", gender: "female",
         img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=500&fit=crop&crop=face",
-        photos: [
-            "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=500&fit=crop&crop=face",
-            "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=500&fit=crop"
-        ],
-        verified: true,
-        isBot: true
+        photos: ["https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
     },
     {
-        name: "Tendai Moyo",
-        age: 28,
-        bio: "Software developer from Harare, now in Joburg. I build apps by day and braai by night. Let's debate: Harare or Joburg — which has the better vibe?",
-        distance: "12 km",
-        job: "Software Developer",
-        company: "Takura Tech",
-        school: "University of Zimbabwe",
-        phone: "+263 77 234 5678",
-        country: "Zimbabwe 🇿🇼",
-        gender: "male",
+        name: "Tendai Moyo", age: 28,
+        bio: "Software developer from Harare, now in Joburg. I build apps by day and braai by night.",
+        distance: "12 km", job: "Software Developer", company: "Takura Tech", school: "University of Zimbabwe",
+        phone: "+263 77 234 5678", country: "Zimbabwe 🇿🇼", gender: "male",
         img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=500&fit=crop&crop=face",
-        photos: [
-            "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=500&fit=crop&crop=face",
-            "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=500&fit=crop"
-        ],
-        verified: false,
-        isBot: true
+        photos: ["https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=500&fit=crop&crop=face"],
+        verified: false, isBot: true
     },
     {
-        name: "Akosua Agyeman",
-        age: 23,
-        bio: "Medical student in Accra, future paediatrician. I dance highlife in my kitchen. Big family, bigger heart. Serious inquiries only.",
-        distance: "4 km",
-        job: "Medical Student",
-        company: "University of Ghana Medical School",
-        school: "University of Ghana",
-        phone: "+233 26 789 0123",
-        country: "Ghana 🇬🇭",
-        gender: "female",
+        name: "Akosua Agyeman", age: 23,
+        bio: "Medical student in Accra, future paediatrician. I dance highlife in my kitchen. Serious inquiries only.",
+        distance: "4 km", job: "Medical Student", company: "University of Ghana Medical School", school: "University of Ghana",
+        phone: "+233 26 789 0123", country: "Ghana 🇬🇭", gender: "female",
         img: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=500&fit=crop&crop=face",
-        photos: [
-            "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=500&fit=crop&crop=face",
-            "https://images.unsplash.com/photo-1536243298747-ea8874136d64?w=400&h=500&fit=crop"
-        ],
-        verified: false,
-        isBot: true
+        photos: ["https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=500&fit=crop&crop=face"],
+        verified: false, isBot: true
     },
     {
-        name: "Chukwuemeka Eze",
-        age: 33,
-        bio: "Entrepreneur from Enugu, Lagos-based. Built 2 startups, failed at 1, learning from both. Suya connoisseur. Looking for my equal.",
-        distance: "6 km",
-        job: "Entrepreneur",
-        company: "EzeVentures",
-        school: "Enugu State University",
-        phone: "+234 806 789 0123",
-        country: "Nigeria 🇳🇬",
-        gender: "male",
+        name: "Chukwuemeka Eze", age: 33,
+        bio: "Entrepreneur from Enugu, Lagos-based. Built 2 startups, failed at 1, learning from both. Suya connoisseur.",
+        distance: "6 km", job: "Entrepreneur", company: "EzeVentures", school: "Enugu State University",
+        phone: "+234 806 789 0123", country: "Nigeria 🇳🇬", gender: "male",
         img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=face",
-        photos: [
-            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=face",
-            "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=500&fit=crop"
-        ],
-        verified: true,
-        isBot: true
+        photos: ["https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
     },
     {
-        name: "Nadia Kamara",
-        age: 25,
-        bio: "Architect from Abidjan redesigning African cities one blueprint at a time. Lover of waakye, good music, and authentic people.",
-        distance: "9 km",
-        job: "Architect",
-        company: "Côte d'Ivoire Urban Design Bureau",
-        school: "INPHB Yamoussoukro",
-        phone: "+225 07 123 4567",
-        country: "Côte d'Ivoire 🇨🇮",
-        gender: "female",
+        name: "Nadia Kamara", age: 25,
+        bio: "Architect from Abidjan redesigning African cities one blueprint at a time. Lover of waakye and authentic people.",
+        distance: "9 km", job: "Architect", company: "CI Urban Design Bureau", school: "INPHB Yamoussoukro",
+        phone: "+225 07 123 4567", country: "Côte d'Ivoire 🇨🇮", gender: "female",
         img: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=500&fit=crop&crop=face",
-        photos: [
-            "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=500&fit=crop&crop=face",
-            "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&h=500&fit=crop"
-        ],
-        verified: false,
-        isBot: true
+        photos: ["https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=500&fit=crop&crop=face"],
+        verified: false, isBot: true
     },
     {
-        name: "Segun Adeyemi",
-        age: 30,
-        bio: "Music producer from Lagos working with top Afrobeats artists. Studio life is real life. Looking for someone who vibes to good music.",
-        distance: "7 km",
-        job: "Music Producer",
-        company: "Afrowave Studios",
-        school: "University of Lagos",
-        phone: "+234 801 234 5678",
-        country: "Nigeria 🇳🇬",
-        gender: "male",
+        name: "Segun Adeyemi", age: 30,
+        bio: "Music producer from Lagos working with top Afrobeats artists. Studio life is real life.",
+        distance: "7 km", job: "Music Producer", company: "Afrowave Studios", school: "University of Lagos",
+        phone: "+234 801 234 5678", country: "Nigeria 🇳🇬", gender: "male",
         img: "https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=400&h=500&fit=crop&crop=face",
-        photos: [
-            "https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=400&h=500&fit=crop&crop=face",
-            "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=500&fit=crop"
-        ],
-        verified: true,
-        isBot: true
+        photos: ["https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
+    },
+    {
+        name: "Nia Omondi", age: 25,
+        bio: "Marine biologist from Mombasa studying coral reefs. Ocean lover, beach girl, terrible cook but great at ordering food 😂",
+        distance: "11 km", job: "Marine Biologist", company: "Kenya Marine Research Institute", school: "University of Nairobi",
+        phone: "+254 722 456 789", country: "Kenya 🇰🇪", gender: "female",
+        img: "https://images.unsplash.com/photo-1502764613149-7f1d229e230f?w=400&h=500&fit=crop&crop=face",
+        photos: ["https://images.unsplash.com/photo-1502764613149-7f1d229e230f?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
+    },
+    {
+        name: "Kwame Asante", age: 34,
+        bio: "Investment banker, Accra. I work hard and play harder. Weekend hiker, jollof judge, and your next favourite conversation.",
+        distance: "15 km", job: "Investment Banker", company: "Accra Capital Partners", school: "Ashesi University",
+        phone: "+233 24 987 6543", country: "Ghana 🇬🇭", gender: "male",
+        img: "https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=500&fit=crop&crop=face",
+        photos: ["https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
+    },
+    {
+        name: "Amira Hassan", age: 26,
+        bio: "Fashion designer in Cairo blending ancient Egyptian motifs with modern streetwear. I travel with my sketchbook everywhere.",
+        distance: "10 km", job: "Fashion Designer", company: "Nile Stitch Studio", school: "Cairo University",
+        phone: "+20 100 234 5678", country: "Egypt 🇪🇬", gender: "female",
+        img: "https://images.unsplash.com/photo-1519419691348-3b3433c4c20e?w=400&h=500&fit=crop&crop=face",
+        photos: ["https://images.unsplash.com/photo-1519419691348-3b3433c4c20e?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
+    },
+    {
+        name: "Tariq Ndiaye", age: 29,
+        bio: "Footballer turned sports journalist in Dakar. Fluent in Wolof, French and football. Life is a beautiful game.",
+        distance: "18 km", job: "Sports Journalist", company: "Dakar Sports Network", school: "UCAD",
+        phone: "+221 77 345 6789", country: "Senegal 🇸🇳", gender: "male",
+        img: "https://images.unsplash.com/photo-1489980557514-251d61e3eeb6?w=400&h=500&fit=crop&crop=face",
+        photos: ["https://images.unsplash.com/photo-1489980557514-251d61e3eeb6?w=400&h=500&fit=crop&crop=face"],
+        verified: false, isBot: true
+    },
+    {
+        name: "Lerato Dlamini", age: 27,
+        bio: "Human rights lawyer in Johannesburg fighting for justice one case at a time. I'm fluent in three languages and sarcasm.",
+        distance: "5 km", job: "Human Rights Lawyer", company: "Ubuntu Legal Aid", school: "University of Cape Town",
+        phone: "+27 82 345 6789", country: "South Africa 🇿🇦", gender: "female",
+        img: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop&crop=face",
+        photos: ["https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
+    },
+    {
+        name: "Sipho Zulu", age: 32,
+        bio: "Game ranger and wildlife photographer in Kruger. I speak lion. Looking for someone wild enough to keep up.",
+        distance: "22 km", job: "Wildlife Photographer", company: "Kruger Nature Reserve", school: "Nelson Mandela University",
+        phone: "+27 83 456 7890", country: "South Africa 🇿🇦", gender: "male",
+        img: "https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=500&fit=crop&crop=face",
+        photos: ["https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&h=500&fit=crop&crop=face"],
+        verified: false, isBot: true
+    },
+    {
+        name: "Yetunde Adewale", age: 28,
+        bio: "Yoruba princess turned software engineer. I build fintech solutions by day and watch Nollywood by night. #TechAfrika",
+        distance: "3 km", job: "Software Engineer", company: "Flutterwave", school: "Covenant University",
+        phone: "+234 807 890 1234", country: "Nigeria 🇳🇬", gender: "female",
+        img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=500&fit=crop&crop=face",
+        photos: ["https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
+    },
+    {
+        name: "Abebe Girma", age: 30,
+        bio: "Marathon runner and coffee farmer from Addis Ababa. Ethiopia gave the world coffee and I'm its proudest ambassador.",
+        distance: "13 km", job: "Coffee Farmer & Athlete", company: "Girma Coffee Estate", school: "Addis Ababa University",
+        phone: "+251 91 234 5678", country: "Ethiopia 🇪🇹", gender: "male",
+        img: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=400&h=500&fit=crop&crop=face",
+        photos: ["https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=400&h=500&fit=crop&crop=face"],
+        verified: false, isBot: true
+    },
+    {
+        name: "Adaeze Nwosu", age: 22,
+        bio: "Final year law student at UNILAG. Passionate about constitutional law, Afropop and making the best egusi soup in Lagos.",
+        distance: "2 km", job: "Law Student", company: "University of Lagos", school: "University of Lagos",
+        phone: "+234 808 901 2345", country: "Nigeria 🇳🇬", gender: "female",
+        img: "https://images.unsplash.com/photo-1596215143317-eb7c7e8eb5fc?w=400&h=500&fit=crop&crop=face",
+        photos: ["https://images.unsplash.com/photo-1596215143317-eb7c7e8eb5fc?w=400&h=500&fit=crop&crop=face"],
+        verified: false, isBot: true
+    },
+    {
+        name: "Musa Traore", age: 31,
+        bio: "Chef and restaurateur in Bamako. My restaurant fuses Malian and French cuisine. Food is love made visible — come dine with me.",
+        distance: "8 km", job: "Chef & Restaurateur", company: "Bamako Fusion Kitchen", school: "Institut Paul Bocuse",
+        phone: "+223 76 234 5678", country: "Mali 🇲🇱", gender: "male",
+        img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop&crop=face",
+        photos: ["https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=500&fit=crop&crop=face"],
+        verified: true, isBot: true
     }
 ];
 
-// Nearby people also seeded with bots
+// Nearby people seeded from all bot profiles
 let nearbyPeople = profiles.map(p => ({
     name: p.name,
     age: p.age,
@@ -1066,6 +1055,84 @@ function passProfile(name) {
     card.style.opacity = '0.5';
 }
 
+async function sendLikeNotification(likedProfile, type = 'like') {
+    if (!window._firebaseReady || !currentUser || !likedProfile.isRegisteredUser) return;
+    try {
+        // Push a like-notification into the liked user's inboxNotifications
+        const notifPayload = {
+            from: currentUser.username,
+            fromName: currentUser.profile.name,
+            fromAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
+            type: type, // 'like' or 'superlike'
+            text: type === 'superlike'
+                ? `${currentUser.profile.name} Super Liked your profile! ⭐`
+                : `${currentUser.profile.name} liked your profile! 💛`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timestamp: Date.now(),
+            read: false,
+            likerUsername: currentUser.username,
+            likerName: currentUser.profile.name,
+            likerAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL
+        };
+        await window._dbPush(
+            window._dbRef(window._db, `users/${likedProfile.username}/likeNotifications`),
+            notifPayload
+        );
+    } catch(e) {
+        console.warn('Could not send like notification:', e);
+    }
+}
+
+function subscribeToLikeNotifications() {
+    if (!window._firebaseReady || !currentUser) return;
+    const ref = window._dbRef(window._db, `users/${currentUser.username}/likeNotifications`);
+    window._dbOnValue(ref, async (snapshot) => {
+        if (!snapshot.exists()) return;
+        const notifs = snapshot.val();
+        for (const [key, notif] of Object.entries(notifs)) {
+            if (notif.read) continue;
+            // Add to in-app notifications
+            addNotification({
+                id: notif.timestamp || Date.now(),
+                type: notif.type === 'superlike' ? 'superlike' : 'like',
+                user: notif.fromName,
+                avatar: notif.fromAvatar || AFRICA_MAP_URL,
+                text: notif.type === 'superlike'
+                    ? `<strong>${notif.fromName}</strong> Super Liked your profile! ⭐ <span style="color:#fbbf24;cursor:pointer;" onclick="viewLikerProfile('${notif.from}','${notif.fromName}','${notif.fromAvatar}')">View profile →</span>`
+                    : `<strong>${notif.fromName}</strong> liked your profile! 💛 <span style="color:#fbbf24;cursor:pointer;" onclick="viewLikerProfile('${notif.from}','${notif.fromName}','${notif.fromAvatar}')">View profile →</span>`,
+                time: notif.time || 'Just now',
+                read: false
+            });
+            // Show toast
+            showToast(`💛 ${notif.fromName} ${notif.type === 'superlike' ? 'Super Liked' : 'liked'} your profile!`);
+            // Mark as read
+            await window._dbSet(
+                window._dbRef(window._db, `users/${currentUser.username}/likeNotifications/${key}/read`), true
+            );
+        }
+    });
+}
+
+function viewLikerProfile(username, name, avatar) {
+    // Find in all profiles or build a minimal one
+    const allProfiles = getAllDiscoverableProfiles();
+    let profile = allProfiles.find(p => p.username === username || p.name === name);
+    if (!profile) {
+        profile = {
+            name: name,
+            age: '?',
+            img: avatar || AFRICA_MAP_URL,
+            photos: [avatar || AFRICA_MAP_URL],
+            bio: 'Liked your profile!',
+            job: '', company: '', school: '', phone: '',
+            distance: 'Nearby', country: 'Africa',
+            isRegisteredUser: true, username: username
+        };
+    }
+    currentViewingProfile = profile;
+    viewProfileDetails(profile.name, 'discover');
+}
+
 function likeProfile(name) {
     showToast(`Liked ${name}! 💛`);
     const card = event.target.closest('.grid-profile-card');
@@ -1075,6 +1142,8 @@ function likeProfile(name) {
     const likedProfile = allProfiles.find(p => p.name === name);
     
     if (likedProfile && likedProfile.isRegisteredUser) {
+        // Send real-time like notification to the liked user
+        sendLikeNotification(likedProfile, 'like');
         setTimeout(() => {
             addMatch(likedProfile);
         }, 2000);
@@ -1094,6 +1163,9 @@ function superLikeProfile(name) {
     const likedProfile = allProfiles.find(p => p.name === name);
     
     if (likedProfile) {
+        if (likedProfile.isRegisteredUser) {
+            sendLikeNotification(likedProfile, 'superlike');
+        }
         addMatch(likedProfile);
     }
     
@@ -2295,6 +2367,8 @@ function subscribeToIncomingMessages() {
     if (!window._firebaseReady || !currentUser) return;
     // Subscribe to the user's chat list — picks up new conversations in real-time
     subscribeToUserChatList();
+    // Subscribe to like notifications
+    subscribeToLikeNotifications();
 }
 
 function handleChatKeypress(e) {

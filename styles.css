@@ -311,28 +311,32 @@ body.lights-on .bulb-glow {
 /* GRID DISCOVERY STYLES */
 .discovery-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-    padding: 15px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    padding: 8px 10px;
     overflow-y: auto;
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 180px);
 }
 
 @media (max-width: 1200px) {
+    .discovery-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+@media (max-width: 900px) {
     .discovery-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 @media (max-width: 768px) {
-    .discovery-grid { grid-template-columns: repeat(3, 1fr); }
+    .discovery-grid { grid-template-columns: repeat(4, 1fr); gap: 5px; }
 }
 
 @media (max-width: 480px) {
-    .discovery-grid { grid-template-columns: repeat(2, 1fr); }
+    .discovery-grid { grid-template-columns: repeat(3, 1fr); gap: 4px; }
 }
 
 .grid-profile-card {
     background: #2a2a2a;
-    border-radius: 10px;
+    border-radius: 7px;
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s;
@@ -340,8 +344,8 @@ body.lights-on .bulb-glow {
 }
 
 .grid-profile-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(251, 191, 36, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
 }
 
 .grid-profile-image {
@@ -351,25 +355,43 @@ body.lights-on .bulb-glow {
 }
 
 .grid-profile-info {
-    padding: 8px;
-    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    padding: 4px 5px;
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
+    position: absolute;
+    bottom: 28px;
+    left: 0;
+    right: 0;
+}
+
+.grid-profile-info h3 {
+    font-size: 10px !important;
+    line-height: 1.2;
+}
+
+.grid-profile-info p {
+    font-size: 9px !important;
+    line-height: 1.2;
 }
 
 .grid-profile-actions {
     display: flex;
-    gap: 5px;
-    padding: 5px 8px;
-    background: rgba(0,0,0,0.8);
+    gap: 2px;
+    padding: 3px 4px;
+    background: rgba(0,0,0,0.85);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
 }
 
 .grid-action-btn {
     flex: 1;
-    padding: 5px;
-    border-radius: 5px;
+    padding: 3px 2px;
+    border-radius: 4px;
     border: none;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 12px;
+    font-size: 9px;
 }
 
 .grid-action-btn:hover {
@@ -442,14 +464,26 @@ body.lights-on .bulb-glow {
 /* Nearby Grid */
 .nearby-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    padding: 15px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    padding: 8px 10px;
+}
+
+@media (max-width: 900px) {
+    .nearby-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .nearby-grid { grid-template-columns: repeat(5, 1fr); gap: 5px; }
+}
+
+@media (max-width: 480px) {
+    .nearby-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; }
 }
 
 .nearby-card {
     position: relative;
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
     aspect-ratio: 1;
     cursor: pointer;
@@ -457,7 +491,7 @@ body.lights-on .bulb-glow {
 }
 
 .nearby-card:hover {
-    transform: scale(1.03);
+    transform: scale(1.04);
 }
 
 .nearby-card img {
@@ -468,13 +502,13 @@ body.lights-on .bulb-glow {
 
 .nearby-distance {
     position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(0,0,0,0.7);
+    top: 3px;
+    right: 3px;
+    background: rgba(0,0,0,0.75);
     color: #fbbf24;
-    padding: 2px 6px;
-    border-radius: 8px;
-    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 6px;
+    font-size: 8px;
     font-weight: bold;
 }
 
@@ -2494,17 +2528,17 @@ select {
 
 /* Search Bar Styles */
 .search-container {
-    padding: 10px 15px;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding: 5px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .search-bar {
     display: flex;
     align-items: center;
-    background: rgba(255,255,255,0.1);
-    border-radius: 25px;
-    padding: 8px 15px;
-    gap: 10px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 5px 12px;
+    gap: 7px;
 }
 
 .search-bar input {
@@ -2512,12 +2546,13 @@ select {
     background: transparent;
     border: none;
     color: white;
-    font-size: 14px;
+    font-size: 12px;
     outline: none;
 }
 
 .search-bar input::placeholder {
-    color: #666;
+    color: #555;
+    font-size: 11px;
 }
 
 .search-results {
