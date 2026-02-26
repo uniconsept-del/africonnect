@@ -92,18 +92,7 @@ function checkOnlineStatus() {
     }
 }
 
-// ==========================================
-// CLEAR ALL ACCOUNTS (Bot + Registered)
-// This runs once on load to remove all stored user accounts
-// ==========================================
-
-(function clearAllAccounts() {
-    // Remove all registered users from localStorage
-    localStorage.removeItem('afriConnect_users');
-    // Remove any active session
-    localStorage.removeItem('afriConnect_session');
-    console.log('✅ All user accounts cleared (bot + registered)');
-})();
+// Accounts are preserved between sessions — do NOT clear on load.
 
 
 
@@ -1774,6 +1763,128 @@ function unmatch(name) {
 // CHAT FUNCTIONS
 // ==========================================
 
+// ==========================================
+// REAL-TIME CHAT ENGINE
+// ==========================================
+
+// Cache: partnerDisplayName → partnerUsername
+const _partnerUsernameCache = {};
+// Active onValue unsubscribers: chatKey → unsubscribe fn
+const _chatListeners = {};
+// Global chats-list listener unsubscriber
+let _chatsListUnsubscribe = null;
+// Current active chat key
+let _activeChatKey = null;
+
+// Resolve a display name → Firebase username
+async function resolvePartnerUsername(displayName) {
+    if (_partnerUsernameCache[displayName]) return _partnerUsernameCache[displayName];
+    if (!window._firebaseReady) return null;
+    try {
+        const snap = await window._dbGet(window._dbRef(window._db, 'users'));
+        if (!snap.exists()) return null;
+        const all = snap.val();
+        for (const [uname, udata] of Object.entries(all)) {
+            if (uname === currentUser.username) continue;
+            if (
+                (udata.profile && udata.profile.name === displayName) ||
+                uname === displayName.toLowerCase()
+            ) {
+                _partnerUsernameCache[displayName] = uname;
+                return uname;
+            }
+        }
+    } catch (e) { console.warn('resolvePartnerUsername error:', e); }
+    return null;
+}
+
+// Build deterministic chatKey from two usernames
+function makeChatKey(a, b) {
+    return [a, b].sort().join('__');
+}
+
+// Subscribe to a specific chat thread — fires instantly on every new message
+function subscribeToChatThread(chatKey, partnerDisplayName) {
+    if (_chatListeners[chatKey]) return; // already subscribed
+    const msgRef = window._dbRef(window._db, `chats/${chatKey}/messages`);
+    const unsub = window._dbOnValue(msgRef, (snapshot) => {
+        if (!snapshot.exists()) return;
+        const raw = snapshot.val();
+        const msgs = Object.values(raw).sort((a, b) => a.timestamp - b.timestamp);
+        // Rebuild chatHistory for this thread from Firebase source of truth
+        chatHistories[partnerDisplayName] = msgs.map(msg => ({
+            text: msg.text,
+            sent: msg.from === currentUser.username,
+            time: msg.time,
+            timestamp: msg.timestamp
+        }));
+        // Update the chat list preview
+        const lastMsg = msgs[msgs.length - 1];
+        const existingChat = chats.find(c => c.name === partnerDisplayName);
+        if (existingChat) {
+            existingChat.message = lastMsg.text;
+            existingChat.time = lastMsg.time;
+            // Only count as unread if we didn't send it and chat isn't open
+            if (lastMsg.from !== currentUser.username &&
+                (!currentChatUser || currentChatUser.name !== partnerDisplayName)) {
+                existingChat.unread = (existingChat.unread || 0) + 1;
+                showToast(`💬 New message from ${partnerDisplayName}`);
+                addNotification({
+                    id: Date.now(),
+                    type: 'message',
+                    user: partnerDisplayName,
+                    avatar: existingChat.img,
+                    text: `<strong>${partnerDisplayName}</strong>: ${lastMsg.text}`,
+                    time: lastMsg.time,
+                    read: false
+                });
+            }
+        }
+        // Re-render open chat immediately
+        if (currentChatUser && currentChatUser.name === partnerDisplayName) {
+            renderMessages(partnerDisplayName);
+        }
+        initChats();
+    });
+    _chatListeners[chatKey] = unsub;
+}
+
+// Subscribe to the user's chat list in Firebase — so new conversations appear instantly
+function subscribeToUserChatList() {
+    if (!window._firebaseReady || !currentUser) return;
+    const ref = window._dbRef(window._db, `users/${currentUser.username}/chatList`);
+    _chatsListUnsubscribe = window._dbOnValue(ref, async (snapshot) => {
+        if (!snapshot.exists()) return;
+        const chatList = snapshot.val();
+        for (const [chatKey, meta] of Object.entries(chatList)) {
+            // Determine partner
+            const partnerUsername = meta.participants.find(p => p !== currentUser.username);
+            if (!partnerUsername) continue;
+            // Get display name
+            let partnerName = meta.partnerName || partnerUsername;
+            let partnerAvatar = meta.partnerAvatar || AFRICA_MAP_URL;
+            // Add to chats list if missing
+            const existing = chats.find(c => c.name === partnerName);
+            if (!existing) {
+                chats.unshift({
+                    name: partnerName,
+                    message: meta.lastMessage || '',
+                    time: meta.lastTime || 'Now',
+                    unread: 0,
+                    img: partnerAvatar,
+                    bio: '', job: '', company: '', school: '', phone: '', age: '',
+                    photos: [partnerAvatar],
+                    isBot: false
+                });
+                _partnerUsernameCache[partnerName] = partnerUsername;
+            }
+            // Subscribe to the thread for real-time updates
+            subscribeToChatThread(chatKey, partnerName);
+        }
+        initChats();
+    });
+}
+
 async function openChat(name) {
     let chat = chats.find(c => c.name === name);
     let match = matches.find(m => m.name === name);
@@ -1798,18 +1909,13 @@ async function openChat(name) {
         chatHistories[name] = [
             { text: "You matched! Say hello 👋", sent: false, time: "Just now" }
         ];
-        
         if (currentUser) {
             currentUser.chats = chats;
-            if (window._firebaseReady) {
-                await window._dbSet(window._dbRef(window._db, `users/${currentUser.username}/chats`), chats);
-            }
-            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-            users[currentUser.username] = currentUser;
-            localStorage.setItem('afriConnect_users', JSON.stringify(users));
+            const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            localUsers[currentUser.username] = currentUser;
+            localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
             localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
         }
-        
         initChats();
     }
     
@@ -1819,6 +1925,7 @@ async function openChat(name) {
     }
     
     currentChatUser = chat;
+    chat.unread = 0;
     
     document.getElementById('chatName').textContent = chat.name;
     document.getElementById('chatAvatar').src = chat.img;
@@ -1826,31 +1933,16 @@ async function openChat(name) {
     
     renderMessages(name);
     
-    // Try to load shared Firebase chat history (cross-device messages)
+    // Hook up real-time listener for this thread
     if (window._firebaseReady && currentUser) {
-        // Find the partner's username
-        try {
-            const allUsersSnap = await window._dbGet(window._dbRef(window._db, 'users'));
-            if (allUsersSnap.exists()) {
-                const allUsersData = allUsersSnap.val();
-                let partnerUsername = null;
-                for (const [uname, udata] of Object.entries(allUsersData)) {
-                    if (uname === currentUser.username) continue;
-                    if ((udata.profile && udata.profile.name === name) || uname === name.toLowerCase()) {
-                        partnerUsername = uname;
-                        break;
-                    }
-                }
-                if (partnerUsername) {
-                    await loadSharedChatHistory(name, partnerUsername);
-                }
-            }
-        } catch (err) {
-            console.warn('Could not load Firebase chat history:', err);
+        const partnerUsername = await resolvePartnerUsername(name);
+        if (partnerUsername) {
+            const chatKey = makeChatKey(currentUser.username, partnerUsername);
+            _activeChatKey = chatKey;
+            subscribeToChatThread(chatKey, name);
         }
     }
     
-    chat.unread = 0;
     initChats();
 }
 
@@ -1862,6 +1954,7 @@ function openChatFromProfile(name) {
 function closeChat() {
     document.getElementById('chatBox').classList.remove('active');
     currentChatUser = null;
+    _activeChatKey = null;
 }
 
 function renderMessages(userName) {
@@ -1885,47 +1978,21 @@ async function sendMessage() {
     if (!text || !currentChatUser) return;
     
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const msgData = {
-        text: text,
-        sent: true,
-        time: time,
-        from: currentUser ? currentUser.username : 'me',
-        timestamp: Date.now()
-    };
-    
-    if (!chatHistories[currentChatUser.name]) {
-        chatHistories[currentChatUser.name] = [];
-    }
-    
-    chatHistories[currentChatUser.name].push(msgData);
-    
-    const chat = chats.find(c => c.name === currentChatUser.name);
-    if (chat) {
-        chat.message = text;
-        chat.time = "Just now";
-        initChats();
-    }
-    
     input.value = '';
-    renderMessages(currentChatUser.name);
     
-    // Save to Firebase for cross-device delivery
     if (window._firebaseReady && currentUser) {
         try {
-            // Determine recipient's username
-            let recipientUsername = null;
-            // Check if the chat target is a registered user
-            const allUsers = (await window._dbGet(window._dbRef(window._db, 'users'))).val() || {};
-            // Find by profile name or username
-            for (const [uname, udata] of Object.entries(allUsers)) {
-                if (uname === currentUser.username) continue;
-                if ((udata.profile && udata.profile.name === currentChatUser.name) || uname === currentChatUser.name.toLowerCase()) {
-                    recipientUsername = uname;
-                    break;
-                }
+            const recipientUsername = await resolvePartnerUsername(currentChatUser.name);
+            if (!recipientUsername) {
+                showToast("Could not find recipient — are they a registered user?");
+                return;
             }
             
-            const chatKey = [currentUser.username, recipientUsername].sort().join('__');
+            const chatKey = makeChatKey(currentUser.username, recipientUsername);
+            _activeChatKey = chatKey;
+            
+            // Subscribe to thread if not already (covers sender's view too)
+            subscribeToChatThread(chatKey, currentChatUser.name);
             
             const firebaseMsg = {
                 text: text,
@@ -1936,46 +2003,50 @@ async function sendMessage() {
                 timestamp: Date.now()
             };
             
-            // Save message to shared chat thread
+            // Push message — onValue listener will update both sides instantly
             await window._dbPush(window._dbRef(window._db, `chats/${chatKey}/messages`), firebaseMsg);
             
-            // Update last message for both users
-            await window._dbSet(window._dbRef(window._db, `chats/${chatKey}/meta`), {
+            // Update chatList for BOTH participants so the conversation appears in both inboxes
+            const chatListMeta = {
                 participants: [currentUser.username, recipientUsername],
                 lastMessage: text,
                 lastTime: time,
-                lastFrom: currentUser.username
-            });
-            
-            // Notify recipient
-            if (recipientUsername) {
-                const notifKey = `inbox_${currentUser.username}_${Date.now()}`;
-                await window._dbPush(window._dbRef(window._db, `users/${recipientUsername}/inboxNotifications`), {
-                    from: currentUser.username,
-                    fromName: currentUser.profile.name,
-                    fromAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
-                    text: text,
-                    time: time,
-                    chatKey: chatKey,
-                    timestamp: Date.now(),
-                    read: false
-                });
-            }
+                lastFrom: currentUser.username,
+                partnerName: currentUser.profile.name,
+                partnerAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
+                timestamp: Date.now()
+            };
+            // For sender: store partner's name/avatar
+            await window._dbSet(
+                window._dbRef(window._db, `users/${currentUser.username}/chatList/${chatKey}`),
+                { ...chatListMeta, partnerName: currentChatUser.name, partnerAvatar: currentChatUser.img }
+            );
+            // For recipient: store sender's name/avatar
+            await window._dbSet(
+                window._dbRef(window._db, `users/${recipientUsername}/chatList/${chatKey}`),
+                chatListMeta
+            );
         } catch (err) {
             console.warn('Firebase message send error:', err);
+            // Fallback: add locally
+            if (!chatHistories[currentChatUser.name]) chatHistories[currentChatUser.name] = [];
+            chatHistories[currentChatUser.name].push({ text, sent: true, time });
+            renderMessages(currentChatUser.name);
         }
-    }
-    
-    // Also update currentUser.chats in localStorage/Firebase
-    if (currentUser) {
-        currentUser.chats = chats;
-        if (window._firebaseReady) {
-            await window._dbSet(window._dbRef(window._db, `users/${currentUser.username}/chats`), chats);
+    } else {
+        // localStorage fallback (same device only)
+        if (!chatHistories[currentChatUser.name]) chatHistories[currentChatUser.name] = [];
+        chatHistories[currentChatUser.name].push({ text, sent: true, time });
+        const chat = chats.find(c => c.name === currentChatUser.name);
+        if (chat) { chat.message = text; chat.time = 'Just now'; }
+        renderMessages(currentChatUser.name);
+        initChats();
+        if (currentUser) {
+            currentUser.chats = chats;
+            const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            localUsers[currentUser.username] = currentUser;
+            localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
         }
-        const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-        users[currentUser.username] = currentUser;
-        localStorage.setItem('afriConnect_users', JSON.stringify(users));
-        localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
     }
 }
 
@@ -1983,96 +2054,10 @@ async function sendMessage() {
 // REAL-TIME INCOMING MESSAGE SUBSCRIPTION
 // ==========================================
 
-let _inboxUnsubscribe = null;
-let _activeChatUnsubscribe = null;
-
-async function subscribeToIncomingMessages() {
+function subscribeToIncomingMessages() {
     if (!window._firebaseReady || !currentUser) return;
-    
-    // Listen for inbox notifications (new messages from other users)
-    const inboxRef = window._dbRef(window._db, `users/${currentUser.username}/inboxNotifications`);
-    _inboxUnsubscribe = window._dbOnValue(inboxRef, async (snapshot) => {
-        if (!snapshot.exists()) return;
-        const notifs = snapshot.val();
-        
-        for (const [key, notif] of Object.entries(notifs)) {
-            if (notif.read) continue;
-            
-            const senderName = notif.fromName || notif.from;
-            const senderAvatar = notif.fromAvatar || AFRICA_MAP_URL;
-            
-            // Add to chats if not already there
-            const existingChat = chats.find(c => c.name === senderName);
-            if (!existingChat) {
-                const newChat = {
-                    name: senderName,
-                    message: notif.text,
-                    time: notif.time,
-                    unread: 1,
-                    img: senderAvatar,
-                    bio: '',
-                    job: '',
-                    company: '',
-                    school: '',
-                    phone: '',
-                    age: '',
-                    photos: [senderAvatar],
-                    isBot: false
-                };
-                chats.unshift(newChat);
-            } else {
-                existingChat.message = notif.text;
-                existingChat.time = notif.time;
-                existingChat.unread = (existingChat.unread || 0) + 1;
-            }
-            
-            // Add to chat history
-            if (!chatHistories[senderName]) chatHistories[senderName] = [];
-            const alreadyAdded = chatHistories[senderName].some(
-                m => !m.sent && m.text === notif.text && m.time === notif.time
-            );
-            if (!alreadyAdded) {
-                chatHistories[senderName].push({
-                    text: notif.text,
-                    sent: false,
-                    time: notif.time,
-                    from: notif.from
-                });
-            }
-            
-            // Mark notification as read in Firebase
-            await window._dbSet(window._dbRef(window._db, `users/${currentUser.username}/inboxNotifications/${key}/read`), true);
-            
-            // Show toast notification
-            showToast(`💬 New message from ${senderName}`);
-            
-            // If chat is currently open with this sender, re-render
-            if (currentChatUser && currentChatUser.name === senderName) {
-                renderMessages(senderName);
-            }
-        }
-        
-        initChats();
-    });
-}
-
-async function loadSharedChatHistory(chatPartnerName, chatPartnerUsername) {
-    if (!window._firebaseReady || !currentUser || !chatPartnerUsername) return;
-    
-    const chatKey = [currentUser.username, chatPartnerUsername].sort().join('__');
-    const snapshot = await window._dbGet(window._dbRef(window._db, `chats/${chatKey}/messages`));
-    
-    if (!snapshot.exists()) return;
-    
-    const firebaseMsgs = Object.values(snapshot.val()).sort((a, b) => a.timestamp - b.timestamp);
-    
-    chatHistories[chatPartnerName] = firebaseMsgs.map(msg => ({
-        text: msg.text,
-        sent: msg.from === currentUser.username,
-        time: msg.time
-    }));
-    
-    renderMessages(chatPartnerName);
+    // Subscribe to the user's chat list — picks up new conversations in real-time
+    subscribeToUserChatList();
 }
 
 function handleChatKeypress(e) {
@@ -2385,21 +2370,27 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check online status
     checkOnlineStatus();
+
+    // Show Firebase warning if not configured
+    if (!window._firebaseReady) {
+        const banner = document.getElementById('firebaseWarningBanner');
+        if (banner) banner.style.display = 'block';
+    }
     
-    // Initialize auth after Firebase is ready (or immediately if not used)
+    // Initialize auth — Firebase may or may not be ready
     if (window._firebaseReady) {
         initAuth();
     } else {
+        // Listen for firebaseReady (real config provided)
         window.addEventListener('firebaseReady', () => {
             initAuth();
         });
-        // Also try after a short delay in case Firebase loads fast
+        // If Firebase is not configured, init immediately with localStorage
         setTimeout(() => {
             if (!window._firebaseReady) {
-                console.warn('Firebase not configured — using localStorage fallback');
                 initAuth();
             }
-        }, 2000);
+        }, 500);
     }
     
     // Setup online/offline listeners

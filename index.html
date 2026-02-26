@@ -17,6 +17,14 @@
 </head>
 <body class="text-gray-200 font-sans min-h-screen flex flex-col relative">
 
+    <!-- Firebase Config Warning Banner (shown when Firebase not configured) -->
+    <div id="firebaseWarningBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#b45309; color:#fff; padding:10px 16px; font-size:13px; text-align:center; font-family:monospace;">
+        ⚠️ <strong>Firebase not configured</strong> — accounts only work on this device. 
+        To enable cross-device login &amp; real-time messaging, open <code>index.html</code> and replace the placeholder Firebase config with your real credentials from 
+        <a href="https://console.firebase.google.com" target="_blank" style="color:#fde68a; text-decoration:underline;">console.firebase.google.com</a>
+        <button onclick="this.parentElement.style.display='none'" style="margin-left:12px; background:rgba(255,255,255,0.2); border:none; color:#fff; padding:2px 8px; border-radius:4px; cursor:pointer;">✕</button>
+    </div>
+
     <!-- Offline Overlay -->
     <div class="offline-overlay" id="offlineOverlay">
         <div class="offline-icon">
@@ -752,7 +760,7 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, push, update, child } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, set, get, onValue, push, update, child, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
         // =============================================
         // PASTE YOUR FIREBASE CONFIG HERE
@@ -760,42 +768,45 @@
         // Create a project → Add Web App → Copy config
         // =============================================
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyAC-xvFTIF-Tw4w5AoJAZdDZkpTuIygqwY",
+            authDomain: "africonnect-50b9f.firebaseapp.com",
+            databaseURL: "https://africonnect-50b9f-default-rtdb.firebaseio.com",
+            projectId: "africonnect-50b9f",
+            storageBucket: "africonnect-50b9f.firebasestorage.app",
+            messagingSenderId: "672075760372",
+            appId: "1:672075760372:web:a6bb6aa1e3abcd9a1994a1",
+            measurementId: "G-G93WJPW0RD"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        // Only initialize Firebase if real credentials are provided
+        const isRealConfig = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY";
 
-        // Expose DB helpers globally so script.js can use them
-        window._db = db;
-        window._dbRef = ref;
-        window._dbSet = set;
-        window._dbGet = get;
-        window._dbOnValue = onValue;
-        window._dbPush = push;
-        window._dbUpdate = update;
-        window._dbChild = child;
-        window._firebaseReady = true;
-
-        // =============================================
-        // CLEAR ALL FIREBASE USER ACCOUNTS
-        // Removes all registered accounts from the database
-        // =============================================
-        async function clearAllFirebaseAccounts() {
+        if (isRealConfig) {
             try {
-                await set(ref(db, 'users'), null);
-                console.log('✅ All Firebase user accounts cleared');
+                const app = initializeApp(firebaseConfig);
+                const db = getDatabase(app);
+
+                // Expose DB helpers globally so script.js can use them
+                window._db = db;
+                window._dbRef = ref;
+                window._dbSet = set;
+                window._dbGet = get;
+                window._dbOnValue = onValue;
+                window._dbPush = push;
+                window._dbUpdate = update;
+                window._dbChild = child;
+                window._dbOff = off;
+                window._firebaseReady = true;
+                console.log('✅ Firebase initialized');
             } catch (err) {
-                console.warn('Could not clear Firebase accounts:', err);
+                console.warn('Firebase init failed — using localStorage fallback:', err);
+                window._firebaseReady = false;
             }
+        } else {
+            console.warn('⚠️ Firebase not configured — using localStorage mode. Accounts will be device-specific.');
+            console.warn('To enable cross-device sync, replace the placeholder values in index.html with your real Firebase config.');
+            window._firebaseReady = false;
         }
-        clearAllFirebaseAccounts();
 
         // Dispatch event so script.js knows Firebase is loaded
         window.dispatchEvent(new Event('firebaseReady'));
