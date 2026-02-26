@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AfriConnect Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --gold: #fbbf24;
+            --gold-dim: #92400e;
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface2: #1e1e1e;
+            --border: rgba(251,191,36,0.15);
+            --text: #e5e5e5;
+            --text-dim: #666;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --info: #3b82f6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Syne', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Login Screen ── */
+        #loginScreen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: radial-gradient(ellipse at center, #1a0e00 0%, #0a0a0a 70%);
+        }
+
+        .login-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 0 80px rgba(251,191,36,0.08);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-logo h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--gold);
+            letter-spacing: 2px;
+        }
+
+        .login-logo p {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            color: var(--gold);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .form-group input {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--gold);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: var(--gold);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: 2px;
+            font-family: 'Syne', sans-serif;
+            transition: opacity 0.2s;
+            margin-top: 8px;
+        }
+
+        .login-btn:hover { opacity: 0.9; }
+
+        .login-error {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #fca5a5;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        /* ── Admin Layout ── */
+        #adminPanel { display: none; }
+
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 240px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            padding: 0 24px 24px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .sidebar-brand h2 {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+
+        .sidebar-brand p {
+            font-size: 10px;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
+        }
+
+        .nav-section {
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+
+        .nav-section-label {
+            font-size: 9px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 8px 12px 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-dim);
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .nav-item:hover { background: var(--surface2); color: var(--text); }
+        .nav-item.active { background: rgba(251,191,36,0.12); color: var(--gold); }
+        .nav-item i { width: 16px; text-align: center; font-size: 12px; }
+
+        .sidebar-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border);
+            margin-top: 16px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+        }
+
+        .admin-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 12px;
+            color: #000;
+            flex-shrink: 0;
+        }
+
+        .admin-user-info { flex: 1; min-width: 0; }
+
+        .admin-user-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .admin-user-role {
+            font-size: 9px;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 1px;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px;
+        }
+
+        .logout-btn:hover { color: var(--danger); }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 240px;
+            padding: 32px;
+            min-height: 100vh;
+        }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .page-header {
+            margin-bottom: 32px;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .page-header p {
+            color: var(--text-dim);
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gold);
+            opacity: 0.4;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Tables */
+        .table-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .table-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .table-header h3 {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .search-input {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: var(--text);
+            font-size: 12px;
+            outline: none;
+            width: 200px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .search-input:focus { border-color: var(--gold); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            padding: 10px 24px;
+            text-align: left;
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.02);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        td {
+            padding: 14px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            vertical-align: middle;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-thumb {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--surface2);
+        }
+
+        .user-thumb-placeholder {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--gold-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 11px;
+            color: var(--gold);
+            flex-shrink: 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-green { background: rgba(34,197,94,0.15); color: #4ade80; }
+        .badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .badge-yellow { background: rgba(251,191,36,0.15); color: var(--gold); }
+        .badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+        .badge-gray { background: rgba(255,255,255,0.08); color: var(--text-dim); }
+
+        /* Action Buttons */
+        .btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+            font-family: 'Syne', sans-serif;
+            letter-spacing: 0.5px;
+        }
+        .btn:hover { opacity: 0.8; }
+        .btn-gold { background: var(--gold); color: #000; }
+        .btn-danger { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .btn-ghost { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid var(--border); }
+
+        /* Activity Feed */
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .activity-item:last-child { border-bottom: none; }
+
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+
+        .activity-text {
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .activity-time {
+            font-size: 10px;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 2px;
+        }
+
+        /* Announcement Panel */
+        .announcement-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 24px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .admin-input, .admin-textarea, .admin-select {
+            width: 100%;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-size: 13px;
+            outline: none;
+            font-family: 'Syne', sans-serif;
+            transition: border-color 0.2s;
+        }
+
+        .admin-input:focus, .admin-textarea:focus, .admin-select:focus {
+            border-color: var(--gold);
+        }
+
+        .admin-textarea { resize: vertical; min-height: 80px; }
+
+        .input-label {
+            font-size: 11px;
+            color: var(--gold);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Toast */
+        #adminToast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--surface);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            z-index: 9999;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        #adminToast.show { transform: translateY(0); opacity: 1; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-layout { grid-template-columns: 1fr; }
+            .sidebar { position: relative; width: 100%; height: auto; }
+            .main-content { margin-left: 0; padding: 16px; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(251,191,36,0.3);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<!-- ── Login Screen ── -->
+<div id="loginScreen">
+    <div class="login-card">
+        <div class="login-logo">
+            <h1>🌍 AFRICONNECT</h1>
+            <p>ADMIN CONTROL PANEL</p>
+        </div>
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="adminEmail" placeholder="admin@africonnect.com" value="">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="adminPassword" placeholder="••••••••" value="">
+        </div>
+        <button class="login-btn" onclick="adminLogin()">ACCESS PANEL →</button>
+        <div class="login-error" id="loginError"></div>
+    </div>
+</div>
+
+<!-- ── Admin Panel ── -->
+<div id="adminPanel">
+    <div class="admin-layout">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <h2>🌍 AfriConnect</h2>
+                <p>ADMIN v1.0</p>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">Overview</div>
+                <div class="nav-item active" onclick="showPage('dashboard', this)">
+                    <i class="fas fa-chart-pie"></i> Dashboard
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">Users</div>
+                <div class="nav-item" onclick="showPage('users', this)">
+                    <i class="fas fa-users"></i> All Users
+                </div>
+                <div class="nav-item" onclick="showPage('bots', this)">
+                    <i class="fas fa-robot"></i> Bot Profiles
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">Content</div>
+                <div class="nav-item" onclick="showPage('messages', this)">
+                    <i class="fas fa-comments"></i> Messages
+                </div>
+                <div class="nav-item" onclick="showPage('market', this)">
+                    <i class="fas fa-store"></i> Marketplace
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-label">System</div>
+                <div class="nav-item" onclick="showPage('announcements', this)">
+                    <i class="fas fa-bullhorn"></i> Announcements
+                </div>
+                <div class="nav-item" onclick="showPage('settings', this)">
+                    <i class="fas fa-cog"></i> Settings
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="admin-user">
+                    <div class="admin-avatar">E</div>
+                    <div class="admin-user-info">
+                        <div class="admin-user-name">Eniola Olayinka</div>
+                        <div class="admin-user-role">SUPER ADMIN</div>
+                    </div>
+                    <button class="logout-btn" onclick="adminLogout()" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Dashboard -->
+            <div id="page-dashboard" class="page active">
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                    <p>Welcome back, Eniola. Here's what's happening on AfriConnect.</p>
+                </div>
+
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(251,191,36,0.1);">👥</div>
+                        <div class="stat-value" id="statUsers">—</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(34,197,94,0.1);">💬</div>
+                        <div class="stat-value" id="statChats">—</div>
+                        <div class="stat-label">Active Chats</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(59,130,246,0.1);">❤️</div>
+                        <div class="stat-value" id="statMatches">—</div>
+                        <div class="stat-label">Total Matches</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:rgba(168,85,247,0.1);">🛒</div>
+                        <div class="stat-value" id="statAdverts">—</div>
+                        <div class="stat-label">Market Listings</div>
+                    </div>
+                </div>
+
+                <!-- Recent Users -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Recent Users</h3>
+                        <button class="btn btn-ghost" onclick="loadUsers()"><i class="fas fa-sync" style="margin-right:4px;"></i>Refresh</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Username</th>
+                                <th>Gender</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentUsersTable">
+                            <tr><td colspan="5" style="text-align:center; color:#666; padding:32px;">Loading users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Activity Feed -->
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Live Activity Feed</h3>
+                        <span class="badge badge-green">● LIVE</span>
+                    </div>
+                    <div id="activityFeed">
+                        <div class="activity-item">
+                            <div class="activity-dot" style="background:#fbbf24;"></div>
+                            <div>
+                                <div class="activity-text">AfriConnect Admin Panel loaded successfully</div>
+                                <div class="activity-time">just now</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Page -->
+            <div id="page-users" class="page">
+                <div class="page-header">
+                    <h1>All Users</h1>
+                    <p>Manage registered users from Firebase database.</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Users (<span id="userCount">0</span>)</h3>
+                        <div class="table-actions">
+                            <input type="text" class="search-input" placeholder="Search users..." oninput="filterUsersTable(this.value)">
+                            <button class="btn btn-ghost" onclick="loadUsers()"><i class="fas fa-sync"></i></button>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Username</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>Bio</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <tr><td colspan="6" style="text-align:center; color:#666; padding:32px;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bots Page -->
+            <div id="page-bots" class="page">
+                <div class="page-header">
+                    <h1>Bot Profiles</h1>
+                    <p>The 10 African bot profiles seeded in the app.</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Active Bots (10)</h3>
+                        <span class="badge badge-blue">AUTO-SEEDED</span>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr><th>Profile</th><th>Name</th><th>Age</th><th>Country</th><th>Gender</th><th>Job</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="botsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Messages Page -->
+            <div id="page-messages" class="page">
+                <div class="page-header">
+                    <h1>Message Threads</h1>
+                    <p>View all active conversation threads.</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Chat Threads</h3>
+                        <button class="btn btn-ghost" onclick="loadChats()"><i class="fas fa-sync" style="margin-right:4px;"></i>Refresh</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr><th>Participants</th><th>Last Message</th><th>Time</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody id="chatsTable">
+                            <tr><td colspan="4" style="text-align:center; color:#666; padding:32px;">Loading chats...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Market Page -->
+            <div id="page-market" class="page">
+                <div class="page-header">
+                    <h1>Marketplace</h1>
+                    <p>View and moderate all market listings.</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Listings</h3>
+                    </div>
+                    <div style="padding:48px; text-align:center; color:#666;">
+                        <i class="fas fa-store" style="font-size:48px; margin-bottom:16px; opacity:0.3;"></i>
+                        <p>No marketplace listings yet.</p>
+                        <p style="font-size:12px; margin-top:8px;">Listings will appear here when users post items.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Announcements Page -->
+            <div id="page-announcements" class="page">
+                <div class="page-header">
+                    <h1>Announcements</h1>
+                    <p>Push announcements to all users via Firebase.</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <h3>Send Announcement</h3>
+                    </div>
+                    <div class="announcement-form">
+                        <div>
+                            <div class="input-label">Title</div>
+                            <input type="text" class="admin-input" id="announcementTitle" placeholder="e.g. New Feature Alert!">
+                        </div>
+                        <div>
+                            <div class="input-label">Message</div>
+                            <textarea class="admin-textarea" id="announcementBody" placeholder="Your message to all users..."></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div>
+                                <div class="input-label">Type</div>
+                                <select class="admin-select" id="announcementType">
+                                    <option value="info">ℹ️ Info</option>
+                                    <option value="update">🔔 App Update</option>
+                                    <option value="promo">🎉 Promotion</option>
+                                    <option value="warning">⚠️ Warning</option>
+                                </select>
+                            </div>
+                            <div style="display:flex; align-items:flex-end;">
+                                <button class="btn btn-gold" onclick="sendAnnouncement()" style="padding:10px 24px; font-size:13px;">
+                                    <i class="fas fa-paper-plane" style="margin-right:6px;"></i>Send to All Users
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Previous Announcements -->
+                <div class="table-card">
+                    <div class="table-header"><h3>Sent Announcements</h3></div>
+                    <div id="announcementsList" style="padding:32px; text-align:center; color:#666; font-size:13px;">
+                        No announcements sent yet.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="page-settings" class="page">
+                <div class="page-header">
+                    <h1>Settings</h1>
+                    <p>System configuration for AfriConnect.</p>
+                </div>
+                <div class="table-card">
+                    <div class="table-header"><h3>Admin Account</h3></div>
+                    <div class="announcement-form">
+                        <div>
+                            <div class="input-label">Admin Email</div>
+                            <input type="email" class="admin-input" value="ENIOLAOLAYINKA217@GMAIL.COM" readonly style="opacity:0.6;">
+                        </div>
+                        <div>
+                            <div class="input-label">Role</div>
+                            <input type="text" class="admin-input" value="Super Administrator" readonly style="opacity:0.6;">
+                        </div>
+                        <div style="padding-top:8px;">
+                            <button class="btn btn-danger" onclick="if(confirm('Delete ALL user accounts from Firebase? This cannot be undone.')) clearAllUsers()">
+                                <i class="fas fa-trash" style="margin-right:6px;"></i>Clear All User Accounts
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-card" style="margin-top:24px;">
+                    <div class="table-header"><h3>Firebase Status</h3></div>
+                    <div style="padding:24px; display:flex; flex-direction:column; gap:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <span style="font-size:13px; color:#aaa;">Database</span>
+                            <span class="badge badge-green">● Connected</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <span style="font-size:13px; color:#aaa;">Project</span>
+                            <span style="font-size:12px; font-family:monospace; color:#fbbf24;">africonnect-50b9f</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0;">
+                            <span style="font-size:13px; color:#aaa;">Real-time Sync</span>
+                            <span class="badge badge-green">● Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<div id="adminToast"></div>
+
+<!-- Firebase SDK (same config as main app) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, get, set, remove, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAC-xvFTIF-Tw4w5AoJAZdDZkpTuIygqwY",
+        authDomain: "africonnect-50b9f.firebaseapp.com",
+        databaseURL: "https://africonnect-50b9f-default-rtdb.firebaseio.com",
+        projectId: "africonnect-50b9f",
+        storageBucket: "africonnect-50b9f.firebasestorage.app",
+        messagingSenderId: "672075760372",
+        appId: "1:672075760372:web:a6bb6aa1e3abcd9a1994a1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window._adminDb = db;
+    window._adminRef = ref;
+    window._adminGet = get;
+    window._adminSet = set;
+    window._adminRemove = remove;
+    window._adminOnValue = onValue;
+    window._adminPush = push;
+    window._adminFirebaseReady = true;
+
+    // Live user count listener
+    onValue(ref(db, 'users'), (snap) => {
+        const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+        const el = document.getElementById('statUsers');
+        if (el) el.textContent = count;
+        const el2 = document.getElementById('userCount');
+        if (el2) el2.textContent = count;
+    });
+
+    // Live chats count
+    onValue(ref(db, 'chats'), (snap) => {
+        const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+        const el = document.getElementById('statChats');
+        if (el) el.textContent = count;
+    });
+</script>
+
+<script>
+// ── Admin Credentials ────────────────────────────────────────
+const ADMIN_EMAIL = 'ENIOLAOLAYINKA217@GMAIL.COM';
+const ADMIN_PASSWORD = 'ENNY5969@';
+
+// ── Auth ─────────────────────────────────────────────────────
+function adminLogin() {
+    const email = document.getElementById('adminEmail').value.trim().toUpperCase();
+    const password = document.getElementById('adminPassword').value;
+    const errorEl = document.getElementById('loginError');
+
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        sessionStorage.setItem('africonnect_admin', 'true');
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        loadDashboard();
+        showAdminToast('Welcome back, Eniola! 👋');
+    } else {
+        errorEl.textContent = 'Invalid email or password. Access denied.';
+        errorEl.style.display = 'block';
+        setTimeout(() => { errorEl.style.display = 'none'; }, 3000);
+    }
+}
+
+function adminLogout() {
+    sessionStorage.removeItem('africonnect_admin');
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// Auto-login if session exists
+if (sessionStorage.getItem('africonnect_admin') === 'true') {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    setTimeout(loadDashboard, 500);
+}
+
+// Enter key to login
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') {
+        adminLogin();
+    }
+});
+
+// ── Navigation ───────────────────────────────────────────────
+function showPage(pageId, navEl) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + pageId).classList.add('active');
+    if (navEl) navEl.classList.add('active');
+
+    // Load data for page
+    if (pageId === 'users') loadUsers();
+    if (pageId === 'bots') loadBots();
+    if (pageId === 'messages') loadChats();
+    if (pageId === 'announcements') loadAnnouncements();
+}
+
+// ── Dashboard ────────────────────────────────────────────────
+function loadDashboard() {
+    loadUsers(true); // load in background for recent users table
+    loadBots();
+    addActivity('Dashboard loaded', '#fbbf24');
+}
+
+// ── Users ────────────────────────────────────────────────────
+let allUsersData = {};
+
+async function loadUsers(dashboardOnly = false) {
+    if (!window._adminFirebaseReady) {
+        setTimeout(() => loadUsers(dashboardOnly), 1000);
+        return;
+    }
+
+    try {
+        const snap = await window._adminGet(window._adminRef(window._adminDb, 'users'));
+        allUsersData = snap.exists() ? snap.val() : {};
+        const users = Object.values(allUsersData);
+
+        document.getElementById('statUsers').textContent = users.length;
+        document.getElementById('statMatches').textContent = users.reduce((a, u) => a + (u.matches ? u.matches.length : 0), 0);
+        document.getElementById('statAdverts').textContent = users.reduce((a, u) => a + (u.adverts ? u.adverts.length : 0), 0);
+
+        renderUsersTable(users, dashboardOnly);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function renderUsersTable(users, dashboardOnly = false) {
+    const tableId = dashboardOnly ? 'recentUsersTable' : 'usersTable';
+    const tbody = document.getElementById(tableId);
+    if (!tbody) return;
+
+    const displayUsers = dashboardOnly ? users.slice(0, 5) : users;
+
+    if (displayUsers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#666; padding:32px;">No registered users yet.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = displayUsers.map(u => {
+        const name = u.profile?.name || u.username;
+        const initial = name.charAt(0).toUpperCase();
+        const photo = u.profile?.photos?.[0];
+        const genderBadge = u.profile?.gender === 'man' ? 'badge-blue' : 'badge-yellow';
+
+        return `<tr>
+            <td>
+                <div class="user-cell">
+                    ${photo ? `<img src="${photo}" class="user-thumb" onerror="this.style.display='none'">` :
+                              `<div class="user-thumb-placeholder">${initial}</div>`}
+                    <div>
+                        <div style="font-weight:700; font-size:13px;">${name}</div>
+                        <div style="font-size:11px; color:#666;">${u.profile?.bio?.substring(0, 40) || '—'}...</div>
+                    </div>
+                </div>
+            </td>
+            <td><span style="font-family:monospace; font-size:12px; color:#fbbf24;">@${u.username}</span></td>
+            ${!dashboardOnly ? `<td>${u.profile?.age || '—'}</td>` : ''}
+            <td><span class="badge ${genderBadge}">${u.profile?.gender || '—'}</span></td>
+            ${!dashboardOnly ? `<td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#888; font-size:12px;">${u.profile?.bio || '—'}</td>` : ''}
+            <td>
+                <button class="btn btn-danger" onclick="deleteUser('${u.username}')" style="font-size:10px; padding:4px 8px;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    if (!dashboardOnly) {
+        document.getElementById('userCount').textContent = users.length;
+    }
+}
+
+function filterUsersTable(query) {
+    const users = Object.values(allUsersData).filter(u =>
+        (u.username || '').toLowerCase().includes(query.toLowerCase()) ||
+        (u.profile?.name || '').toLowerCase().includes(query.toLowerCase())
+    );
+    renderUsersTable(users);
+}
+
+async function deleteUser(username) {
+    if (!confirm(`Delete user @${username}? This cannot be undone.`)) return;
+    try {
+        await window._adminRemove(window._adminRef(window._adminDb, `users/${username}`));
+        showAdminToast(`User @${username} deleted.`);
+        addActivity(`Deleted user @${username}`, '#ef4444');
+        loadUsers();
+    } catch (e) {
+        showAdminToast('Error deleting user: ' + e.message);
+    }
+}
+
+async function clearAllUsers() {
+    try {
+        await window._adminSet(window._adminRef(window._adminDb, 'users'), null);
+        showAdminToast('All users cleared from database.');
+        addActivity('All user accounts cleared', '#ef4444');
+        loadUsers();
+    } catch (e) {
+        showAdminToast('Error: ' + e.message);
+    }
+}
+
+// ── Bots ─────────────────────────────────────────────────────
+const BOT_PROFILES = [
+    { name: "Amara Osei", age: 26, country: "Ghana 🇬🇭", gender: "female", job: "Graphic Designer", img: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=60&h=60&fit=crop&crop=face" },
+    { name: "Kofi Mensah", age: 29, country: "Ghana 🇬🇭", gender: "male", job: "Civil Engineer", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=face" },
+    { name: "Zara Bello", age: 24, country: "Nigeria 🇳🇬", gender: "female", job: "Content Creator", img: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=60&h=60&fit=crop&crop=face" },
+    { name: "Emeka Okafor", age: 31, country: "Nigeria 🇳🇬", gender: "male", job: "Medical Doctor", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=60&h=60&fit=crop&crop=face" },
+    { name: "Fatou Diallo", age: 27, country: "Senegal 🇸🇳", gender: "female", job: "Journalist", img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=60&h=60&fit=crop&crop=face" },
+    { name: "Tendai Moyo", age: 28, country: "Zimbabwe 🇿🇼", gender: "male", job: "Software Developer", img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=60&h=60&fit=crop&crop=face" },
+    { name: "Akosua Agyeman", age: 23, country: "Ghana 🇬🇭", gender: "female", job: "Medical Student", img: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=60&h=60&fit=crop&crop=face" },
+    { name: "Chukwuemeka Eze", age: 33, country: "Nigeria 🇳🇬", gender: "male", job: "Entrepreneur", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop&crop=face" },
+    { name: "Nadia Kamara", age: 25, country: "Côte d'Ivoire 🇨🇮", gender: "female", job: "Architect", img: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=60&h=60&fit=crop&crop=face" },
+    { name: "Segun Adeyemi", age: 30, country: "Nigeria 🇳🇬", gender: "male", job: "Music Producer", img: "https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=60&h=60&fit=crop&crop=face" }
+];
+
+function loadBots() {
+    const tbody = document.getElementById('botsTable');
+    if (!tbody) return;
+    tbody.innerHTML = BOT_PROFILES.map((b, i) => `
+        <tr>
+            <td><img src="${b.img}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" onerror="this.src='https://via.placeholder.com/36'"></td>
+            <td style="font-weight:700;">${b.name}</td>
+            <td>${b.age}</td>
+            <td>${b.country}</td>
+            <td><span class="badge ${b.gender === 'female' ? 'badge-yellow' : 'badge-blue'}">${b.gender}</span></td>
+            <td style="color:#888; font-size:12px;">${b.job}</td>
+            <td><span class="badge badge-green">● Active</span></td>
+        </tr>
+    `).join('');
+}
+
+// ── Chats ────────────────────────────────────────────────────
+async function loadChats() {
+    if (!window._adminFirebaseReady) { setTimeout(loadChats, 1000); return; }
+    const tbody = document.getElementById('chatsTable');
+
+    try {
+        const snap = await window._adminGet(window._adminRef(window._adminDb, 'chats'));
+        if (!snap.exists()) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#666; padding:32px;">No chat threads yet.</td></tr>';
+            return;
+        }
+
+        const chats = snap.val();
+        document.getElementById('statChats').textContent = Object.keys(chats).length;
+
+        tbody.innerHTML = Object.entries(chats).map(([key, chat]) => {
+            const participants = key.split('__');
+            const lastMsg = chat.meta?.lastMessage || '—';
+            const lastTime = chat.meta?.lastTime || '—';
+            const msgCount = chat.messages ? Object.keys(chat.messages).length : 0;
+
+            return `<tr>
+                <td>
+                    <div style="font-family:monospace; font-size:12px; color:#fbbf24;">@${participants[0]}</div>
+                    <div style="font-size:10px; color:#666;">↔ @${participants[1]}</div>
+                </td>
+                <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#aaa; font-size:12px;">${lastMsg}</td>
+                <td style="font-family:monospace; font-size:11px; color:#666;">${lastTime}</td>
+                <td>
+                    <span class="badge badge-gray">${msgCount} msgs</span>
+                    <button class="btn btn-danger" style="margin-left:6px; font-size:10px; padding:4px 8px;" onclick="deleteChat('${key}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#ef4444; padding:32px;">Error: ${e.message}</td></tr>`;
+    }
+}
+
+async function deleteChat(chatKey) {
+    if (!confirm('Delete this chat thread?')) return;
+    await window._adminRemove(window._adminRef(window._adminDb, `chats/${chatKey}`));
+    showAdminToast('Chat thread deleted.');
+    loadChats();
+}
+
+// ── Announcements ─────────────────────────────────────────────
+let sentAnnouncements = JSON.parse(localStorage.getItem('africonnect_admin_announcements') || '[]');
+
+function loadAnnouncements() {
+    const el = document.getElementById('announcementsList');
+    if (!el) return;
+    if (sentAnnouncements.length === 0) {
+        el.innerHTML = '<div style="padding:32px; text-align:center; color:#666; font-size:13px;">No announcements sent yet.</div>';
+        return;
+    }
+    el.innerHTML = sentAnnouncements.map(a => `
+        <div style="padding:16px 24px; border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span style="font-weight:700; font-size:14px;">${a.title}</span>
+                <span style="font-size:11px; color:#666; font-family:monospace;">${a.time}</span>
+            </div>
+            <div style="font-size:13px; color:#aaa;">${a.body}</div>
+            <div style="margin-top:6px;"><span class="badge badge-gray">${a.type}</span></div>
+        </div>
+    `).join('');
+}
+
+async function sendAnnouncement() {
+    const title = document.getElementById('announcementTitle').value.trim();
+    const body = document.getElementById('announcementBody').value.trim();
+    const type = document.getElementById('announcementType').value;
+
+    if (!title || !body) {
+        showAdminToast('Please fill in title and message.');
+        return;
+    }
+
+    const announcement = {
+        title, body, type,
+        time: new Date().toLocaleString(),
+        timestamp: Date.now(),
+        from: 'admin'
+    };
+
+    // Push to Firebase announcements node
+    if (window._adminFirebaseReady) {
+        await window._adminPush(window._adminRef(window._adminDb, 'announcements'), announcement);
+    }
+
+    // Save locally for display
+    sentAnnouncements.unshift(announcement);
+    localStorage.setItem('africonnect_admin_announcements', JSON.stringify(sentAnnouncements));
+
+    document.getElementById('announcementTitle').value = '';
+    document.getElementById('announcementBody').value = '';
+
+    showAdminToast('Announcement sent to all users! 📢');
+    addActivity(`Sent announcement: "${title}"`, '#22c55e');
+    loadAnnouncements();
+}
+
+// ── Activity Feed ─────────────────────────────────────────────
+function addActivity(text, color = '#fbbf24') {
+    const feed = document.getElementById('activityFeed');
+    if (!feed) return;
+    const time = new Date().toLocaleTimeString();
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+    item.innerHTML = `
+        <div class="activity-dot" style="background:${color};"></div>
+        <div>
+            <div class="activity-text">${text}</div>
+            <div class="activity-time">${time}</div>
+        </div>
+    `;
+    feed.insertBefore(item, feed.firstChild);
+    // Keep only 20 items
+    while (feed.children.length > 20) feed.removeChild(feed.lastChild);
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showAdminToast(msg) {
+    const toast = document.getElementById('adminToast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

@@ -613,13 +613,211 @@ let currentGroupRoom = null;
 let myAdverts = [];
 let notifications = [];
 
-// All hardcoded bot/demo profiles have been removed.
-// Only real registered users from Firebase/localStorage will appear.
-const profiles = [];
+// African Bot Profiles - 10 diverse real-feeling profiles
+const profiles = [
+    {
+        name: "Amara Osei",
+        age: 26,
+        bio: "Graphic designer from Accra who loves Afrobeats, jollof rice debates, and late-night conversations. Looking for someone genuine.",
+        distance: "2 km",
+        job: "Graphic Designer",
+        company: "Kente Creative Studio",
+        school: "KNUST",
+        phone: "+233 24 456 7890",
+        country: "Ghana 🇬🇭",
+        gender: "female",
+        img: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=500&fit=crop&crop=face",
+        photos: [
+            "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=500&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=500&fit=crop",
+            "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=500&fit=crop"
+        ],
+        verified: true,
+        isBot: true
+    },
+    {
+        name: "Kofi Mensah",
+        age: 29,
+        bio: "Civil engineer building bridges — literally and figuratively. Football fanatic, Arsenal till I die. Based in Kumasi.",
+        distance: "5 km",
+        job: "Civil Engineer",
+        company: "Ghana Infrastructure Co.",
+        school: "University of Ghana",
+        phone: "+233 20 123 4567",
+        country: "Ghana 🇬🇭",
+        gender: "male",
+        img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face",
+        photos: [
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=400&h=500&fit=crop"
+        ],
+        verified: false,
+        isBot: true
+    },
+    {
+        name: "Zara Bello",
+        age: 24,
+        bio: "Fashion blogger & content creator from Lagos. Aso-oke enthusiast. If you can't handle a woman who knows what she wants, move along 💅",
+        distance: "1 km",
+        job: "Content Creator",
+        company: "ZaraStyleNG",
+        school: "University of Lagos",
+        phone: "+234 802 345 6789",
+        country: "Nigeria 🇳🇬",
+        gender: "female",
+        img: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop&crop=face",
+        photos: [
+            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop&crop=face"
+        ],
+        verified: true,
+        isBot: true
+    },
+    {
+        name: "Emeka Okafor",
+        age: 31,
+        bio: "Naija doctor, Lagos Island General Hospital. I cook better than I prescribe. Looking for my partner in crime and jollof.",
+        distance: "8 km",
+        job: "Medical Doctor",
+        company: "Lagos Island General Hospital",
+        school: "University of Ibadan",
+        phone: "+234 803 567 8901",
+        country: "Nigeria 🇳🇬",
+        gender: "male",
+        img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop&crop=face",
+        photos: [
+            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1504199367641-aba8151af406?w=400&h=500&fit=crop"
+        ],
+        verified: true,
+        isBot: true
+    },
+    {
+        name: "Fatou Diallo",
+        age: 27,
+        bio: "Dakar-born, Nairobi-living. Journalist covering East Africa. Passionate about Pan-Africanism, spoken word, and good coffee.",
+        distance: "3 km",
+        job: "Journalist",
+        company: "Africa Now Media",
+        school: "Université Cheikh Anta Diop",
+        phone: "+254 712 345 678",
+        country: "Senegal 🇸🇳",
+        gender: "female",
+        img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=500&fit=crop&crop=face",
+        photos: [
+            "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=500&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=500&fit=crop"
+        ],
+        verified: true,
+        isBot: true
+    },
+    {
+        name: "Tendai Moyo",
+        age: 28,
+        bio: "Software developer from Harare, now in Joburg. I build apps by day and braai by night. Let's debate: Harare or Joburg — which has the better vibe?",
+        distance: "12 km",
+        job: "Software Developer",
+        company: "Takura Tech",
+        school: "University of Zimbabwe",
+        phone: "+263 77 234 5678",
+        country: "Zimbabwe 🇿🇼",
+        gender: "male",
+        img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=500&fit=crop&crop=face",
+        photos: [
+            "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=500&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=500&fit=crop"
+        ],
+        verified: false,
+        isBot: true
+    },
+    {
+        name: "Akosua Agyeman",
+        age: 23,
+        bio: "Medical student in Accra, future paediatrician. I dance highlife in my kitchen. Big family, bigger heart. Serious inquiries only.",
+        distance: "4 km",
+        job: "Medical Student",
+        company: "University of Ghana Medical School",
+        school: "University of Ghana",
+        phone: "+233 26 789 0123",
+        country: "Ghana 🇬🇭",
+        gender: "female",
+        img: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=500&fit=crop&crop=face",
+        photos: [
+            "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=500&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1536243298747-ea8874136d64?w=400&h=500&fit=crop"
+        ],
+        verified: false,
+        isBot: true
+    },
+    {
+        name: "Chukwuemeka Eze",
+        age: 33,
+        bio: "Entrepreneur from Enugu, Lagos-based. Built 2 startups, failed at 1, learning from both. Suya connoisseur. Looking for my equal.",
+        distance: "6 km",
+        job: "Entrepreneur",
+        company: "EzeVentures",
+        school: "Enugu State University",
+        phone: "+234 806 789 0123",
+        country: "Nigeria 🇳🇬",
+        gender: "male",
+        img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=face",
+        photos: [
+            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=400&h=500&fit=crop"
+        ],
+        verified: true,
+        isBot: true
+    },
+    {
+        name: "Nadia Kamara",
+        age: 25,
+        bio: "Architect from Abidjan redesigning African cities one blueprint at a time. Lover of waakye, good music, and authentic people.",
+        distance: "9 km",
+        job: "Architect",
+        company: "Côte d'Ivoire Urban Design Bureau",
+        school: "INPHB Yamoussoukro",
+        phone: "+225 07 123 4567",
+        country: "Côte d'Ivoire 🇨🇮",
+        gender: "female",
+        img: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=500&fit=crop&crop=face",
+        photos: [
+            "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=500&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=400&h=500&fit=crop"
+        ],
+        verified: false,
+        isBot: true
+    },
+    {
+        name: "Segun Adeyemi",
+        age: 30,
+        bio: "Music producer from Lagos working with top Afrobeats artists. Studio life is real life. Looking for someone who vibes to good music.",
+        distance: "7 km",
+        job: "Music Producer",
+        company: "Afrowave Studios",
+        school: "University of Lagos",
+        phone: "+234 801 234 5678",
+        country: "Nigeria 🇳🇬",
+        gender: "male",
+        img: "https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=400&h=500&fit=crop&crop=face",
+        photos: [
+            "https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?w=400&h=500&fit=crop&crop=face",
+            "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=500&fit=crop"
+        ],
+        verified: true,
+        isBot: true
+    }
+];
 
-// All hardcoded nearby people have been removed.
-// Nearby section will only show real registered users.
-let nearbyPeople = [];
+// Nearby people also seeded with bots
+let nearbyPeople = profiles.map(p => ({
+    name: p.name,
+    age: p.age,
+    distance: p.distance,
+    img: p.img,
+    online: Math.random() > 0.3,
+    isRegisteredUser: false,
+    isBot: true
+}));
 
 let matches = [];
 let chats = [];

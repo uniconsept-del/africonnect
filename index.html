@@ -3,7 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soul of Africa - Find Your Connection</title>
+    <title>AfriConnect - Find Your Connection</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="AfriConnect – Connecting Africa, One Heart at a Time">
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AfriConnect">
+    <link rel="manifest" href="manifest.json">
+    <!-- PWA Icons (using favicon fallback) -->
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/96/africa.png">
+    <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/africa.png">
     
     <!-- External CSS Libraries -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
@@ -17,7 +29,40 @@
 </head>
 <body class="text-gray-200 font-sans min-h-screen flex flex-col relative">
 
-    <!-- Firebase Config Warning Banner (shown when Firebase not configured) -->
+    <!-- Top Bar: View Toggle + Install Button + Admin Link -->
+    <div id="topBar" style="position:fixed; top:0; left:0; right:0; z-index:10000; background:rgba(15,15,15,0.95); backdrop-filter:blur(10px); border-bottom:1px solid rgba(251,191,36,0.2); padding:6px 16px; display:flex; align-items:center; justify-content:space-between; height:40px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span style="color:#fbbf24; font-size:12px; font-weight:700; letter-spacing:1px; font-family:monospace;">AfriConnect</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+            <!-- View Toggle -->
+            <div style="display:flex; background:rgba(255,255,255,0.08); border-radius:20px; padding:2px; gap:2px;">
+                <button onclick="setViewMode('mobile')" id="mobileViewBtn" title="Mobile View"
+                    style="border:none; border-radius:18px; padding:3px 10px; font-size:11px; cursor:pointer; transition:all 0.2s; background:#fbbf24; color:#000; font-weight:700;">
+                    📱 Mobile
+                </button>
+                <button onclick="setViewMode('desktop')" id="desktopViewBtn" title="Desktop View"
+                    style="border:none; border-radius:18px; padding:3px 10px; font-size:11px; cursor:pointer; transition:all 0.2s; background:transparent; color:#aaa; font-weight:600;">
+                    🖥 Desktop
+                </button>
+            </div>
+            <!-- Install App Button -->
+            <button id="installBtn" onclick="installPWA()" title="Install App"
+                style="display:none; border:1px solid #fbbf24; background:transparent; color:#fbbf24; border-radius:20px; padding:3px 12px; font-size:11px; cursor:pointer; font-weight:700;">
+                ⬇ Install App
+            </button>
+            <!-- Admin Panel Link -->
+            <a href="admin.html" target="_blank"
+                style="border:1px solid rgba(255,255,255,0.15); background:transparent; color:#888; border-radius:20px; padding:3px 10px; font-size:11px; cursor:pointer; font-weight:600; text-decoration:none;">
+                ⚙ Admin
+            </a>
+        </div>
+    </div>
+
+    <!-- Spacer for top bar -->
+    <div style="height:40px;"></div>
+
+
     <div id="firebaseWarningBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#b45309; color:#fff; padding:10px 16px; font-size:13px; text-align:center; font-family:monospace;">
         ⚠️ <strong>Firebase not configured</strong> — accounts only work on this device. 
         To enable cross-device login &amp; real-time messaging, open <code>index.html</code> and replace the placeholder Firebase config with your real credentials from 
@@ -814,5 +859,110 @@
 
     <!-- Your JavaScript File -->
     <script src="script.js"></script>
+
+    <!-- PWA Install + View Mode Logic -->
+    <script>
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => {
+                    console.warn('SW registration failed:', err);
+                });
+            });
+        }
+
+        // ── PWA Install ──────────────────────────────────────────
+        let _deferredInstallPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            _deferredInstallPrompt = e;
+            const btn = document.getElementById('installBtn');
+            if (btn) btn.style.display = 'inline-block';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            const btn = document.getElementById('installBtn');
+            if (btn) btn.style.display = 'none';
+            _deferredInstallPrompt = null;
+        });
+
+        function installPWA() {
+            if (_deferredInstallPrompt) {
+                _deferredInstallPrompt.prompt();
+                _deferredInstallPrompt.userChoice.then(choice => {
+                    if (choice.outcome === 'accepted') {
+                        document.getElementById('installBtn').style.display = 'none';
+                    }
+                    _deferredInstallPrompt = null;
+                });
+            } else {
+                alert('To install: open your browser menu → "Add to Home Screen" or "Install App"');
+            }
+        }
+
+        // ── View Mode Toggle ─────────────────────────────────────
+        // Main app wrapper — we'll constrain it for mobile view
+        const _appRoot = document.getElementById('swipe-interface');
+
+        function setViewMode(mode) {
+            const mobilBtn = document.getElementById('mobileViewBtn');
+            const deskBtn  = document.getElementById('desktopViewBtn');
+
+            if (mode === 'mobile') {
+                // Constrain to phone dimensions
+                document.body.style.background = '#111';
+                const wrapper = document.getElementById('viewModeWrapper');
+                if (wrapper) {
+                    wrapper.style.maxWidth = '430px';
+                    wrapper.style.margin = '0 auto';
+                    wrapper.style.boxShadow = '0 0 60px rgba(0,0,0,0.8)';
+                    wrapper.style.minHeight = 'calc(100vh - 40px)';
+                    wrapper.style.overflow = 'hidden';
+                    wrapper.style.position = 'relative';
+                }
+                mobilBtn.style.background = '#fbbf24';
+                mobilBtn.style.color = '#000';
+                deskBtn.style.background = 'transparent';
+                deskBtn.style.color = '#aaa';
+                localStorage.setItem('africonnect_viewmode', 'mobile');
+            } else {
+                // Full desktop width
+                const wrapper = document.getElementById('viewModeWrapper');
+                if (wrapper) {
+                    wrapper.style.maxWidth = '100%';
+                    wrapper.style.margin = '0';
+                    wrapper.style.boxShadow = 'none';
+                }
+                deskBtn.style.background = '#fbbf24';
+                deskBtn.style.color = '#000';
+                mobilBtn.style.background = 'transparent';
+                mobilBtn.style.color = '#aaa';
+                localStorage.setItem('africonnect_viewmode', 'desktop');
+            }
+        }
+
+        // Wrap body content in a view mode container
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wrap everything after topBar in a viewModeWrapper div
+            const wrapper = document.createElement('div');
+            wrapper.id = 'viewModeWrapper';
+            wrapper.style.transition = 'max-width 0.3s ease, margin 0.3s ease';
+            wrapper.style.background = 'inherit';
+
+            // Move all body children (except topBar and the spacer) into wrapper
+            const children = Array.from(document.body.children);
+            children.forEach(child => {
+                if (child.id !== 'topBar' && child.tagName !== 'SCRIPT') {
+                    wrapper.appendChild(child);
+                }
+            });
+            document.body.appendChild(wrapper);
+
+            // Restore saved view mode
+            const saved = localStorage.getItem('africonnect_viewmode') || 'mobile';
+            setViewMode(saved);
+        });
+    </script>
 </body>
 </html>
