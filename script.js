@@ -93,8 +93,19 @@ function checkOnlineStatus() {
 }
 
 // ==========================================
-// AUTHENTICATION SYSTEM
+// CLEAR ALL ACCOUNTS (Bot + Registered)
+// This runs once on load to remove all stored user accounts
 // ==========================================
+
+(function clearAllAccounts() {
+    // Remove all registered users from localStorage
+    localStorage.removeItem('afriConnect_users');
+    // Remove any active session
+    localStorage.removeItem('afriConnect_session');
+    console.log('✅ All user accounts cleared (bot + registered)');
+})();
+
+
 
 let currentUser = null;
 const AFRICA_MAP_URL = 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg';
@@ -574,209 +585,13 @@ let currentGroupRoom = null;
 let myAdverts = [];
 let notifications = [];
 
-const profiles = [
-    { 
-        name: "Amara", 
-        age: 24, 
-        bio: "Loves jazz and sunset walks. Looking for deep conversations and authentic connections.", 
-        distance: "5 km",
-        job: "Marketing Manager",
-        company: "Creative Arts Agency",
-        school: "University of Lagos",
-        phone: "+234 801 234 5678",
-        country: "Nigeria",
-        gender: "female",
-        img: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=600&fit=crop", 
-        photos: [
-            "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop"
-        ],
-        verified: false,
-        isBot: false
-    },
-    { 
-        name: "Kwame", 
-        age: 28, 
-        bio: "Chef & Travel enthusiast. I cook amazing jollof rice and love exploring new cultures.", 
-        distance: "12 km",
-        job: "Executive Chef",
-        company: "Golden Spoon Restaurant",
-        school: "Ghana Institute of Catering",
-        phone: "+233 24 567 8901",
-        country: "Ghana",
-        gender: "male",
-        img: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop", 
-        photos: [
-            "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
-        ],
-        verified: false,
-        isBot: false
-    },
-    { 
-        name: "Zara", 
-        age: 26, 
-        bio: "Artist & Dreamer. I paint my emotions and dance when no one's watching.", 
-        distance: "8 km",
-        job: "Visual Artist",
-        company: "Self Employed",
-        school: "Makerere University",
-        phone: "+256 78 901 2345",
-        country: "Uganda",
-        gender: "female",
-        img: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop", 
-        photos: [
-            "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=600&fit=crop"
-        ],
-        verified: false,
-        isBot: false
-    },
-    { 
-        name: "Thabo", 
-        age: 30, 
-        bio: "Tech entrepreneur building the future. Love hiking and wine tasting.", 
-        distance: "15 km",
-        job: "CEO & Founder",
-        company: "AfriTech Solutions",
-        school: "University of Cape Town",
-        phone: "+27 83 456 7890",
-        country: "South Africa",
-        gender: "male",
-        img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop", 
-        photos: [
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
-        ],
-        verified: false,
-        isBot: false
-    },
-    { 
-        name: "Nia", 
-        age: 23, 
-        bio: "Dancer & Poet. My body speaks when words fail me.", 
-        distance: "3 km",
-        job: "Dance Instructor",
-        company: "Lagos Dance Academy",
-        school: "University of Lagos",
-        phone: "+234 802 345 6789",
-        country: "Nigeria",
-        gender: "female",
-        img: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop", 
-        photos: [
-            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=600&fit=crop"
-        ],
-        verified: false,
-        isBot: false
-    },
-    { 
-        name: "Kofi", 
-        age: 27, 
-        bio: "Music producer. I create beats that make you move. Looking for my muse.", 
-        distance: "20 km",
-        job: "Music Producer",
-        company: "Beat Masters Studio",
-        school: "National Film & Television Institute",
-        phone: "+233 20 123 4567",
-        country: "Ghana",
-        gender: "male",
-        img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop", 
-        photos: [
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=600&fit=crop"
-        ],
-        verified: false,
-        isBot: false
-    },
-    { 
-        name: "Amina", 
-        age: 25, 
-        bio: "Medical student passionate about healthcare. Love reading and volunteering.", 
-        distance: "7 km",
-        job: "Medical Student",
-        company: "University of Nairobi",
-        school: "University of Nairobi",
-        phone: "+254 712 345 678",
-        country: "Kenya",
-        gender: "female",
-        img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=600&fit=crop", 
-        photos: [
-            "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=600&fit=crop"
-        ],
-        verified: false,
-        isBot: false
-    },
-    { 
-        name: "David", 
-        age: 29, 
-        bio: "Photographer capturing Africa's beauty. Always looking for new adventures.", 
-        distance: "11 km",
-        job: "Professional Photographer",
-        company: "Lens Africa",
-        school: "Multimedia University",
-        phone: "+254 723 456 789",
-        country: "Kenya",
-        gender: "male",
-        img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop", 
-        photos: [
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=600&fit=crop"
-        ],
-        verified: false,
-        isBot: false
-    },
-    { 
-        name: "Fatima", 
-        age: 24, 
-        bio: "Fashion designer creating modern African wear. Love fashion shows and tea.", 
-        distance: "9 km",
-        job: "Fashion Designer",
-        company: "Fatima Designs",
-        school: "University of Dar es Salaam",
-        phone: "+255 654 321 098",
-        country: "Tanzania",
-        gender: "female",
-        img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop", 
-        photos: [
-            "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=600&fit=crop"
-        ],
-        verified: false,
-        isBot: false
-    },
-    { 
-        name: "James", 
-        age: 31, 
-        bio: "Banker by day, poet by night. Looking for someone to share sunsets with.", 
-        distance: "14 km",
-        job: "Investment Banker",
-        company: "Standard Bank",
-        school: "University of Zambia",
-        phone: "+260 97 123 4567",
-        country: "Zambia",
-        gender: "male",
-        img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=600&fit=crop", 
-        photos: [
-            "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=600&fit=crop",
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=600&fit=crop"
-        ],
-        verified: false,
-        isBot: false
-    }
-];
+// All hardcoded bot/demo profiles have been removed.
+// Only real registered users from Firebase/localStorage will appear.
+const profiles = [];
 
-let nearbyPeople = [
-    { name: "Amina", age: 25, distance: "0.5 km", img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=400&fit=crop", online: true, isBot: false },
-    { name: "David", age: 29, distance: "1.2 km", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop", online: true, isBot: false },
-    { name: "Fatima", age: 24, distance: "2.1 km", img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop", online: false, isBot: false },
-    { name: "James", age: 31, distance: "3.5 km", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop", online: true, isBot: false },
-    { name: "Zainab", age: 27, distance: "4.2 km", img: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=400&fit=crop", online: false, isBot: false },
-    { name: "Michael", age: 26, distance: "4.8 km", img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop", online: true, isBot: false },
-];
+// All hardcoded nearby people have been removed.
+// Nearby section will only show real registered users.
+let nearbyPeople = [];
 
 let matches = [];
 let chats = [];

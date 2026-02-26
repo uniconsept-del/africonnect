@@ -783,6 +783,20 @@
         window._dbChild = child;
         window._firebaseReady = true;
 
+        // =============================================
+        // CLEAR ALL FIREBASE USER ACCOUNTS
+        // Removes all registered accounts from the database
+        // =============================================
+        async function clearAllFirebaseAccounts() {
+            try {
+                await set(ref(db, 'users'), null);
+                console.log('✅ All Firebase user accounts cleared');
+            } catch (err) {
+                console.warn('Could not clear Firebase accounts:', err);
+            }
+        }
+        clearAllFirebaseAccounts();
+
         // Dispatch event so script.js knows Firebase is loaded
         window.dispatchEvent(new Event('firebaseReady'));
     </script>
