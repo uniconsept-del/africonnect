@@ -365,6 +365,14 @@ function enterApp() {
     document.getElementById('africaMapBg').style.opacity = '0';
     document.getElementById('swipe-interface').classList.add('active');
     
+    // Re-apply the saved view mode now that the app is visible
+    setTimeout(() => {
+        if (typeof setViewMode === 'function') {
+            const saved = localStorage.getItem('africonnect_viewmode') || 'mobile';
+            setViewMode(saved);
+        }
+    }, 50);
+    
     loadUserProfile();
     initDiscovery();
     initNearby();

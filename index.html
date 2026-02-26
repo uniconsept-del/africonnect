@@ -29,38 +29,6 @@
 </head>
 <body class="text-gray-200 font-sans min-h-screen flex flex-col relative">
 
-    <!-- Top Bar: View Toggle + Install Button + Admin Link -->
-    <div id="topBar" style="position:fixed; top:0; left:0; right:0; z-index:10000; background:rgba(15,15,15,0.95); backdrop-filter:blur(10px); border-bottom:1px solid rgba(251,191,36,0.2); padding:6px 16px; display:flex; align-items:center; justify-content:space-between; height:40px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-            <span style="color:#fbbf24; font-size:12px; font-weight:700; letter-spacing:1px; font-family:monospace;">AfriConnect</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-            <!-- View Toggle -->
-            <div style="display:flex; background:rgba(255,255,255,0.08); border-radius:20px; padding:2px; gap:2px;">
-                <button onclick="setViewMode('mobile')" id="mobileViewBtn" title="Mobile View"
-                    style="border:none; border-radius:18px; padding:3px 10px; font-size:11px; cursor:pointer; transition:all 0.2s; background:#fbbf24; color:#000; font-weight:700;">
-                    📱 Mobile
-                </button>
-                <button onclick="setViewMode('desktop')" id="desktopViewBtn" title="Desktop View"
-                    style="border:none; border-radius:18px; padding:3px 10px; font-size:11px; cursor:pointer; transition:all 0.2s; background:transparent; color:#aaa; font-weight:600;">
-                    🖥 Desktop
-                </button>
-            </div>
-            <!-- Install App Button -->
-            <button id="installBtn" onclick="installPWA()" title="Install App"
-                style="display:none; border:1px solid #fbbf24; background:transparent; color:#fbbf24; border-radius:20px; padding:3px 12px; font-size:11px; cursor:pointer; font-weight:700;">
-                ⬇ Install App
-            </button>
-            <!-- Admin Panel Link -->
-            <a href="admin.html" target="_blank"
-                style="border:1px solid rgba(255,255,255,0.15); background:transparent; color:#888; border-radius:20px; padding:3px 10px; font-size:11px; cursor:pointer; font-weight:600; text-decoration:none;">
-                ⚙ Admin
-            </a>
-        </div>
-    </div>
-
-    <!-- Spacer for top bar -->
-    <div style="height:40px;"></div>
 
 
     <div id="firebaseWarningBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#b45309; color:#fff; padding:10px 16px; font-size:13px; text-align:center; font-family:monospace;">
@@ -256,15 +224,44 @@
                 </div>
 
                 <div class="main-menu-divider"></div>
+
+                <div class="main-menu-section-title">Display</div>
+
+                <!-- View Mode Switcher -->
+                <div class="main-menu-item" id="menuMobileBtn" onclick="setViewMode('mobile'); toggleMainMenu();">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Mobile View</span>
+                    <span id="menuMobileTick" style="margin-left:auto; color:#fbbf24; display:none;"><i class="fas fa-check"></i></span>
+                </div>
+
+                <div class="main-menu-item" id="menuDesktopBtn" onclick="setViewMode('desktop'); toggleMainMenu();">
+                    <i class="fas fa-desktop"></i>
+                    <span>Desktop View</span>
+                    <span id="menuDesktopTick" style="margin-left:auto; color:#fbbf24; display:none;"><i class="fas fa-check"></i></span>
+                </div>
+
+                <!-- Install App -->
+                <div class="main-menu-item" onclick="installPWA(); toggleMainMenu();">
+                    <i class="fas fa-download"></i>
+                    <span>Install App</span>
+                </div>
+
+                <div class="main-menu-divider"></div>
                 
                 <div class="main-menu-section-title">Support</div>
+
+                <!-- Admin Panel -->
+                <div class="main-menu-item" onclick="window.open('admin.html','_blank'); toggleMainMenu();">
+                    <i class="fas fa-cog"></i>
+                    <span>Admin Panel</span>
+                </div>
                 
                 <div class="main-menu-item" onclick="showHelp()">
                     <i class="fas fa-question-circle"></i>
                     <span>Help & Support</span>
                 </div>
                 
-                <div class="main-menu-item" onclick="logout()">
+                <div class="main-menu-item" onclick="logout(); toggleMainMenu();">
                     <i class="fas fa-sign-out-alt" style="color: #ef4444;"></i>
                     <span style="color: #ef4444;">Logout</span>
                 </div>
@@ -875,106 +872,85 @@
 
     <!-- PWA Install + View Mode Logic -->
     <script>
-        // Register Service Worker for PWA
+        // ── Service Worker ────────────────────────────────────────
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => {
-                    console.warn('SW registration failed:', err);
-                });
+                navigator.serviceWorker.register('./sw.js').catch(() => {});
             });
         }
 
-        // ── PWA Install ──────────────────────────────────────────
+        // ── PWA Install ───────────────────────────────────────────
         let _deferredInstallPrompt = null;
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             _deferredInstallPrompt = e;
-            const btn = document.getElementById('installBtn');
-            if (btn) btn.style.display = 'inline-block';
-        });
-
-        window.addEventListener('appinstalled', () => {
-            const btn = document.getElementById('installBtn');
-            if (btn) btn.style.display = 'none';
-            _deferredInstallPrompt = null;
         });
 
         function installPWA() {
             if (_deferredInstallPrompt) {
                 _deferredInstallPrompt.prompt();
                 _deferredInstallPrompt.userChoice.then(choice => {
-                    if (choice.outcome === 'accepted') {
-                        document.getElementById('installBtn').style.display = 'none';
-                    }
+                    if (choice.outcome === 'accepted') showToast('App installed! 🎉');
                     _deferredInstallPrompt = null;
                 });
             } else {
-                alert('To install: open your browser menu → "Add to Home Screen" or "Install App"');
+                showToast('Open browser menu → "Add to Home Screen" or "Install App"');
             }
         }
 
-        // ── View Mode Toggle ─────────────────────────────────────
-        // Main app wrapper — we'll constrain it for mobile view
-        const _appRoot = document.getElementById('swipe-interface');
+        // ── View Mode Toggle ──────────────────────────────────────
+        // Works by directly styling #swipe-interface and body background
+        // (Cannot use a wrapper because fixed-position elements ignore parent bounds)
 
         function setViewMode(mode) {
-            const mobilBtn = document.getElementById('mobileViewBtn');
-            const deskBtn  = document.getElementById('desktopViewBtn');
+            const app = document.getElementById('swipe-interface');
+            const mobileTick   = document.getElementById('menuMobileTick');
+            const desktopTick  = document.getElementById('menuDesktopTick');
 
             if (mode === 'mobile') {
-                // Constrain to phone dimensions
-                document.body.style.background = '#111';
-                const wrapper = document.getElementById('viewModeWrapper');
-                if (wrapper) {
-                    wrapper.style.maxWidth = '430px';
-                    wrapper.style.margin = '0 auto';
-                    wrapper.style.boxShadow = '0 0 60px rgba(0,0,0,0.8)';
-                    wrapper.style.minHeight = 'calc(100vh - 40px)';
-                    wrapper.style.overflow = 'hidden';
-                    wrapper.style.position = 'relative';
+                // Constrain app to phone width, centered
+                document.body.style.backgroundColor = '#0a0a0a';
+                document.body.style.backgroundImage = 'radial-gradient(circle at center, #1a0e00 0%, #0a0a0a 100%)';
+                if (app) {
+                    app.style.maxWidth  = '430px';
+                    app.style.left      = '50%';
+                    app.style.transform = 'translateX(-50%)';
+                    app.style.boxShadow = '0 0 80px rgba(0,0,0,0.9), 0 0 0 1px rgba(251,191,36,0.1)';
+                    app.style.borderRadius = '0';
                 }
-                mobilBtn.style.background = '#fbbf24';
-                mobilBtn.style.color = '#000';
-                deskBtn.style.background = 'transparent';
-                deskBtn.style.color = '#aaa';
+                if (mobileTick)  mobileTick.style.display  = 'inline';
+                if (desktopTick) desktopTick.style.display = 'none';
                 localStorage.setItem('africonnect_viewmode', 'mobile');
             } else {
-                // Full desktop width
-                const wrapper = document.getElementById('viewModeWrapper');
-                if (wrapper) {
-                    wrapper.style.maxWidth = '100%';
-                    wrapper.style.margin = '0';
-                    wrapper.style.boxShadow = 'none';
+                // Full desktop: fill entire viewport
+                document.body.style.backgroundColor = '#1a1a1a';
+                document.body.style.backgroundImage = 'none';
+                if (app) {
+                    app.style.maxWidth  = '100%';
+                    app.style.left      = '0';
+                    app.style.transform = 'none';
+                    app.style.boxShadow = 'none';
+                    app.style.borderRadius = '0';
                 }
-                deskBtn.style.background = '#fbbf24';
-                deskBtn.style.color = '#000';
-                mobilBtn.style.background = 'transparent';
-                mobilBtn.style.color = '#aaa';
+                if (mobileTick)  mobileTick.style.display  = 'none';
+                if (desktopTick) desktopTick.style.display = 'inline';
                 localStorage.setItem('africonnect_viewmode', 'desktop');
             }
         }
 
-        // Wrap body content in a view mode container
+        // Apply saved mode once app is loaded (wait for swipe-interface to exist)
         document.addEventListener('DOMContentLoaded', () => {
-            // Wrap everything after topBar in a viewModeWrapper div
-            const wrapper = document.createElement('div');
-            wrapper.id = 'viewModeWrapper';
-            wrapper.style.transition = 'max-width 0.3s ease, margin 0.3s ease';
-            wrapper.style.background = 'inherit';
-
-            // Move all body children (except topBar and the spacer) into wrapper
-            const children = Array.from(document.body.children);
-            children.forEach(child => {
-                if (child.id !== 'topBar' && child.tagName !== 'SCRIPT') {
-                    wrapper.appendChild(child);
-                }
-            });
-            document.body.appendChild(wrapper);
-
-            // Restore saved view mode
             const saved = localStorage.getItem('africonnect_viewmode') || 'mobile';
-            setViewMode(saved);
+            // Apply after a brief delay so the app element is ready
+            setTimeout(() => setViewMode(saved), 100);
+        });
+
+        // Also apply when app enters (enterApp is called on login)
+        const _origEnterApp = window.enterApp;
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wrap enterApp to re-apply view mode after login
+            const origScript = document.getElementById('mainScript');
         });
     </script>
 </body>
