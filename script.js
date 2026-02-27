@@ -444,6 +444,89 @@ async function handleSignup(e) {
     }
 }
 
+// ==========================================
+// INITIALIZE STARTER CONTENT FOR NEW USERS
+// ==========================================
+
+function initializeStarterContent() {
+    if (!currentUser) return;
+    
+    // If user already has matches and chats, don't override them
+    if (currentUser.matches && currentUser.matches.length > 0) return;
+    
+    // Select 5-8 random bot profiles as initial matches
+    const botProfiles = profiles.filter(p => p.isBot);
+    const shuffled = botProfiles.sort(() => 0.5 - Math.random());
+    const starterMatches = shuffled.slice(0, Math.floor(Math.random() * 4) + 5); // 5-8 matches
+    
+    currentUser.matches = starterMatches.map(profile => ({
+        name: profile.name,
+        age: profile.age,
+        bio: profile.bio,
+        distance: profile.distance,
+        job: profile.job,
+        company: profile.company,
+        school: profile.school,
+        phone: profile.phone,
+        country: profile.country,
+        gender: profile.gender,
+        img: profile.img,
+        photos: profile.photos,
+        verified: profile.verified,
+        verificationBadge: profile.verificationBadge,
+        isBot: profile.isBot,
+        lastActive: ['Just now', '5m ago', '2h ago', 'Today'][Math.floor(Math.random() * 4)]
+    }));
+    
+    // Create 2-3 starter chat conversations
+    const starterChats = starterMatches.slice(0, Math.floor(Math.random() * 2) + 2).map(profile => {
+        const greetings = [
+            "Hey! I saw your profile and thought we'd vibe 😊",
+            "Hi there! You seem really interesting. How's your day going?",
+            "Hello! I love your profile. What do you do for fun?",
+            "Hey! Nice to match with you. Tell me something interesting about yourself!",
+            "Hi! I'm excited to chat with you. What brought you to AfriConnect?"
+        ];
+        
+        const greeting = greetings[Math.floor(Math.random() * greetings.length)];
+        
+        return {
+            name: profile.name,
+            message: greeting,
+            time: ['Just now', '5m ago', '1h ago', '2h ago'][Math.floor(Math.random() * 4)],
+            unread: Math.random() > 0.5 ? Math.floor(Math.random() * 3) + 1 : 0,
+            img: profile.img,
+            bio: profile.bio,
+            job: profile.job,
+            company: profile.company,
+            school: profile.school,
+            phone: profile.phone,
+            age: profile.age,
+            photos: profile.photos,
+            isBot: profile.isBot
+        };
+    });
+    
+    currentUser.chats = starterChats;
+    
+    // Initialize chat histories with the greeting messages
+    starterChats.forEach(chat => {
+        chatHistories[chat.name] = [
+            { text: "You matched! Say hello 👋", sent: false, time: "Earlier" },
+            { text: chat.message, sent: false, time: chat.time }
+        ];
+    });
+    
+    // Save to storage
+    if (window._firebaseReady) {
+        window._dbSet(window._dbRef(window._db, `users/${currentUser.username}`), currentUser);
+    }
+    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+    users[currentUser.username] = currentUser;
+    localStorage.setItem('afriConnect_users', JSON.stringify(users));
+    localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
+}
+
 function enterApp() {
     document.getElementById('interface-container').style.display = 'none';
     document.getElementById('touchLamp').style.display = 'none';
@@ -457,6 +540,9 @@ function enterApp() {
             setViewMode(saved);
         }
     }, 50);
+    
+    // Initialize starter matches and chats for new users
+    initializeStarterContent();
     
     loadUserProfile();
     initDiscovery();
