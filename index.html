@@ -610,7 +610,7 @@
                     <div class="verif-shop-header">
                         <div>
                             <h3 class="text-base font-bold text-yellow-500">Get Verified</h3>
-                            <p class="text-xs text-gray-400 mt-1">Stand out with a badge · Access community group chats</p>
+                            <p class="text-xs text-gray-400 mt-1">Stand out with a verification badge</p>
                         </div>
                         <span id="currentBadgeDisplay" style="font-size:22px;"></span>
                     </div>
@@ -620,9 +620,9 @@
                             <div class="verif-tier-icon">🥈</div>
                             <div class="verif-tier-info">
                                 <div class="verif-tier-name" style="color:#94a3b8;">Silver Verified</div>
-                                <div class="verif-tier-desc">70 msgs/day in groups · 30 days · Silver badge</div>
+                                <div class="verif-tier-desc">Basic trust badge · Shows on your profile</div>
                             </div>
-                            <div class="verif-tier-price">₦3,000</div>
+                            <div class="verif-tier-price">$2.99</div>
                         </div>
                         <!-- Gold -->
                         <div class="verif-tier verif-tier-popular" onclick="purchaseVerification('gold')">
@@ -630,18 +630,18 @@
                             <div class="verif-tier-icon">🥇</div>
                             <div class="verif-tier-info">
                                 <div class="verif-tier-name" style="color:#fbbf24;">Gold Verified</div>
-                                <div class="verif-tier-desc">100 msgs/day in groups · 30 days · Gold badge</div>
+                                <div class="verif-tier-desc">Priority in Discover · Gold badge · More matches</div>
                             </div>
-                            <div class="verif-tier-price">₦5,000</div>
+                            <div class="verif-tier-price">$7.99</div>
                         </div>
                         <!-- Diamond -->
                         <div class="verif-tier verif-tier-diamond" onclick="purchaseVerification('diamond')">
                             <div class="verif-tier-icon">💎</div>
                             <div class="verif-tier-info">
                                 <div class="verif-tier-name" style="color:#67e8f9;">Diamond Verified</div>
-                                <div class="verif-tier-desc">UNLIMITED msgs in groups · 30 days · Diamond badge</div>
+                                <div class="verif-tier-desc">Top placement · Diamond badge · Unlimited likes</div>
                             </div>
-                            <div class="verif-tier-price">₦10,000</div>
+                            <div class="verif-tier-price">$14.99</div>
                         </div>
                     </div>
                     <p class="text-center text-xs text-gray-600 mt-3">Payments are processed securely. Demo mode active.</p>
@@ -725,24 +725,13 @@
             <div class="group-members-preview" id="groupMembersPreview"></div>
         </div>
         <div class="chat-messages" id="groupChatMessages"></div>
-        <!-- Group msg limit counter -->
-        <div id="groupMsgLimitBar" style="display:none; padding:4px 12px; background:rgba(0,0,0,0.6); border-top:1px solid rgba(255,255,255,0.06);">
-            <span id="groupMsgLimitText" style="font-size:10px; color:#888;"></span>
-        </div>
-        <div class="chat-input-area" id="groupChatInputArea">
+        <div class="chat-input-area">
             <button class="text-gray-400 hover:text-yellow-400 text-lg">
                 <i class="fas fa-plus-circle"></i>
             </button>
             <input type="text" class="chat-input" id="groupChatInput" placeholder="Type a message..." onkeypress="handleGroupChatKeypress(event)">
             <button class="chat-send-btn" onclick="sendGroupMessage()">
                 <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
-        <!-- Locked state for unverified users -->
-        <div id="groupLockedBanner" style="display:none;" class="group-locked-banner">
-            <p>🔒 Community group chat requires a verification badge.<br>Get verified to unlock group messaging.</p>
-            <button onclick="closeGroupChat(); showSection('profile', false); setTimeout(()=>{ const c=document.getElementById('verificationShopCard'); if(c) c.scrollIntoView({behavior:'smooth',block:'center'}); }, 400);">
-                🏅 Get Verified
             </button>
         </div>
     </div>
@@ -927,15 +916,13 @@
         <div class="verif-purchase-card">
             <span class="verif-purchase-icon" id="verifModalIcon">🥇</span>
             <div class="verif-purchase-title" id="verifModalTitle">Gold Verified</div>
-            <div class="verif-purchase-desc" id="verifModalDesc">Gold badge · 100 messages/day in community groups for 30 days.</div>
+            <div class="verif-purchase-desc" id="verifModalDesc">Get the Gold badge and appear higher in Discovery results.</div>
             <div class="verif-purchase-price-box">
-                <div class="verif-purchase-price" id="verifModalPrice">₦5,000</div>
-                <div class="verif-purchase-price-label">30-day access · Badge on your profile</div>
+                <div class="verif-purchase-price" id="verifModalPrice">$7.99</div>
+                <div class="verif-purchase-price-label">One-time payment · Lifetime badge</div>
             </div>
-            <!-- Payment Details — filled dynamically -->
-            <div id="verifPaymentDetails"></div>
             <button class="verif-btn-confirm" id="verifConfirmBtn" onclick="confirmVerificationPurchase()">
-                ✅ I've Made Payment
+                🔒 Complete Purchase
             </button>
             <button class="verif-btn-cancel" onclick="closeVerifModal()">Cancel</button>
         </div>
