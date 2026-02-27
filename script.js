@@ -613,18 +613,19 @@ function loadUserProfile() {
         el.onerror = () => { el.src = fallback; };
     });
 
-    // Name display in menu + profile header
+    // Name display in menu + profile header - use profile name or username as fallback
+    const displayName = p.name || currentUser.username || 'User';
     const menuName = document.getElementById('menuUserName');
-    if (menuName) menuName.textContent = p.name || currentUser.username;
+    if (menuName) menuName.textContent = displayName;
 
     const dispName = document.getElementById('profileDisplayName');
     const dispAge  = document.getElementById('profileDisplayAge');
-    if (dispName) dispName.textContent = p.name || currentUser.username;
+    if (dispName) dispName.textContent = displayName;
     if (dispAge)  dispAge.textContent  = p.age ? `${p.age} years old` : '';
 
     // Form fields
     const f = (id, val) => { const el = document.getElementById(id); if (el) el.value = (val !== undefined && val !== null) ? val : ''; };
-    f('profileName',    p.name);
+    f('profileName',    p.name || currentUser.username || '');
     f('profileAge',     p.age);
     f('profileBio',     p.bio);
     f('profileJob',     p.job);
@@ -659,7 +660,7 @@ function loadUserProfile() {
 async function saveProfile() {
     if (!currentUser) return;
     
-    currentUser.profile.name = document.getElementById('profileName').value;
+    currentUser.profile.name = document.getElementById('profileName').value || currentUser.username;
     currentUser.profile.age = document.getElementById('profileAge').value;
     currentUser.profile.bio = document.getElementById('profileBio').value;
     currentUser.profile.job = document.getElementById('profileJob').value;
@@ -680,7 +681,11 @@ async function saveProfile() {
     localStorage.setItem('afriConnect_users', JSON.stringify(users));
     localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
     
-    document.getElementById('menuUserName').textContent = currentUser.profile.name;
+    // Update display name
+    const displayName = currentUser.profile.name || currentUser.username;
+    document.getElementById('menuUserName').textContent = displayName;
+    const dispName = document.getElementById('profileDisplayName');
+    if (dispName) dispName.textContent = displayName;
     
     showToast("Profile saved! ✓");
 }
@@ -1247,11 +1252,13 @@ function getAllDiscoverableProfiles() {
     
     Object.values(mergedUsers).forEach(user => {
         if (currentUser && user.username === currentUser.username) return;
+        if (!user.profile) return; // Skip users without profiles
         
-        const exists = allProfiles.some(p => p.name === (user.profile && user.profile.name ? user.profile.name : user.username));
+        const userName = user.profile.name || user.username || 'User';
+        const exists = allProfiles.some(p => p.name === userName);
         if (!exists) {
             const userProfile = {
-                name: user.profile.name || user.username,
+                name: userName,
                 age: user.profile.age || 24,
                 bio: user.profile.bio || 'New to AfriConnect',
                 distance: `${Math.floor(Math.random() * 20) + 1} km`,
@@ -1259,7 +1266,7 @@ function getAllDiscoverableProfiles() {
                 company: user.profile.company || 'AfriConnect',
                 school: user.profile.school || '',
                 phone: user.profile.phone || '',
-                country: 'Africa',
+                country: 'Africa 🌍',
                 gender: user.profile.gender === 'man' ? 'male' : (user.profile.gender === 'woman' ? 'female' : 'other'),
                 img: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos[0] : AFRICA_MAP_URL,
                 photos: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos : [AFRICA_MAP_URL],
@@ -1302,30 +1309,43 @@ function initDiscovery() {
 
 function renderDiscoveryGrid(profileList) {
     const grid = document.getElementById('discoveryGrid');
+    if (!grid) return;
+    
+    if (!profileList || profileList.length === 0) {
+        grid.innerHTML = '<div style="text-align: center; color: #888; padding: 40px; grid-column: 1/-1;">No profiles available. Check back later!</div>';
+        return;
+    }
+    
     grid.innerHTML = profileList.map(profile => {
         const verifiedBadge = profile.verified ? 
             `<span class="verification-badge"><i class="fas fa-check-circle"></i></span>` : '';
         
         const badgeIcon = getVerificationBadge(profile);
+        const profileImg = profile.img || AFRICA_MAP_URL;
+        const profileName = profile.name || 'User';
+        const profileAge = profile.age || '?';
+        const profileDistance = profile.distance || 'Nearby';
+        const profileCountry = profile.country || 'Africa 🌍';
+        
         return `
-        <div class="grid-profile-card" onclick="viewProfileDetails('${profile.name}', 'discover')">
-            <img src="${profile.img}" class="grid-profile-image" alt="${profile.name}">
+        <div class="grid-profile-card" onclick="viewProfileDetails('${profileName}', 'discover')">
+            <img src="${profileImg}" class="grid-profile-image" alt="${profileName}" onerror="this.src='${AFRICA_MAP_URL}'">
             ${badgeIcon ? `<div style="position:absolute;top:4px;left:4px;z-index:2;">${badgeIcon}</div>` : ''}
             <div class="grid-profile-info">
                 <div class="flex items-center mb-1">
-                    <h3 class="text-sm font-bold text-white">${profile.name}, ${profile.age}</h3>
+                    <h3 class="text-sm font-bold text-white">${profileName}, ${profileAge}</h3>
                 </div>
-                <p class="text-yellow-500 text-xs mb-1"><i class="fas fa-map-marker-alt mr-1"></i>${profile.distance}</p>
-                <p class="text-gray-400 text-xs">${profile.country}</p>
+                <p class="text-yellow-500 text-xs mb-1"><i class="fas fa-map-marker-alt mr-1"></i>${profileDistance}</p>
+                <p class="text-gray-400 text-xs">${profileCountry}</p>
             </div>
             <div class="grid-profile-actions">
-                <button class="grid-action-btn pass" onclick="event.stopPropagation(); passProfile('${profile.name}')">
+                <button class="grid-action-btn pass" onclick="event.stopPropagation(); passProfile('${profileName}')">
                     <i class="fas fa-times"></i>
                 </button>
-                <button class="grid-action-btn like" onclick="event.stopPropagation(); likeProfile('${profile.name}')">
+                <button class="grid-action-btn like" onclick="event.stopPropagation(); likeProfile('${profileName}')">
                     <i class="fas fa-heart"></i>
                 </button>
-                <button class="grid-action-btn super" onclick="event.stopPropagation(); superLikeProfile('${profile.name}')">
+                <button class="grid-action-btn super" onclick="event.stopPropagation(); superLikeProfile('${profileName}')">
                     <i class="fas fa-star"></i>
                 </button>
             </div>
@@ -1660,6 +1680,16 @@ function updateNotificationBadge() {
 
 function initGroups() {
     const container = document.getElementById('groupsContainer');
+    if (!container) {
+        console.warn('Groups container not found');
+        return;
+    }
+    
+    if (!africanCountries || africanCountries.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">Community groups will be available soon!</div>';
+        return;
+    }
+    
     container.innerHTML = africanCountries.map(country => `
         <div class="country-group">
             <div class="country-header" onclick="toggleCountry('${country.name}')">
@@ -2600,21 +2630,28 @@ function initMatches() {
     }
     
     const grid = document.getElementById('matchesGrid');
+    if (!grid) return;
     
     if (matches.length === 0) {
         grid.innerHTML = '<div style="text-align: center; color: #888; padding: 40px; grid-column: 1/-1;">No matches yet. Start liking profiles!</div>';
         return;
     }
     
-    grid.innerHTML = matches.map(match => `
-        <div class="match-card" onclick="viewProfileDetails('${match.name}', 'matches')">
-            <img src="${match.img}" alt="${match.name}">
+    grid.innerHTML = matches.map(match => {
+        const imgSrc = match.img || AFRICA_MAP_URL;
+        const matchName = match.name || 'User';
+        const matchAge = match.age || '?';
+        const lastActive = match.lastActive || 'Recently active';
+        return `
+        <div class="match-card" onclick="viewProfileDetails('${matchName}', 'matches')">
+            <img src="${imgSrc}" alt="${matchName}" onerror="this.src='${AFRICA_MAP_URL}'">
             <div class="match-overlay">
-                <h4 class="font-bold text-white text-sm">${match.name}, ${match.age}</h4>
-                <p class="text-xs text-green-400">${match.lastActive}</p>
+                <h4 class="font-bold text-white text-sm">${matchName}, ${matchAge}</h4>
+                <p class="text-xs text-green-400">${lastActive}</p>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function initChats() {
@@ -2640,20 +2677,27 @@ function initChats() {
         return;
     }
 
-    list.innerHTML = chats.map(chat => `
-        <div class="chat-item" onclick="openChat('${chat.name}')">
-            <img src="${chat.img || AFRICA_MAP_URL}" class="chat-avatar" alt="${chat.name}"
+    list.innerHTML = chats.map(chat => {
+        const chatImg = chat.img || AFRICA_MAP_URL;
+        const chatName = chat.name || 'User';
+        const chatMessage = chat.message || 'Start a conversation';
+        const chatTime = chat.time || '';
+        const unreadCount = chat.unread || 0;
+        return `
+        <div class="chat-item" onclick="openChat('${chatName}')">
+            <img src="${chatImg}" class="chat-avatar" alt="${chatName}"
                  onerror="this.src='${AFRICA_MAP_URL}'">
             <div class="chat-preview">
-                <div class="chat-name">${chat.name}</div>
-                <div class="chat-message">${chat.message || ''}</div>
+                <div class="chat-name">${chatName}</div>
+                <div class="chat-message">${chatMessage}</div>
             </div>
             <div class="text-right">
-                <div class="chat-time">${chat.time || ''}</div>
-                ${(chat.unread || 0) > 0 ? `<div class="unread-badge">${chat.unread}</div>` : ''}
+                <div class="chat-time">${chatTime}</div>
+                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // ==========================================
@@ -2673,15 +2717,37 @@ function showToast(message = "It's a Match! 🎉") {
 
 function renderPhotoGrid() {
     const grid = document.getElementById('photoGrid');
+    if (!grid) return;
     grid.innerHTML = '';
     
-    const photos = currentUser ? (currentUser.profile.photos || [AFRICA_MAP_URL]) : userProfile.photos;
+    // Get photos from currentUser profile, fallback to default
+    let photos = [];
+    if (currentUser && currentUser.profile && currentUser.profile.photos) {
+        photos = currentUser.profile.photos;
+    } else if (currentUser && currentUser.profile) {
+        photos = [AFRICA_MAP_URL]; // Default photo if none exists
+        currentUser.profile.photos = photos; // Initialize photos array
+    } else if (userProfile && userProfile.photos) {
+        photos = userProfile.photos;
+    } else {
+        photos = [AFRICA_MAP_URL];
+    }
+    
+    // Ensure at least one photo exists
+    if (photos.length === 0) {
+        photos = [AFRICA_MAP_URL];
+        if (currentUser && currentUser.profile) {
+            currentUser.profile.photos = photos;
+        } else if (userProfile) {
+            userProfile.photos = photos;
+        }
+    }
     
     photos.forEach((photo, index) => {
         const slot = document.createElement('div');
         slot.className = 'photo-slot';
         slot.innerHTML = `
-            <img src="${photo}" alt="Photo ${index + 1}">
+            <img src="${photo}" alt="Photo ${index + 1}" onerror="this.src='${AFRICA_MAP_URL}'">
             ${index === 0 ? '<span class="main-photo-badge">MAIN</span>' : ''}
             <div class="delete-photo" onclick="deletePhoto(${index})">
                 <i class="fas fa-times"></i>
