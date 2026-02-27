@@ -186,32 +186,41 @@ const AFRICA_MAP_URL = 'https://static.vecteezy.com/system/resources/previews/00
 
 async function initAuth() {
     const session = localStorage.getItem('afriConnect_session');
-    if (session) {
+    if (!session) return;
+
+    let saved;
+    try { saved = JSON.parse(session); } catch(e) { localStorage.removeItem('afriConnect_session'); return; }
+    if (!saved || !saved.username) { localStorage.removeItem('afriConnect_session'); return; }
+
+    // Always try localStorage cache first for instant load
+    const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+    if (localUsers[saved.username]) {
+        currentUser = localUsers[saved.username];
+        enterApp();
+        subscribeToIncomingMessages();
+    }
+
+    // Then sync with Firebase in the background (don't block or logout on failure)
+    if (window._firebaseReady) {
         try {
-            const saved = JSON.parse(session);
-            if (window._firebaseReady) {
-                const snapshot = await window._dbGet(window._dbRef(window._db, `users/${saved.username}`));
-                if (snapshot.exists()) {
-                    currentUser = snapshot.val();
+            const snapshot = await window._dbGet(window._dbRef(window._db, `users/${saved.username}`));
+            if (snapshot.exists()) {
+                currentUser = snapshot.val();
+                // Update local cache
+                localUsers[saved.username] = currentUser;
+                localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
+                // If we hadn't entered the app yet (no local cache), enter now
+                if (!document.getElementById('swipe-interface').classList.contains('active')) {
                     enterApp();
-                } else {
-                    localStorage.removeItem('afriConnect_session');
-                    currentUser = null;
+                    subscribeToIncomingMessages();
                 }
-            } else {
-                // Firebase not configured yet - fall back to localStorage
-                const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-                if (users[saved.username]) {
-                    currentUser = users[saved.username];
-                    enterApp();
-                } else {
-                    localStorage.removeItem('afriConnect_session');
-                    currentUser = null;
-                }
+            } else if (!currentUser) {
+                // Account truly doesn't exist anywhere
+                localStorage.removeItem('afriConnect_session');
             }
         } catch (e) {
-            localStorage.removeItem('afriConnect_session');
-            currentUser = null;
+            // Firebase failed — we already restored from localStorage above, so stay logged in
+            console.warn('Firebase session sync failed, using cached data:', e);
         }
     }
 }
@@ -2406,11 +2415,21 @@ function closeChat() {
 function renderMessages(userName) {
     const container = document.getElementById('chatMessages');
     const messages = chatHistories[userName] || [];
-    
+
+    // Get avatars
+    const myAvatar = (currentUser && currentUser.profile && currentUser.profile.photos && currentUser.profile.photos[0])
+        ? currentUser.profile.photos[0] : AFRICA_MAP_URL;
+    const partnerAvatar = (currentChatUser && currentChatUser.img)
+        ? currentChatUser.img : AFRICA_MAP_URL;
+
     container.innerHTML = messages.map(msg => `
         <div class="message ${msg.sent ? 'sent' : 'received'}">
-            <div>${msg.text}</div>
-            <div class="message-time">${msg.time}</div>
+            ${!msg.sent ? `<img src="${partnerAvatar}" class="msg-avatar msg-avatar-left" alt="${userName}" onerror="this.src='${AFRICA_MAP_URL}'">` : ''}
+            <div class="msg-bubble">
+                <div>${msg.text}</div>
+                <div class="message-time">${msg.time}</div>
+            </div>
+            ${msg.sent ? `<img src="${myAvatar}" class="msg-avatar msg-avatar-right" alt="You" onerror="this.src='${AFRICA_MAP_URL}'">` : ''}
         </div>
     `).join('');
     
@@ -3170,18 +3189,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Initialize auth — Firebase may or may not be ready
-    if (window._firebaseReady) {
+    let _authInitialized = false;
+    function _runInitAuth() {
+        if (_authInitialized) return;
+        _authInitialized = true;
         initAuth();
+    }
+
+    if (window._firebaseReady) {
+        _runInitAuth();
     } else {
         // Listen for firebaseReady (real config provided)
         window.addEventListener('firebaseReady', () => {
-            initAuth();
+            _runInitAuth();
         });
-        // If Firebase is not configured, init immediately with localStorage
+        // If Firebase is not configured, init immediately with localStorage after short delay
         setTimeout(() => {
-            if (!window._firebaseReady) {
-                initAuth();
-            }
+            _runInitAuth();
         }, 500);
     }
     
