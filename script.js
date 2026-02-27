@@ -185,41 +185,52 @@ let currentUser = null;
 const AFRICA_MAP_URL = 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg';
 
 async function initAuth() {
-    const session = localStorage.getItem('afriConnect_session');
-    if (!session) return;
+    const sessionStr = localStorage.getItem('afriConnect_session');
+    if (!sessionStr) return;
 
     let saved;
-    try { saved = JSON.parse(session); } catch(e) { localStorage.removeItem('afriConnect_session'); return; }
+    try { saved = JSON.parse(sessionStr); } catch(e) { localStorage.removeItem('afriConnect_session'); return; }
     if (!saved || !saved.username) { localStorage.removeItem('afriConnect_session'); return; }
 
-    // Step 1: Restore immediately from localStorage cache (prevents logout on refresh)
-    const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-    if (localUsers[saved.username]) {
-        currentUser = localUsers[saved.username];
-        enterApp();
-        subscribeToIncomingMessages();
+    const username = saved.username;
+    const localUsers = JSON.parse(localStorage.getItem('afriConnect_users') || '{}');
+
+    // ALWAYS restore from local cache first → user never gets logged out on refresh
+    if (localUsers[username]) {
+        currentUser = localUsers[username];
+        if (!document.getElementById('swipe-interface').classList.contains('active')) {
+            enterApp();
+        }
     }
 
-    // Step 2: Sync with Firebase in background — never log out on error
+    // Then sync from Firebase in background
     if (window._firebaseReady) {
         try {
-            const snapshot = await window._dbGet(window._dbRef(window._db, `users/${saved.username}`));
-            if (snapshot.exists()) {
-                currentUser = snapshot.val();
-                localUsers[saved.username] = currentUser;
+            const snap = await window._dbGet(window._dbRef(window._db, `users/${username}`));
+            if (snap.exists()) {
+                currentUser = snap.val();
+                localUsers[username] = currentUser;
                 localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
                 if (document.getElementById('swipe-interface').classList.contains('active')) {
-                    loadUserProfile();
+                    loadUserProfile(); // Refresh UI only
+                    subscribeToIncomingMessages();
                 } else {
                     enterApp();
-                    subscribeToIncomingMessages();
                 }
             } else if (!currentUser) {
+                // Account not found anywhere
                 localStorage.removeItem('afriConnect_session');
             }
-        } catch (e) {
-            console.warn('Firebase session sync failed — staying logged in with cached data:', e);
+        } catch(err) {
+            // Firebase error — already restored from cache above, stay logged in
+            console.warn('Firebase sync failed (staying logged in from cache):', err.message);
+            if (currentUser && !document.getElementById('swipe-interface').classList.contains('active')) {
+                enterApp();
+            }
         }
+    } else if (!currentUser) {
+        // No Firebase and no local cache
+        localStorage.removeItem('afriConnect_session');
     }
 }
 
@@ -590,59 +601,57 @@ function logout() {
 
 function loadUserProfile() {
     if (!currentUser || !currentUser.profile) return;
-    
-    const profile = currentUser.profile;
-    const avatarSrc = (profile.photos && profile.photos[0]) ? profile.photos[0] : AFRICA_MAP_URL;
+    const p = currentUser.profile;
+    const fallback = AFRICA_MAP_URL;
+    const avatar = (p.photos && p.photos[0]) ? p.photos[0] : fallback;
 
-    // Avatars with error fallback
-    const userAvatarEl = document.getElementById('userAvatar');
-    const menuAvatarEl = document.getElementById('menuUserAvatar');
-    if (userAvatarEl) { userAvatarEl.src = avatarSrc; userAvatarEl.onerror = () => { userAvatarEl.src = AFRICA_MAP_URL; }; }
-    if (menuAvatarEl) { menuAvatarEl.src = avatarSrc; menuAvatarEl.onerror = () => { menuAvatarEl.src = AFRICA_MAP_URL; }; }
+    // Avatars
+    ['userAvatar','menuUserAvatar'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.src = avatar;
+        el.onerror = () => { el.src = fallback; };
+    });
 
-    // Menu name
-    const menuNameEl = document.getElementById('menuUserName');
-    if (menuNameEl) menuNameEl.textContent = profile.name || currentUser.username;
+    // Name display in menu + profile header
+    const menuName = document.getElementById('menuUserName');
+    if (menuName) menuName.textContent = p.name || currentUser.username;
 
-    // Profile header name/age display
     const dispName = document.getElementById('profileDisplayName');
     const dispAge  = document.getElementById('profileDisplayAge');
-    if (dispName) dispName.textContent = profile.name || currentUser.username;
-    if (dispAge)  dispAge.textContent  = profile.age ? `${profile.age} years old` : '';
+    if (dispName) dispName.textContent = p.name || currentUser.username;
+    if (dispAge)  dispAge.textContent  = p.age ? `${p.age} years old` : '';
 
     // Form fields
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-    setVal('profileName',    profile.name);
-    setVal('profileAge',     profile.age);
-    setVal('profileBio',     profile.bio);
-    setVal('profileJob',     profile.job);
-    setVal('profileCompany', profile.company);
-    setVal('profileSchool',  profile.school);
-    setVal('profilePhone',   profile.phone);
+    const f = (id, val) => { const el = document.getElementById(id); if (el) el.value = (val !== undefined && val !== null) ? val : ''; };
+    f('profileName',    p.name);
+    f('profileAge',     p.age);
+    f('profileBio',     p.bio);
+    f('profileJob',     p.job);
+    f('profileCompany', p.company);
+    f('profileSchool',  p.school);
+    f('profilePhone',   p.phone);
+    f('lookingFor',     p.lookingFor || 'everyone');
 
-    const distSlider = document.getElementById('distanceSlider');
-    const distVal    = document.getElementById('distanceValue');
-    if (distSlider) distSlider.value = profile.distance || 50;
-    if (distVal)    distVal.textContent = (profile.distance || 50) + ' km';
+    const dist = document.getElementById('distanceSlider');
+    const distV = document.getElementById('distanceValue');
+    if (dist)  dist.value = p.distance || 50;
+    if (distV) distV.textContent = (p.distance || 50) + ' km';
 
-    const ageMinEl = document.getElementById('ageMin');
-    const ageMaxEl = document.getElementById('ageMax');
-    const ageVal   = document.getElementById('ageValue');
-    if (ageMinEl) ageMinEl.value = profile.ageMin || 22;
-    if (ageMaxEl) ageMaxEl.value = profile.ageMax || 30;
-    if (ageVal)   ageVal.textContent = (profile.ageMin || 22) + ' - ' + (profile.ageMax || 30);
+    const amin = document.getElementById('ageMin');
+    const amax = document.getElementById('ageMax');
+    const aval = document.getElementById('ageValue');
+    if (amin)  amin.value = p.ageMin || 22;
+    if (amax)  amax.value = p.ageMax || 30;
+    if (aval)  aval.textContent = (p.ageMin || 22) + ' - ' + (p.ageMax || 30);
 
-    const lookingForEl = document.getElementById('lookingFor');
-    if (lookingForEl) lookingForEl.value = profile.lookingFor || 'everyone';
-
-    // Gender selection
+    // Gender highlight
     document.querySelectorAll('.gender-option').forEach(opt => {
         opt.classList.remove('selected');
-        if (opt.getAttribute('onclick') && opt.getAttribute('onclick').includes(`'${profile.gender}'`)) {
-            opt.classList.add('selected');
-        }
+        const onclick = opt.getAttribute('onclick') || '';
+        if (onclick.includes(`'${p.gender}'`)) opt.classList.add('selected');
     });
-    
+
     renderPhotoGrid();
     updateCurrentBadgeDisplay();
 }
@@ -2444,29 +2453,29 @@ function closeChat() {
 
 function renderMessages(userName) {
     const container = document.getElementById('chatMessages');
+    if (!container) return;
     const messages = chatHistories[userName] || [];
 
     const myAvatar = (currentUser && currentUser.profile && currentUser.profile.photos && currentUser.profile.photos[0])
         ? currentUser.profile.photos[0] : AFRICA_MAP_URL;
-    const partnerAvatar = (currentChatUser && currentChatUser.img)
-        ? currentChatUser.img : AFRICA_MAP_URL;
+    const partnerAvatar = (currentChatUser && currentChatUser.img) ? currentChatUser.img : AFRICA_MAP_URL;
 
     if (messages.length === 0) {
-        container.innerHTML = '<div style="text-align:center;color:#888;padding:40px;font-size:13px;">No messages yet. Say hello! 👋</div>';
+        container.innerHTML = '<div style="text-align:center;color:#666;padding:40px;font-size:13px;">No messages yet — say hello! 👋</div>';
         return;
     }
 
     container.innerHTML = messages.map(msg => `
         <div class="message ${msg.sent ? 'sent' : 'received'}">
-            ${!msg.sent ? `<img src="${partnerAvatar}" class="msg-avatar" alt="${userName}" onerror="this.src='${AFRICA_MAP_URL}'">` : ''}
+            ${!msg.sent ? `<img class="msg-avatar" src="${partnerAvatar}" onerror="this.src='${AFRICA_MAP_URL}'" alt="">` : ''}
             <div class="msg-bubble">
                 <div>${msg.text}</div>
-                <div class="message-time">${msg.time}</div>
+                <div class="message-time">${msg.time || ''}</div>
             </div>
-            ${msg.sent ? `<img src="${myAvatar}" class="msg-avatar" alt="You" onerror="this.src='${AFRICA_MAP_URL}'">` : ''}
+            ${msg.sent ? `<img class="msg-avatar" src="${myAvatar}" onerror="this.src='${AFRICA_MAP_URL}'" alt="">` : ''}
         </div>
     `).join('');
-    
+
     container.scrollTop = container.scrollHeight;
 }
 
@@ -2502,10 +2511,10 @@ async function sendMessage() {
                 timestamp: Date.now()
             };
             
-            // Push message — onValue listener will update both sides instantly
+            // Push message to Firebase — onValue listener updates both sides
             await window._dbPush(window._dbRef(window._db, `chats/${chatKey}/messages`), firebaseMsg);
-            
-            // Write chat meta so admin panel can display last message
+
+            // Write meta node so admin panel can display last message/time
             await window._dbSet(window._dbRef(window._db, `chats/${chatKey}/meta`), {
                 lastMessage: text,
                 lastTime: time,
@@ -2609,40 +2618,39 @@ function initMatches() {
 }
 
 function initChats() {
-    // Merge saved chats from currentUser into the live chats array — don't overwrite
-    if (currentUser && currentUser.chats && currentUser.chats.length > 0) {
-        currentUser.chats.forEach(savedChat => {
-            const exists = chats.find(c => c.name === savedChat.name);
-            if (!exists) {
-                chats.push(savedChat);
-                // Seed chat history only if we don't already have real messages
-                if (!chatHistories[savedChat.name] || chatHistories[savedChat.name].length === 0) {
-                    chatHistories[savedChat.name] = [
-                        { text: savedChat.message || 'You matched!', sent: false, time: savedChat.time || 'Earlier' }
+    // Merge saved chats into live array — never overwrite real-time messages
+    if (currentUser && currentUser.chats) {
+        currentUser.chats.forEach(saved => {
+            if (!chats.find(c => c.name === saved.name)) {
+                chats.push(saved);
+                if (!chatHistories[saved.name] || chatHistories[saved.name].length === 0) {
+                    chatHistories[saved.name] = [
+                        { text: saved.message || 'Say hello 👋', sent: false, time: saved.time || '' }
                     ];
                 }
             }
         });
     }
-    
+
     const list = document.getElementById('chatList');
     if (!list) return;
-    
+
     if (chats.length === 0) {
-        list.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">No messages yet. Match with someone to start chatting!</div>';
+        list.innerHTML = '<div style="text-align:center;color:#888;padding:40px;">No messages yet. Match with someone to start chatting!</div>';
         return;
     }
-    
+
     list.innerHTML = chats.map(chat => `
         <div class="chat-item" onclick="openChat('${chat.name}')">
-            <img src="${chat.img || ''}" class="chat-avatar" alt="${chat.name}" onerror="this.src='https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg'">
+            <img src="${chat.img || AFRICA_MAP_URL}" class="chat-avatar" alt="${chat.name}"
+                 onerror="this.src='${AFRICA_MAP_URL}'">
             <div class="chat-preview">
                 <div class="chat-name">${chat.name}</div>
                 <div class="chat-message">${chat.message || ''}</div>
             </div>
             <div class="text-right">
                 <div class="chat-time">${chat.time || ''}</div>
-                ${chat.unread > 0 ? `<div class="unread-badge">${chat.unread}</div>` : ''}
+                ${(chat.unread || 0) > 0 ? `<div class="unread-badge">${chat.unread}</div>` : ''}
             </div>
         </div>
     `).join('');
@@ -3230,42 +3238,25 @@ window.viewProfileDetails = viewProfileDetails;
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize lamp functionality
     initLamp();
-    
-    // Check online status
     checkOnlineStatus();
 
-    // Show Firebase warning if not configured
+    // Firebase compat scripts load before this runs, so _firebaseReady is already set
     if (!window._firebaseReady) {
         const banner = document.getElementById('firebaseWarningBanner');
         if (banner) banner.style.display = 'block';
     }
-    
-    // Initialize auth — prevent double-call
-    let _authInitialized = false;
-    function _runInitAuth() {
-        if (_authInitialized) return;
-        _authInitialized = true;
-        initAuth();
-    }
 
-    if (window._firebaseReady) {
-        _runInitAuth();
-    } else {
-        window.addEventListener('firebaseReady', () => { _runInitAuth(); });
-        setTimeout(() => { _runInitAuth(); }, 600);
-    }
-    
-    // Setup online/offline listeners
+    // initAuth is safe to call immediately — localStorage restore is synchronous
+    initAuth();
+
     window.addEventListener('online', () => {
-        const offlineOverlay = document.getElementById('offlineOverlay');
-        if (offlineOverlay) offlineOverlay.classList.remove('active');
-        showToast("Back online! 🎉");
+        const o = document.getElementById('offlineOverlay');
+        if (o) o.classList.remove('active');
+        showToast('Back online! 🎉');
     });
-    
     window.addEventListener('offline', () => {
-        const offlineOverlay = document.getElementById('offlineOverlay');
-        if (offlineOverlay) offlineOverlay.classList.add('active');
+        const o = document.getElementById('offlineOverlay');
+        if (o) o.classList.add('active');
     });
 });

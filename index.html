@@ -487,10 +487,10 @@
                     <i class="fas fa-plus text-white text-sm"></i>
                 </button>
             </div>
-            <!-- Profile name + age display under avatar -->
-            <div style="text-align:center; padding: 58px 16px 6px; background: rgba(0,0,0,0.5);">
-                <div id="profileDisplayName" style="font-size:20px; font-weight:800; color:#fff; letter-spacing:0.3px;">—</div>
-                <div id="profileDisplayAge" style="font-size:13px; color:#fbbf24; margin-top:2px;"></div>
+            <!-- Name & age shown below avatar -->
+            <div style="text-align:center;padding:58px 16px 6px;background:rgba(0,0,0,0.5);">
+                <div id="profileDisplayName" style="font-size:20px;font-weight:800;color:#fff;letter-spacing:0.3px;">—</div>
+                <div id="profileDisplayAge" style="font-size:13px;color:#fbbf24;margin-top:2px;"></div>
             </div>
             
             <div class="settings-section" id="profileSettingsSection">
@@ -834,59 +834,44 @@
     <!-- Notification Toast -->
     <div class="toast" id="toast">It's a Match! 🎉</div>
 
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, push, update, child, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-        // =============================================
-        // PASTE YOUR FIREBASE CONFIG HERE
-        // Go to https://console.firebase.google.com
-        // Create a project → Add Web App → Copy config
-        // =============================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyAC-xvFTIF-Tw4w5AoJAZdDZkpTuIygqwY",
-            authDomain: "africonnect-50b9f.firebaseapp.com",
-            databaseURL: "https://africonnect-50b9f-default-rtdb.firebaseio.com",
-            projectId: "africonnect-50b9f",
-            storageBucket: "africonnect-50b9f.firebasestorage.app",
-            messagingSenderId: "672075760372",
-            appId: "1:672075760372:web:a6bb6aa1e3abcd9a1994a1",
-            measurementId: "G-G93WJPW0RD"
-        };
-
-        // Only initialize Firebase if real credentials are provided
-        const isRealConfig = firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY";
-
-        if (isRealConfig) {
+    <!-- Firebase SDK (compat - loads synchronously, no module race condition) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script>
+        (function() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyAC-xvFTIF-Tw4w5AoJAZdDZkpTuIygqwY",
+                authDomain: "africonnect-50b9f.firebaseapp.com",
+                databaseURL: "https://africonnect-50b9f-default-rtdb.firebaseio.com",
+                projectId: "africonnect-50b9f",
+                storageBucket: "africonnect-50b9f.firebasestorage.app",
+                messagingSenderId: "672075760372",
+                appId: "1:672075760372:web:a6bb6aa1e3abcd9a1994a1"
+            };
             try {
-                const app = initializeApp(firebaseConfig);
-                const db = getDatabase(app);
+                const app = firebase.initializeApp(firebaseConfig);
+                const db = firebase.database();
 
-                // Expose DB helpers globally so script.js can use them
+                // Expose helpers matching what script.js expects
                 window._db = db;
-                window._dbRef = ref;
-                window._dbSet = set;
-                window._dbGet = get;
-                window._dbOnValue = onValue;
-                window._dbPush = push;
-                window._dbUpdate = update;
-                window._dbChild = child;
-                window._dbOff = off;
                 window._firebaseReady = true;
-                console.log('✅ Firebase initialized');
-            } catch (err) {
-                console.warn('Firebase init failed — using localStorage fallback:', err);
+
+                // Map modular-style helpers to compat API
+                window._dbRef    = (db, path) => db.ref(path);
+                window._dbGet    = (ref) => ref.get();
+                window._dbSet    = (ref, val) => ref.set(val);
+                window._dbPush   = (ref, val) => ref.push(val);
+                window._dbUpdate = (ref, val) => ref.update(val);
+                window._dbOnValue = (ref, cb) => { ref.on('value', cb); return () => ref.off('value', cb); };
+                window._dbOff    = (ref) => ref ? ref.off() : null;
+                window._dbChild  = (ref, path) => ref.child(path);
+
+                console.log('✅ Firebase (compat) initialized — ready before script.js loads');
+            } catch(err) {
+                console.warn('Firebase init failed:', err);
                 window._firebaseReady = false;
             }
-        } else {
-            console.warn('⚠️ Firebase not configured — using localStorage mode. Accounts will be device-specific.');
-            console.warn('To enable cross-device sync, replace the placeholder values in index.html with your real Firebase config.');
-            window._firebaseReady = false;
-        }
-
-        // Dispatch event so script.js knows Firebase is loaded
-        window.dispatchEvent(new Event('firebaseReady'));
+        })();
     </script>
 
     <!-- Your JavaScript File -->

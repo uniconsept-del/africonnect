@@ -731,6 +731,55 @@ body.lights-on .bulb-glow {
     }
 }
 
+/* ── Message bubbles with avatars ── */
+.message {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: 82%;
+    margin-bottom: 4px;
+}
+
+.message.sent {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.message.received {
+    align-self: flex-start;
+    flex-direction: row;
+}
+
+.msg-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid rgba(251,191,36,0.4);
+}
+
+.msg-bubble {
+    padding: 10px 14px;
+    border-radius: 18px;
+    max-width: calc(100% - 38px);
+    word-break: break-word;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.message.sent .msg-bubble {
+    background: #fbbf24;
+    color: #000;
+    border-bottom-right-radius: 4px;
+}
+
+.message.received .msg-bubble {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border-bottom-left-radius: 4px;
+}
+
 .message-time {
     font-size: 9px;
     opacity: 0.7;
@@ -951,7 +1000,7 @@ body.lights-on .bulb-glow {
     font-weight: 500;
     width: 100%;
     padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 1px solid rgba(255,255,255,0.18);
     transition: all 0.3s;
 }
 
@@ -962,55 +1011,6 @@ body.lights-on .bulb-glow {
 
 .editable-field::placeholder {
     color: #555;
-}
-
-/* Message avatars + bubble layout */
-.message {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    max-width: 82%;
-    margin-bottom: 4px;
-}
-
-.message.sent {
-    align-self: flex-end;
-    flex-direction: row-reverse;
-}
-
-.message.received {
-    align-self: flex-start;
-    flex-direction: row;
-}
-
-.msg-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    object-fit: cover;
-    flex-shrink: 0;
-    border: 2px solid rgba(251,191,36,0.4);
-}
-
-.msg-bubble {
-    padding: 10px 14px;
-    border-radius: 18px;
-    max-width: calc(100% - 38px);
-    word-break: break-word;
-    font-size: 14px;
-    line-height: 1.4;
-}
-
-.message.sent .msg-bubble {
-    background: #fbbf24;
-    color: #000;
-    border-bottom-right-radius: 4px;
-}
-
-.message.received .msg-bubble {
-    background: rgba(255,255,255,0.1);
-    color: white;
-    border-bottom-left-radius: 4px;
 }
 
 .photo-grid {

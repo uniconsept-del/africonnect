@@ -1073,48 +1073,50 @@
     </div>
 </div>
 
-<!-- Firebase SDK (same config as main app) -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, get, set, remove, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+<!-- Firebase SDK (compat - synchronous, no race condition) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+    (function() {
+        const firebaseConfig = {
+            apiKey: "AIzaSyAC-xvFTIF-Tw4w5AoJAZdDZkpTuIygqwY",
+            authDomain: "africonnect-50b9f.firebaseapp.com",
+            databaseURL: "https://africonnect-50b9f-default-rtdb.firebaseio.com",
+            projectId: "africonnect-50b9f",
+            storageBucket: "africonnect-50b9f.firebasestorage.app",
+            messagingSenderId: "672075760372",
+            appId: "1:672075760372:web:a6bb6aa1e3abcd9a1994a1"
+        };
+        try {
+            // Avoid re-initializing if already done
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            const db = firebase.database();
+            window._adminDb = db;
+            window._adminFirebaseReady = true;
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAC-xvFTIF-Tw4w5AoJAZdDZkpTuIygqwY",
-        authDomain: "africonnect-50b9f.firebaseapp.com",
-        databaseURL: "https://africonnect-50b9f-default-rtdb.firebaseio.com",
-        projectId: "africonnect-50b9f",
-        storageBucket: "africonnect-50b9f.firebasestorage.app",
-        messagingSenderId: "672075760372",
-        appId: "1:672075760372:web:a6bb6aa1e3abcd9a1994a1"
-    };
+            window._adminRef    = (db, path) => db.ref(path);
+            window._adminGet    = (ref) => ref.get();
+            window._adminSet    = (ref, val) => ref.set(val);
+            window._adminRemove = (ref) => ref.remove();
+            window._adminPush   = (ref, val) => ref.push(val);
+            window._adminOnValue = (ref, cb) => { ref.on('value', cb); return () => ref.off('value', cb); };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+            // Live counters
+            db.ref('users').on('value', snap => {
+                const c = snap.exists() ? Object.keys(snap.val()).length : 0;
+                ['statUsers','userCount'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = c; });
+            });
+            db.ref('chats').on('value', snap => {
+                const c = snap.exists() ? Object.keys(snap.val()).length : 0;
+                const el = document.getElementById('statChats'); if(el) el.textContent = c;
+            });
 
-    window._adminDb = db;
-    window._adminRef = ref;
-    window._adminGet = get;
-    window._adminSet = set;
-    window._adminRemove = remove;
-    window._adminOnValue = onValue;
-    window._adminPush = push;
-    window._adminFirebaseReady = true;
-
-    // Live user count listener
-    onValue(ref(db, 'users'), (snap) => {
-        const count = snap.exists() ? Object.keys(snap.val()).length : 0;
-        const el = document.getElementById('statUsers');
-        if (el) el.textContent = count;
-        const el2 = document.getElementById('userCount');
-        if (el2) el2.textContent = count;
-    });
-
-    // Live chats count
-    onValue(ref(db, 'chats'), (snap) => {
-        const count = snap.exists() ? Object.keys(snap.val()).length : 0;
-        const el = document.getElementById('statChats');
-        if (el) el.textContent = count;
-    });
+            console.log('✅ Admin Firebase (compat) ready');
+        } catch(err) {
+            console.warn('Admin Firebase init failed:', err);
+            window._adminFirebaseReady = false;
+        }
+    })();
 </script>
 
 <script>
@@ -1359,99 +1361,89 @@ function loadBots() {
 
 // ── Chats ────────────────────────────────────────────────────
 async function loadChats() {
-    if (!window._adminFirebaseReady) { setTimeout(loadChats, 1000); return; }
+    if (!window._adminFirebaseReady) { setTimeout(loadChats, 800); return; }
     const tbody = document.getElementById('chatsTable');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;"><span class="loading-spinner"></span></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:28px;"><span class="loading-spinner"></span> Loading...</td></tr>';
 
     try {
         const snap = await window._adminGet(window._adminRef(window._adminDb, 'chats'));
         if (!snap.exists()) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#666; padding:32px;">No chat threads yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#666;padding:32px;">No chat threads yet.</td></tr>';
             document.getElementById('statChats').textContent = '0';
             return;
         }
 
         const chats = snap.val();
-        const chatKeys = Object.keys(chats);
-        document.getElementById('statChats').textContent = chatKeys.length;
+        const keys = Object.keys(chats);
+        document.getElementById('statChats').textContent = keys.length;
 
-        tbody.innerHTML = chatKeys.map(key => {
+        // Fix thead to 5 columns
+        const thead = document.querySelector('#page-messages table thead tr');
+        if (thead) thead.innerHTML = '<th>Participants</th><th>Last Message</th><th>Time</th><th>Count</th><th>Actions</th>';
+
+        tbody.innerHTML = keys.map(key => {
             const chat = chats[key];
-            const participants = key.split('__');
-            // Support both meta node (new) and direct fields (old)
+            const parts = key.split('__');
             const meta = chat.meta || {};
-            const lastMsg = meta.lastMessage || chat.lastMessage || '—';
-            const lastTime = meta.lastTime || chat.lastTime || '—';
+            const lastMsg = meta.lastMessage || '—';
+            const lastTime = meta.lastTime || '—';
             const msgCount = chat.messages ? Object.keys(chat.messages).length : 0;
-
             return `<tr>
                 <td>
-                    <div style="font-family:monospace; font-size:13px; color:#fbbf24; font-weight:700;">@${participants[0]}</div>
-                    <div style="font-size:11px; color:#666; margin-top:2px;">↔ @${participants[1] || '?'}</div>
+                    <div style="font-family:monospace;font-size:13px;color:#fbbf24;font-weight:700;">@${parts[0]}</div>
+                    <div style="font-size:11px;color:#666;margin-top:2px;">↔ @${parts[1] || '?'}</div>
                 </td>
-                <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ccc; font-size:13px;">${lastMsg}</td>
-                <td style="font-family:monospace; font-size:11px; color:#666; white-space:nowrap;">${lastTime}</td>
-                <td><span class="badge badge-gray">${msgCount} msg${msgCount !== 1 ? 's' : ''}</span></td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ccc;font-size:13px;">${lastMsg}</td>
+                <td style="font-family:monospace;font-size:11px;color:#666;white-space:nowrap;">${lastTime}</td>
+                <td><span class="badge badge-gray">${msgCount} msg${msgCount!==1?'s':''}</span></td>
                 <td style="white-space:nowrap;">
-                    <button class="btn btn-ghost" style="font-size:10px; padding:4px 8px; margin-right:4px;" onclick="viewChatThread('${key}', '${participants[0]}', '${participants[1] || ''}')">
+                    <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px;margin-right:4px;" onclick="viewChatThread('${key}','${parts[0]}','${parts[1]||''}')">
                         <i class="fas fa-eye"></i> View
                     </button>
-                    <button class="btn btn-danger" style="font-size:10px; padding:4px 8px;" onclick="deleteChat('${key}')">
+                    <button class="btn btn-danger" style="font-size:10px;padding:4px 8px;" onclick="deleteChat('${key}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
             </tr>`;
         }).join('');
-
-        // Update thead to match 5 columns
-        const thead = document.querySelector('#page-messages table thead tr');
-        if (thead) thead.innerHTML = '<th>Participants</th><th>Last Message</th><th>Time</th><th>Count</th><th>Actions</th>';
-
-    } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:32px;">Error loading chats: ${e.message}</td></tr>`;
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:32px;">Error: ${e.message}</td></tr>`;
     }
 }
 
-// View full chat thread in admin
 async function viewChatThread(chatKey, user1, user2) {
-    if (!window._adminFirebaseReady) return;
     try {
         const snap = await window._adminGet(window._adminRef(window._adminDb, `chats/${chatKey}/messages`));
-        const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b) => a.timestamp - b.timestamp) : [];
-
+        const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b)=>(a.timestamp||0)-(b.timestamp||0)) : [];
         const html = msgs.length === 0
-            ? '<p style="color:#666; text-align:center; padding:20px;">No messages in this thread.</p>'
-            : msgs.map(m => `
-                <div style="margin-bottom:12px; padding:10px 14px; background:${m.from === user1 ? 'rgba(251,191,36,0.08)' : 'rgba(255,255,255,0.05)'}; border-radius:10px; border-left:3px solid ${m.from === user1 ? '#fbbf24' : '#3b82f6'};">
-                    <div style="font-size:11px; font-family:monospace; color:${m.from === user1 ? '#fbbf24' : '#60a5fa'}; margin-bottom:4px; font-weight:700;">@${m.from} · ${m.time || ''}</div>
-                    <div style="font-size:14px; color:#e5e5e5;">${m.text}</div>
-                </div>
-            `).join('');
+            ? '<p style="color:#666;text-align:center;padding:20px;">No messages yet.</p>'
+            : msgs.map(m=>`
+                <div style="margin-bottom:10px;padding:10px 14px;background:${m.from===user1?'rgba(251,191,36,0.1)':'rgba(255,255,255,0.04)'};border-radius:10px;border-left:3px solid ${m.from===user1?'#fbbf24':'#3b82f6'};">
+                    <div style="font-size:11px;font-family:monospace;color:${m.from===user1?'#fbbf24':'#60a5fa'};margin-bottom:4px;font-weight:700;">@${m.from} · ${m.time||''}</div>
+                    <div style="font-size:14px;color:#e5e5e5;">${m.text}</div>
+                </div>`).join('');
 
-        // Show in a modal-like overlay
-        let overlay = document.getElementById('chatThreadOverlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = 'chatThreadOverlay';
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
-            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-            document.body.appendChild(overlay);
-        }
-        overlay.innerHTML = `
+        let ov = document.getElementById('chatThreadOverlay');
+        if (ov) ov.remove();
+        ov = document.createElement('div');
+        ov.id = 'chatThreadOverlay';
+        ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        ov.onclick = e => { if(e.target===ov) ov.remove(); };
+        ov.innerHTML = `
             <div style="background:#141414;border:1px solid rgba(251,191,36,0.2);border-radius:16px;width:90%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
-                <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;">
+                <div style="padding:18px 24px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;">
                     <div>
                         <div style="font-weight:800;font-size:15px;">💬 Chat Thread</div>
                         <div style="font-size:12px;color:#888;font-family:monospace;margin-top:2px;">@${user1} ↔ @${user2}</div>
                     </div>
-                    <button onclick="document.getElementById('chatThreadOverlay').remove()" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button>
+                    <button onclick="document.getElementById('chatThreadOverlay').remove()" style="background:none;border:none;color:#888;font-size:22px;cursor:pointer;line-height:1;">✕</button>
                 </div>
                 <div style="padding:20px;overflow-y:auto;flex:1;">${html}</div>
             </div>`;
-        document.body.appendChild(overlay);
+        document.body.appendChild(ov);
     } catch(e) {
-        showAdminToast('Error loading thread: ' + e.message);
+        showAdminToast('Error: ' + e.message);
     }
 }
 
