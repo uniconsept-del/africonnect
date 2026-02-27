@@ -613,19 +613,18 @@ function loadUserProfile() {
         el.onerror = () => { el.src = fallback; };
     });
 
-    // Name display in menu + profile header - use profile name or username as fallback
-    const displayName = p.name || currentUser.username || 'User';
+    // Name display in menu + profile header
     const menuName = document.getElementById('menuUserName');
-    if (menuName) menuName.textContent = displayName;
+    if (menuName) menuName.textContent = p.name || currentUser.username;
 
     const dispName = document.getElementById('profileDisplayName');
     const dispAge  = document.getElementById('profileDisplayAge');
-    if (dispName) dispName.textContent = displayName;
+    if (dispName) dispName.textContent = p.name || currentUser.username;
     if (dispAge)  dispAge.textContent  = p.age ? `${p.age} years old` : '';
 
     // Form fields
     const f = (id, val) => { const el = document.getElementById(id); if (el) el.value = (val !== undefined && val !== null) ? val : ''; };
-    f('profileName',    p.name || currentUser.username || '');
+    f('profileName',    p.name);
     f('profileAge',     p.age);
     f('profileBio',     p.bio);
     f('profileJob',     p.job);
@@ -660,7 +659,7 @@ function loadUserProfile() {
 async function saveProfile() {
     if (!currentUser) return;
     
-    currentUser.profile.name = document.getElementById('profileName').value || currentUser.username;
+    currentUser.profile.name = document.getElementById('profileName').value;
     currentUser.profile.age = document.getElementById('profileAge').value;
     currentUser.profile.bio = document.getElementById('profileBio').value;
     currentUser.profile.job = document.getElementById('profileJob').value;
@@ -681,11 +680,7 @@ async function saveProfile() {
     localStorage.setItem('afriConnect_users', JSON.stringify(users));
     localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
     
-    // Update display name
-    const displayName = currentUser.profile.name || currentUser.username;
-    document.getElementById('menuUserName').textContent = displayName;
-    const dispName = document.getElementById('profileDisplayName');
-    if (dispName) dispName.textContent = displayName;
+    document.getElementById('menuUserName').textContent = currentUser.profile.name;
     
     showToast("Profile saved! ✓");
 }
@@ -1252,13 +1247,11 @@ function getAllDiscoverableProfiles() {
     
     Object.values(mergedUsers).forEach(user => {
         if (currentUser && user.username === currentUser.username) return;
-        if (!user.profile) return; // Skip users without profiles
         
-        const userName = user.profile.name || user.username || 'User';
-        const exists = allProfiles.some(p => p.name === userName);
+        const exists = allProfiles.some(p => p.name === (user.profile && user.profile.name ? user.profile.name : user.username));
         if (!exists) {
             const userProfile = {
-                name: userName,
+                name: user.profile.name || user.username,
                 age: user.profile.age || 24,
                 bio: user.profile.bio || 'New to AfriConnect',
                 distance: `${Math.floor(Math.random() * 20) + 1} km`,
@@ -1266,7 +1259,7 @@ function getAllDiscoverableProfiles() {
                 company: user.profile.company || 'AfriConnect',
                 school: user.profile.school || '',
                 phone: user.profile.phone || '',
-                country: 'Africa 🌍',
+                country: 'Africa',
                 gender: user.profile.gender === 'man' ? 'male' : (user.profile.gender === 'woman' ? 'female' : 'other'),
                 img: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos[0] : AFRICA_MAP_URL,
                 photos: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos : [AFRICA_MAP_URL],
@@ -1309,43 +1302,30 @@ function initDiscovery() {
 
 function renderDiscoveryGrid(profileList) {
     const grid = document.getElementById('discoveryGrid');
-    if (!grid) return;
-    
-    if (!profileList || profileList.length === 0) {
-        grid.innerHTML = '<div style="text-align: center; color: #888; padding: 40px; grid-column: 1/-1;">No profiles available. Check back later!</div>';
-        return;
-    }
-    
     grid.innerHTML = profileList.map(profile => {
         const verifiedBadge = profile.verified ? 
             `<span class="verification-badge"><i class="fas fa-check-circle"></i></span>` : '';
         
         const badgeIcon = getVerificationBadge(profile);
-        const profileImg = profile.img || AFRICA_MAP_URL;
-        const profileName = profile.name || 'User';
-        const profileAge = profile.age || '?';
-        const profileDistance = profile.distance || 'Nearby';
-        const profileCountry = profile.country || 'Africa 🌍';
-        
         return `
-        <div class="grid-profile-card" onclick="viewProfileDetails('${profileName}', 'discover')">
-            <img src="${profileImg}" class="grid-profile-image" alt="${profileName}" onerror="this.src='${AFRICA_MAP_URL}'">
+        <div class="grid-profile-card" onclick="viewProfileDetails('${profile.name}', 'discover')">
+            <img src="${profile.img}" class="grid-profile-image" alt="${profile.name}">
             ${badgeIcon ? `<div style="position:absolute;top:4px;left:4px;z-index:2;">${badgeIcon}</div>` : ''}
             <div class="grid-profile-info">
                 <div class="flex items-center mb-1">
-                    <h3 class="text-sm font-bold text-white">${profileName}, ${profileAge}</h3>
+                    <h3 class="text-sm font-bold text-white">${profile.name}, ${profile.age}</h3>
                 </div>
-                <p class="text-yellow-500 text-xs mb-1"><i class="fas fa-map-marker-alt mr-1"></i>${profileDistance}</p>
-                <p class="text-gray-400 text-xs">${profileCountry}</p>
+                <p class="text-yellow-500 text-xs mb-1"><i class="fas fa-map-marker-alt mr-1"></i>${profile.distance}</p>
+                <p class="text-gray-400 text-xs">${profile.country}</p>
             </div>
             <div class="grid-profile-actions">
-                <button class="grid-action-btn pass" onclick="event.stopPropagation(); passProfile('${profileName}')">
+                <button class="grid-action-btn pass" onclick="event.stopPropagation(); passProfile('${profile.name}')">
                     <i class="fas fa-times"></i>
                 </button>
-                <button class="grid-action-btn like" onclick="event.stopPropagation(); likeProfile('${profileName}')">
+                <button class="grid-action-btn like" onclick="event.stopPropagation(); likeProfile('${profile.name}')">
                     <i class="fas fa-heart"></i>
                 </button>
-                <button class="grid-action-btn super" onclick="event.stopPropagation(); superLikeProfile('${profileName}')">
+                <button class="grid-action-btn super" onclick="event.stopPropagation(); superLikeProfile('${profile.name}')">
                     <i class="fas fa-star"></i>
                 </button>
             </div>
@@ -1374,25 +1354,67 @@ function passProfile(name) {
     card.style.opacity = '0.5';
 }
 
+
+// Enhanced notification system with browser notifications
 async function sendLikeNotification(likedProfile, type = 'like') {
-    if (!window._firebaseReady || !currentUser || !likedProfile.isRegisteredUser) return;
     try {
-        // Push a like-notification into the liked user's inboxNotifications
-        const notifPayload = {
-            from: currentUser.username,
-            fromName: currentUser.profile.name,
-            fromAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
-            type: type, // 'like' or 'superlike'
-            text: type === 'superlike'
-                ? `${currentUser.profile.name} Super Liked your profile! ⭐`
-                : `${currentUser.profile.name} liked your profile! 💛`,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            timestamp: Date.now(),
+        const notificationText = type === 'superlike' 
+            ? `${currentUser.name} super liked you! ⭐` 
+            : `${currentUser.name} liked you! ❤️`;
+        
+        // Add to in-app notifications
+        const notification = {
+            id: Date.now(),
+            user: currentUser.name,
+            avatar: currentUser.photos[0] || 'https://via.placeholder.com/150',
+            text: notificationText,
+            time: 'Just now',
             read: false,
-            likerUsername: currentUser.username,
-            likerName: currentUser.profile.name,
-            likerAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL
+            type: type
         };
+        addNotification(notification);
+        
+        // Request browser notification permission and show notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('AfriConnect', {
+                body: notificationText,
+                icon: currentUser.photos[0] || '/africonnect-logo.jpg',
+                badge: '/africonnect-logo.jpg'
+            });
+        } else if ('Notification' in window && Notification.permission !== 'denied') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    new Notification('AfriConnect', {
+                        body: notificationText,
+                        icon: currentUser.photos[0] || '/africonnect-logo.jpg',
+                        badge: '/africonnect-logo.jpg'
+                    });
+                }
+            });
+        }
+        
+        console.log('✅ Like notification sent:', notificationText);
+    } catch (e) {
+        console.warn('Could not send like notification:', e);
+    }
+}
+
+// Function to notify user when they like someone
+function sendOutgoingLikeNotification(likedProfile, type = 'like') {
+    const notificationText = type === 'superlike' 
+        ? `You super liked ${likedProfile.name}! ⭐` 
+        : `You liked ${likedProfile.name}! ❤️`;
+    
+    const notification = {
+        id: Date.now(),
+        user: likedProfile.name,
+        avatar: likedProfile.photos[0] || likedProfile.img,
+        text: notificationText,
+        time: 'Just now',
+        read: false,
+        type: 'outgoing_' + type
+    };
+    addNotification(notification);
         await window._dbPush(
             window._dbRef(window._db, `users/${likedProfile.username}/likeNotifications`),
             notifPayload
@@ -1484,6 +1506,7 @@ function superLikeProfile(name) {
     if (likedProfile) {
         if (likedProfile.isRegisteredUser) {
             sendLikeNotification(likedProfile, 'superlike');
+            sendOutgoingLikeNotification(likedProfile, \'superlike\');
         }
         addMatch(likedProfile);
     }
@@ -1680,16 +1703,6 @@ function updateNotificationBadge() {
 
 function initGroups() {
     const container = document.getElementById('groupsContainer');
-    if (!container) {
-        console.warn('Groups container not found');
-        return;
-    }
-    
-    if (!africanCountries || africanCountries.length === 0) {
-        container.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">Community groups will be available soon!</div>';
-        return;
-    }
-    
     container.innerHTML = africanCountries.map(country => `
         <div class="country-group">
             <div class="country-header" onclick="toggleCountry('${country.name}')">
@@ -2630,28 +2643,21 @@ function initMatches() {
     }
     
     const grid = document.getElementById('matchesGrid');
-    if (!grid) return;
     
     if (matches.length === 0) {
         grid.innerHTML = '<div style="text-align: center; color: #888; padding: 40px; grid-column: 1/-1;">No matches yet. Start liking profiles!</div>';
         return;
     }
     
-    grid.innerHTML = matches.map(match => {
-        const imgSrc = match.img || AFRICA_MAP_URL;
-        const matchName = match.name || 'User';
-        const matchAge = match.age || '?';
-        const lastActive = match.lastActive || 'Recently active';
-        return `
-        <div class="match-card" onclick="viewProfileDetails('${matchName}', 'matches')">
-            <img src="${imgSrc}" alt="${matchName}" onerror="this.src='${AFRICA_MAP_URL}'">
+    grid.innerHTML = matches.map(match => `
+        <div class="match-card" onclick="viewProfileDetails('${match.name}', 'matches')">
+            <img src="${match.img}" alt="${match.name}">
             <div class="match-overlay">
-                <h4 class="font-bold text-white text-sm">${matchName}, ${matchAge}</h4>
-                <p class="text-xs text-green-400">${lastActive}</p>
+                <h4 class="font-bold text-white text-sm">${match.name}, ${match.age}</h4>
+                <p class="text-xs text-green-400">${match.lastActive}</p>
             </div>
         </div>
-    `;
-    }).join('');
+    `).join('');
 }
 
 function initChats() {
@@ -2677,27 +2683,20 @@ function initChats() {
         return;
     }
 
-    list.innerHTML = chats.map(chat => {
-        const chatImg = chat.img || AFRICA_MAP_URL;
-        const chatName = chat.name || 'User';
-        const chatMessage = chat.message || 'Start a conversation';
-        const chatTime = chat.time || '';
-        const unreadCount = chat.unread || 0;
-        return `
-        <div class="chat-item" onclick="openChat('${chatName}')">
-            <img src="${chatImg}" class="chat-avatar" alt="${chatName}"
+    list.innerHTML = chats.map(chat => `
+        <div class="chat-item" onclick="openChat('${chat.name}')">
+            <img src="${chat.img || AFRICA_MAP_URL}" class="chat-avatar" alt="${chat.name}"
                  onerror="this.src='${AFRICA_MAP_URL}'">
             <div class="chat-preview">
-                <div class="chat-name">${chatName}</div>
-                <div class="chat-message">${chatMessage}</div>
+                <div class="chat-name">${chat.name}</div>
+                <div class="chat-message">${chat.message || ''}</div>
             </div>
             <div class="text-right">
-                <div class="chat-time">${chatTime}</div>
-                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                <div class="chat-time">${chat.time || ''}</div>
+                ${(chat.unread || 0) > 0 ? `<div class="unread-badge">${chat.unread}</div>` : ''}
             </div>
         </div>
-    `;
-    }).join('');
+    `).join('');
 }
 
 // ==========================================
@@ -2717,37 +2716,15 @@ function showToast(message = "It's a Match! 🎉") {
 
 function renderPhotoGrid() {
     const grid = document.getElementById('photoGrid');
-    if (!grid) return;
     grid.innerHTML = '';
     
-    // Get photos from currentUser profile, fallback to default
-    let photos = [];
-    if (currentUser && currentUser.profile && currentUser.profile.photos) {
-        photos = currentUser.profile.photos;
-    } else if (currentUser && currentUser.profile) {
-        photos = [AFRICA_MAP_URL]; // Default photo if none exists
-        currentUser.profile.photos = photos; // Initialize photos array
-    } else if (userProfile && userProfile.photos) {
-        photos = userProfile.photos;
-    } else {
-        photos = [AFRICA_MAP_URL];
-    }
-    
-    // Ensure at least one photo exists
-    if (photos.length === 0) {
-        photos = [AFRICA_MAP_URL];
-        if (currentUser && currentUser.profile) {
-            currentUser.profile.photos = photos;
-        } else if (userProfile) {
-            userProfile.photos = photos;
-        }
-    }
+    const photos = currentUser ? (currentUser.profile.photos || [AFRICA_MAP_URL]) : userProfile.photos;
     
     photos.forEach((photo, index) => {
         const slot = document.createElement('div');
         slot.className = 'photo-slot';
         slot.innerHTML = `
-            <img src="${photo}" alt="Photo ${index + 1}" onerror="this.src='${AFRICA_MAP_URL}'">
+            <img src="${photo}" alt="Photo ${index + 1}">
             ${index === 0 ? '<span class="main-photo-badge">MAIN</span>' : ''}
             <div class="delete-photo" onclick="deletePhoto(${index})">
                 <i class="fas fa-times"></i>
