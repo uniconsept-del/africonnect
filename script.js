@@ -1,9 +1,80 @@
 // ==========================================
-// LAMP LOGIC - FIXED VERSION
+// LAMP LOGIC - COMPLETELY FIXED VERSION
 // ==========================================
 
 let isLightOn = false;
 let isAnimating = false;
+
+function toggleLight(e) {
+    console.log('🔦 toggleLight called, isLightOn:', isLightOn, 'isAnimating:', isAnimating);
+    
+    // Prevent default and stop propagation
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // Prevent rapid clicking
+    if (isAnimating) {
+        console.log('⏳ Animation in progress, skipping...');
+        return;
+    }
+    isAnimating = true;
+    
+    const ropeSwitch = document.getElementById('ropeSwitch');
+    const clickFeedback = document.getElementById('clickFeedback');
+    const body = document.body;
+    
+    console.log('Elements check:', {
+        ropeSwitch: !!ropeSwitch,
+        clickFeedback: !!clickFeedback,
+        body: !!body,
+        bodyClasses: body.className
+    });
+    
+    // Show click feedback animation
+    if (clickFeedback) {
+        clickFeedback.classList.remove('animate');
+        void clickFeedback.offsetWidth; // Trigger reflow
+        clickFeedback.classList.add('animate');
+        console.log('✨ Click feedback animated');
+    }
+    
+    // Animate rope pull
+    if (ropeSwitch) {
+        ropeSwitch.classList.add('pulled');
+        console.log('🪢 Rope pulled');
+    }
+    
+    // Toggle light state immediately
+    isLightOn = !isLightOn;
+    console.log('💡 New light state:', isLightOn ? 'ON' : 'OFF');
+    
+    if (isLightOn) {
+        body.classList.add('lights-on');
+        console.log('✅ Added lights-on class to body');
+    } else {
+        body.classList.remove('lights-on');
+        console.log('❌ Removed lights-on class from body');
+    }
+    
+    // Log current body classes after change
+    console.log('Body classes after toggle:', body.className);
+    
+    // Reset rope animation
+    setTimeout(() => {
+        if (ropeSwitch) {
+            ropeSwitch.classList.remove('pulled');
+            console.log('🪢 Rope released');
+        }
+    }, 400);
+    
+    // Reset animation lock
+    setTimeout(() => {
+        isAnimating = false;
+        console.log('🔓 Animation lock released');
+    }, 500);
+}
 
 function initLamp() {
     console.log('🔧 Initializing lamp...');
@@ -22,108 +93,81 @@ function initLamp() {
         clickFeedback: !!clickFeedback
     });
 
-    if (!touchLamp || !ropeSwitch || !ropeContainer) {
-        console.error('❌ Lamp elements not found', {
-            touchLamp: !!touchLamp,
-            ropeSwitch: !!ropeSwitch,
-            ropeContainer: !!ropeContainer
-        });
+    if (!touchLamp) {
+        console.error('❌ touchLamp element not found!');
         return;
     }
-
-    function toggleLight(e) {
-        console.log('🔦 Toggle light clicked!');
-        
-        // Prevent default and stop propagation
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        
-        // Prevent rapid clicking
-        if (isAnimating) {
-            console.log('⏳ Animation in progress, skipping...');
-            return;
-        }
-        isAnimating = true;
-        
-        // Show click feedback animation
-        if (clickFeedback) {
-            clickFeedback.classList.remove('animate');
-            void clickFeedback.offsetWidth; // Trigger reflow
-            clickFeedback.classList.add('animate');
-        }
-        
-        // Animate rope pull
-        if (ropeSwitch) {
-            ropeSwitch.classList.add('pulled');
-        }
-        
-        // Toggle light state
-        setTimeout(() => {
-            isLightOn = !isLightOn;
-            
-            if (isLightOn) {
-                body.classList.add('lights-on');
-                console.log('💡 Light ON');
-            } else {
-                body.classList.remove('lights-on');
-                console.log('💡 Light OFF');
-            }
-        }, 150);
-        
-        // Reset rope and animation lock
-        setTimeout(() => {
-            if (ropeSwitch) {
-                ropeSwitch.classList.remove('pulled');
-            }
-        }, 400);
-        
-        setTimeout(() => {
-            isAnimating = false;
-        }, 500);
+    
+    if (!ropeSwitch) {
+        console.error('❌ ropeSwitch element not found!');
+    }
+    
+    if (!ropeContainer) {
+        console.error('❌ ropeContainer element not found!');
     }
 
-    // Remove any existing listeners by cloning elements
-    const newTouchLamp = touchLamp.cloneNode(true);
-    touchLamp.parentNode.replaceChild(newTouchLamp, touchLamp);
-    
-    const newRopeContainer = newTouchLamp.querySelector('#ropeSwitchContainer');
-    const newRopeSwitch = newTouchLamp.querySelector('#ropeSwitch');
-    const newClickFeedback = newTouchLamp.querySelector('#clickFeedback');
-
-    // Click on lamp container
-    newTouchLamp.addEventListener('click', function(e) {
-        console.log('🖱️ Lamp clicked');
+    // Method 1: Click on lamp container
+    touchLamp.addEventListener('click', function(e) {
+        console.log('🖱️ Lamp container clicked');
         toggleLight(e);
     }, true);
     
-    // Click specifically on the rope
-    if (newRopeContainer) {
-        newRopeContainer.addEventListener('click', function(e) {
-            console.log('🪢 Rope clicked');
+    // Method 2: Click on rope container
+    if (ropeContainer) {
+        ropeContainer.addEventListener('click', function(e) {
+            console.log('🖱️ Rope container clicked');
+            e.stopPropagation();
+            toggleLight(e);
+        }, true);
+    }
+    
+    // Method 3: Click on rope itself
+    if (ropeSwitch) {
+        ropeSwitch.addEventListener('click', function(e) {
+            console.log('🖱️ Rope switch clicked');
             e.stopPropagation();
             toggleLight(e);
         }, true);
     }
 
-    // Touch support for mobile
-    newTouchLamp.addEventListener('touchstart', function(e) {
-        console.log('👆 Lamp touched');
+    // Method 4: Touch support for mobile - lamp container
+    touchLamp.addEventListener('touchend', function(e) {
+        console.log('👆 Lamp touched (touchend)');
         e.preventDefault();
         toggleLight(e);
     }, { passive: false, capture: true });
     
-    if (newRopeContainer) {
-        newRopeContainer.addEventListener('touchstart', function(e) {
-            console.log('👆 Rope touched');
+    // Method 5: Touch support for mobile - rope container
+    if (ropeContainer) {
+        ropeContainer.addEventListener('touchend', function(e) {
+            console.log('👆 Rope container touched (touchend)');
             e.preventDefault();
             e.stopPropagation();
             toggleLight(e);
         }, { passive: false, capture: true });
     }
     
-    console.log('✅ Lamp initialized successfully');
+    // Method 6: Touch support for mobile - rope itself
+    if (ropeSwitch) {
+        ropeSwitch.addEventListener('touchend', function(e) {
+            console.log('👆 Rope switch touched (touchend)');
+            e.preventDefault();
+            e.stopPropagation();
+            toggleLight(e);
+        }, { passive: false, capture: true });
+    }
+    
+    // BONUS: Add keyboard support (press L to toggle)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'l' || e.key === 'L') {
+            console.log('⌨️ L key pressed to toggle light');
+            toggleLight();
+        }
+    });
+    
+    console.log('✅ Lamp initialized successfully - click lamp, rope, or press L to toggle');
+    console.log('🔦 Initial light state:', isLightOn ? 'ON' : 'OFF');
+    console.log('📋 Current body classes:', body.className);
 }
 
 // ==========================================

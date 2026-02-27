@@ -71,7 +71,7 @@ body.lights-on {
     background-position: center 20%;
     background-repeat: no-repeat;
     opacity: 0.55;
-    transition: opacity 2s ease-in-out, transform 2.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 2s ease-in-out, transform 2.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
     z-index: 15;
     pointer-events: none;
     transform: scale(1);
@@ -80,9 +80,9 @@ body.lights-on {
 /* When lamp turns ON — zoom into the image dramatically */
 body.lights-on .africa-map-bg {
     opacity: 0.22;
-    transform: scale(2.2);
+    transform: scale(2.2) !important;
     background-position: center 30%;
-    transition: opacity 2.5s ease-in-out, transform 3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 2.5s ease-in-out, transform 3s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 /* When app is open — hide background */
@@ -101,7 +101,7 @@ body.app-open .africa-map-bg {
     pointer-events: none;
     background: radial-gradient(circle at 10% 10%, rgba(255, 223, 150, 0.15) 0%, rgba(0, 0, 0, 0.98) 40%);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.8s ease !important;
     z-index: 40;
     mix-blend-mode: screen;
 }
@@ -120,7 +120,8 @@ body.lights-on #lamp-light {
     background: radial-gradient(circle at 10% 10%, rgba(10,10,10,0.2) 0%, rgba(0,0,0,1) 50%);
     pointer-events: none;
     z-index: 30;
-    transition: opacity 1.5s ease-in-out;
+    opacity: 1;
+    transition: opacity 1.5s ease-in-out !important;
 }
 
 body.lights-on #darkness-overlay {
@@ -130,15 +131,17 @@ body.lights-on #darkness-overlay {
 /* Interface Containers */
 #interface-container {
     opacity: 0;
-    transition: opacity 2s ease-in-out;
+    transition: opacity 2s ease-in-out, filter 2s ease-in-out, transform 2s ease-in-out !important;
     filter: blur(5px);
     transform: scale(0.98);
+    pointer-events: none;
 }
 
 body.lights-on #interface-container {
     opacity: 1;
     filter: blur(0);
     transform: scale(1);
+    pointer-events: auto;
 }
 
 /* Dark Welcome */
@@ -154,17 +157,19 @@ body.lights-on #interface-container {
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    transition: opacity 1s ease;
+    opacity: 1;
+    transition: opacity 1.5s ease !important;
 }
 
 body.lights-on #dark-welcome {
     opacity: 0;
+    pointer-events: none;
 }
 
 .glow-text {
     color: rgba(255, 255, 255, 0.08);
     text-shadow: 0 0 20px rgba(251, 191, 36, 0.05);
-    transition: all 1.5s ease;
+    transition: all 1.5s ease !important;
     letter-spacing: 0.05em;
 }
 
