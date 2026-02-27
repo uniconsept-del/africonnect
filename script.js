@@ -82,9 +82,9 @@ function initLamp() {
 // ==========================================
 
 const VERIF_TIERS = {
-    silver:  { icon: '🥈', name: 'Silver Verified',  price: '$2.99', desc: 'Get the Silver trust badge visible on your profile and in Discovery.' },
-    gold:    { icon: '🥇', name: 'Gold Verified',    price: '$7.99', desc: 'Gold badge + appear higher in Discovery. More visibility, more matches.' },
-    diamond: { icon: '💎', name: 'Diamond Verified', price: '$14.99', desc: 'Diamond badge + top placement in Discovery + unlimited super likes.' }
+    silver:  { icon: '🥈', name: 'Silver Verified',  price: '₦3,000', desc: 'Get the Silver trust badge visible on your profile and in Discovery.' },
+    gold:    { icon: '🥇', name: 'Gold Verified',    price: '₦5,000', desc: 'Gold badge + appear higher in Discovery. More visibility, more matches.' },
+    diamond: { icon: '💎', name: 'Diamond Verified', price: '₦10,000', desc: 'Diamond badge + top placement in Discovery + unlimited super likes.' }
 };
 
 let _pendingVerifTier = null;
@@ -112,52 +112,85 @@ async function confirmVerificationPurchase() {
     const tier = _pendingVerifTier;
     const t = VERIF_TIERS[tier];
 
-    // Update button to show processing
     const btn = document.getElementById('verifConfirmBtn');
-    btn.textContent = '⏳ Processing...';
+    btn.textContent = '⏳ Submitting...';
     btn.disabled = true;
 
-    // Simulate payment processing (demo mode)
-    await new Promise(r => setTimeout(r, 1500));
-
     try {
-        // Save badge to Firebase
-        if (window._firebaseReady && currentUser) {
+        // Save pending verification request to Firebase for admin to approve
+        const pendingPayload = {
+            username: currentUser.username,
+            name: currentUser.profile.name,
+            avatar: (currentUser.profile.photos && currentUser.profile.photos[0]) || '',
+            tier: tier,
+            price: t.price,
+            requestedAt: Date.now(),
+            status: 'pending'
+        };
+        if (window._firebaseReady) {
             await window._dbSet(
-                window._dbRef(window._db, `users/${currentUser.username}/verificationBadge`), tier
+                window._dbRef(window._db, `verificationRequests/${currentUser.username}`),
+                pendingPayload
+            );
+            // Mark user as pending
+            await window._dbSet(
+                window._dbRef(window._db, `users/${currentUser.username}/verificationPending`), tier
             );
         }
         // Also save locally
-        currentUser.verificationBadge = tier;
+        currentUser.verificationPending = tier;
         const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
         if (localUsers[currentUser.username]) {
-            localUsers[currentUser.username].verificationBadge = tier;
+            localUsers[currentUser.username].verificationPending = tier;
             localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
         }
 
-        closeVerifModal();
-        showToast(`${t.icon} You're now ${t.name}! Badge applied to your profile.`);
-        updateCurrentBadgeDisplay();
+        // Show pending status in modal
+        document.getElementById('verifPaymentInstructions').style.display = 'none';
+        document.getElementById('verifPendingStatus').style.display = 'block';
+        btn.textContent = '✅ Submitted!';
+        showToast(`${t.icon} Payment notification sent! Admin will verify within 24hrs.`);
+
+        setTimeout(() => {
+            closeVerifModal();
+            btn.textContent = '✅ I\'ve Paid — Notify Admin';
+            btn.disabled = false;
+            document.getElementById('verifPaymentInstructions').style.display = 'block';
+            document.getElementById('verifPendingStatus').style.display = 'none';
+        }, 2500);
 
     } catch(e) {
-        showToast('Error applying badge. Please try again.');
+        showToast('Error submitting request. Please try again.');
         console.error(e);
+        btn.textContent = '✅ I\'ve Paid — Notify Admin';
+        btn.disabled = false;
     }
-
-    btn.textContent = '🔒 Complete Purchase';
-    btn.disabled = false;
     _pendingVerifTier = null;
 }
 
 function updateCurrentBadgeDisplay() {
     const display = document.getElementById('currentBadgeDisplay');
+    const label = document.getElementById('currentBadgeLabel');
     if (!display || !currentUser) return;
     const tier = currentUser.verificationBadge;
+    const pending = currentUser.verificationPending;
     if (!tier || tier === 'none') {
-        display.textContent = '';
+        display.textContent = pending ? '⏳' : '🔓';
+        if (label) label.textContent = pending 
+            ? `${VERIF_TIERS[pending]?.name} — Pending Approval` 
+            : 'Tap to Get Verified ›';
     } else {
-        display.textContent = VERIF_TIERS[tier]?.icon || '';
+        display.textContent = VERIF_TIERS[tier]?.icon || '✅';
+        if (label) label.textContent = VERIF_TIERS[tier]?.name || 'Verified';
     }
+}
+
+function openVerifShopFromMenu() {
+    // Navigate to profile section which now has badge shortcut,
+    // or open the first tier (gold) modal directly
+    document.getElementById('mainMenuPanel') && document.getElementById('mainMenuPanel').classList.remove('active');
+    document.getElementById('mainMenuOverlay') && document.getElementById('mainMenuOverlay').classList.remove('active');
+    purchaseVerification('gold');
 }
 
 // Close on overlay click
