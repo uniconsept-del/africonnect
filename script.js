@@ -78,6 +78,95 @@ function initLamp() {
 }
 
 // ==========================================
+// VERIFICATION PURCHASE SYSTEM
+// ==========================================
+
+const VERIF_TIERS = {
+    silver:  { icon: '🥈', name: 'Silver Verified',  price: '$2.99', desc: 'Get the Silver trust badge visible on your profile and in Discovery.' },
+    gold:    { icon: '🥇', name: 'Gold Verified',    price: '$7.99', desc: 'Gold badge + appear higher in Discovery. More visibility, more matches.' },
+    diamond: { icon: '💎', name: 'Diamond Verified', price: '$14.99', desc: 'Diamond badge + top placement in Discovery + unlimited super likes.' }
+};
+
+let _pendingVerifTier = null;
+
+function purchaseVerification(tier) {
+    const t = VERIF_TIERS[tier];
+    if (!t) return;
+    _pendingVerifTier = tier;
+
+    document.getElementById('verifModalIcon').textContent = t.icon;
+    document.getElementById('verifModalTitle').textContent = t.name;
+    document.getElementById('verifModalDesc').textContent = t.desc;
+    document.getElementById('verifModalPrice').textContent = t.price;
+    document.getElementById('verifPurchaseModal').classList.add('active');
+}
+
+function closeVerifModal() {
+    document.getElementById('verifPurchaseModal').classList.remove('active');
+    _pendingVerifTier = null;
+}
+
+async function confirmVerificationPurchase() {
+    if (!_pendingVerifTier || !currentUser) return;
+
+    const tier = _pendingVerifTier;
+    const t = VERIF_TIERS[tier];
+
+    // Update button to show processing
+    const btn = document.getElementById('verifConfirmBtn');
+    btn.textContent = '⏳ Processing...';
+    btn.disabled = true;
+
+    // Simulate payment processing (demo mode)
+    await new Promise(r => setTimeout(r, 1500));
+
+    try {
+        // Save badge to Firebase
+        if (window._firebaseReady && currentUser) {
+            await window._dbSet(
+                window._dbRef(window._db, `users/${currentUser.username}/verificationBadge`), tier
+            );
+        }
+        // Also save locally
+        currentUser.verificationBadge = tier;
+        const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+        if (localUsers[currentUser.username]) {
+            localUsers[currentUser.username].verificationBadge = tier;
+            localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
+        }
+
+        closeVerifModal();
+        showToast(`${t.icon} You're now ${t.name}! Badge applied to your profile.`);
+        updateCurrentBadgeDisplay();
+
+    } catch(e) {
+        showToast('Error applying badge. Please try again.');
+        console.error(e);
+    }
+
+    btn.textContent = '🔒 Complete Purchase';
+    btn.disabled = false;
+    _pendingVerifTier = null;
+}
+
+function updateCurrentBadgeDisplay() {
+    const display = document.getElementById('currentBadgeDisplay');
+    if (!display || !currentUser) return;
+    const tier = currentUser.verificationBadge;
+    if (!tier || tier === 'none') {
+        display.textContent = '';
+    } else {
+        display.textContent = VERIF_TIERS[tier]?.icon || '';
+    }
+}
+
+// Close on overlay click
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('verifPurchaseModal');
+    if (modal && e.target === modal) closeVerifModal();
+});
+
+// ==========================================
 // NETWORK STATUS CHECK
 // ==========================================
 
@@ -433,6 +522,7 @@ function loadUserProfile() {
     document.getElementById('lookingFor').value = profile.lookingFor || 'everyone';
     
     renderPhotoGrid();
+    updateCurrentBadgeDisplay();
 }
 
 async function saveProfile() {
