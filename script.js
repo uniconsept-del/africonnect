@@ -118,7 +118,7 @@ function purchaseVerification(tier) {
     // Build payment details
     const payEl = document.getElementById('verifPaymentDetails');
     if (payEl) {
-        payEl.innerHTML = \`
+        payEl.innerHTML = `
             <div class="verif-payment-box">
                 <div class="verif-payment-label">MAKE PAYMENT TO:</div>
                 <div class="verif-payment-row">
@@ -142,7 +142,7 @@ function purchaseVerification(tier) {
                 <i class="fab fa-whatsapp"></i> Send Payment Proof on WhatsApp
             </a>
             <p class="verif-payment-note">After payment, send your screenshot on WhatsApp. Your badge will be activated within 24 hours.</p>
-        \`;
+        `;
     }
 
     document.getElementById('verifPurchaseModal').classList.add('active');
@@ -1808,7 +1808,6 @@ function updateGroupChatLimitUI() {
             }
         }
     }
-}
 
 function closeGroupChat() {
     document.getElementById('groupChatBox').classList.remove('active');
@@ -3095,3 +3094,4 @@ document.addEventListener('DOMContentLoaded', function() {
         if (offlineOverlay) offlineOverlay.classList.add('active');
     });
 });
+}
