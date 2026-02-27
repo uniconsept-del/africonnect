@@ -89,39 +89,15 @@ const VERIF_TIERS = {
 
 let _pendingVerifTier = null;
 
-function openVerifMenu() {
-    toggleMainMenu();
-    // Update current badge display
-    const display = document.getElementById('verifMenuCurrentBadge');
-    if (display && currentUser && currentUser.verificationBadge && currentUser.verificationBadge !== 'none') {
-        const t = VERIF_TIERS[currentUser.verificationBadge];
-        display.textContent = t ? `Current: ${t.icon} ${t.name}` : '';
-    } else if (display) {
-        display.textContent = 'No badge yet — choose a tier below';
-    }
-    document.getElementById('verifMenuModal').classList.add('active');
-}
-
-function closeVerifMenu() {
-    document.getElementById('verifMenuModal').classList.remove('active');
-}
-
 function purchaseVerification(tier) {
     const t = VERIF_TIERS[tier];
     if (!t) return;
     _pendingVerifTier = tier;
 
-    // Close the menu modal if open
-    const menuModal = document.getElementById('verifMenuModal');
-    if (menuModal) menuModal.classList.remove('active');
-
     document.getElementById('verifModalIcon').textContent = t.icon;
     document.getElementById('verifModalTitle').textContent = t.name;
     document.getElementById('verifModalDesc').textContent = t.desc;
     document.getElementById('verifModalPrice').textContent = t.price;
-    // Update payment step amount
-    const payStep = document.getElementById('payStepAmount');
-    if (payStep) payStep.textContent = t.price;
     document.getElementById('verifPurchaseModal').classList.add('active');
 }
 
@@ -130,30 +106,91 @@ function closeVerifModal() {
     _pendingVerifTier = null;
 }
 
-// NOTE: Badge granting is done by admin only via admin.html panel.
-// Users pay and notify admin via WhatsApp; admin grants badge from the backend.
 async function confirmVerificationPurchase() {
-    // This function is now only called by admin panel indirectly.
-    // User flow: pay → WhatsApp → admin grants badge.
-    closeVerifModal();
+    if (!_pendingVerifTier || !currentUser) return;
+
+    const tier = _pendingVerifTier;
+    const t = VERIF_TIERS[tier];
+
+    const btn = document.getElementById('verifConfirmBtn');
+    btn.textContent = '⏳ Submitting...';
+    btn.disabled = true;
+
+    try {
+        // Save pending verification request to Firebase for admin to approve
+        const pendingPayload = {
+            username: currentUser.username,
+            name: currentUser.profile.name,
+            avatar: (currentUser.profile.photos && currentUser.profile.photos[0]) || '',
+            tier: tier,
+            price: t.price,
+            requestedAt: Date.now(),
+            status: 'pending'
+        };
+        if (window._firebaseReady) {
+            await window._dbSet(
+                window._dbRef(window._db, `verificationRequests/${currentUser.username}`),
+                pendingPayload
+            );
+            // Mark user as pending
+            await window._dbSet(
+                window._dbRef(window._db, `users/${currentUser.username}/verificationPending`), tier
+            );
+        }
+        // Also save locally
+        currentUser.verificationPending = tier;
+        const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+        if (localUsers[currentUser.username]) {
+            localUsers[currentUser.username].verificationPending = tier;
+            localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
+        }
+
+        // Show pending status in modal
+        document.getElementById('verifPaymentInstructions').style.display = 'none';
+        document.getElementById('verifPendingStatus').style.display = 'block';
+        btn.textContent = '✅ Submitted!';
+        showToast(`${t.icon} Payment notification sent! Admin will verify within 24hrs.`);
+
+        setTimeout(() => {
+            closeVerifModal();
+            btn.textContent = '✅ I\'ve Paid — Notify Admin';
+            btn.disabled = false;
+            document.getElementById('verifPaymentInstructions').style.display = 'block';
+            document.getElementById('verifPendingStatus').style.display = 'none';
+        }, 2500);
+
+    } catch(e) {
+        showToast('Error submitting request. Please try again.');
+        console.error(e);
+        btn.textContent = '✅ I\'ve Paid — Notify Admin';
+        btn.disabled = false;
+    }
+    _pendingVerifTier = null;
 }
 
 function updateCurrentBadgeDisplay() {
     const display = document.getElementById('currentBadgeDisplay');
-    if (display && currentUser) {
-        const tier = currentUser.verificationBadge;
-        if (!tier || tier === 'none') {
-            display.textContent = '';
-        } else {
-            display.textContent = VERIF_TIERS[tier]?.icon || '';
-        }
+    const label = document.getElementById('currentBadgeLabel');
+    if (!display || !currentUser) return;
+    const tier = currentUser.verificationBadge;
+    const pending = currentUser.verificationPending;
+    if (!tier || tier === 'none') {
+        display.textContent = pending ? '⏳' : '🔓';
+        if (label) label.textContent = pending 
+            ? `${VERIF_TIERS[pending]?.name} — Pending Approval` 
+            : 'Tap to Get Verified ›';
+    } else {
+        display.textContent = VERIF_TIERS[tier]?.icon || '✅';
+        if (label) label.textContent = VERIF_TIERS[tier]?.name || 'Verified';
     }
-    // Also update hamburger menu badge display
-    const menuBadge = document.getElementById('menuBadgeDisplay');
-    if (menuBadge && currentUser) {
-        const tier = currentUser.verificationBadge;
-        menuBadge.textContent = (tier && tier !== 'none') ? (VERIF_TIERS[tier]?.icon || '') : '';
-    }
+}
+
+function openVerifShopFromMenu() {
+    // Navigate to profile section which now has badge shortcut,
+    // or open the first tier (gold) modal directly
+    document.getElementById('mainMenuPanel') && document.getElementById('mainMenuPanel').classList.remove('active');
+    document.getElementById('mainMenuOverlay') && document.getElementById('mainMenuOverlay').classList.remove('active');
+    purchaseVerification('gold');
 }
 
 // Close on overlay click
@@ -186,39 +223,32 @@ const AFRICA_MAP_URL = 'https://static.vecteezy.com/system/resources/previews/00
 
 async function initAuth() {
     const session = localStorage.getItem('afriConnect_session');
-    if (!session) return;
-
-    let saved;
-    try { saved = JSON.parse(session); } catch(e) { localStorage.removeItem('afriConnect_session'); return; }
-    if (!saved || !saved.username) { localStorage.removeItem('afriConnect_session'); return; }
-
-    // Step 1: Restore immediately from localStorage cache (prevents logout on refresh)
-    const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-    if (localUsers[saved.username]) {
-        currentUser = localUsers[saved.username];
-        enterApp();
-        subscribeToIncomingMessages();
-    }
-
-    // Step 2: Sync with Firebase in background — never log out on error
-    if (window._firebaseReady) {
+    if (session) {
         try {
-            const snapshot = await window._dbGet(window._dbRef(window._db, `users/${saved.username}`));
-            if (snapshot.exists()) {
-                currentUser = snapshot.val();
-                localUsers[saved.username] = currentUser;
-                localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
-                if (document.getElementById('swipe-interface').classList.contains('active')) {
-                    loadUserProfile();
-                } else {
+            const saved = JSON.parse(session);
+            if (window._firebaseReady) {
+                const snapshot = await window._dbGet(window._dbRef(window._db, `users/${saved.username}`));
+                if (snapshot.exists()) {
+                    currentUser = snapshot.val();
                     enterApp();
-                    subscribeToIncomingMessages();
+                } else {
+                    localStorage.removeItem('afriConnect_session');
+                    currentUser = null;
                 }
-            } else if (!currentUser) {
-                localStorage.removeItem('afriConnect_session');
+            } else {
+                // Firebase not configured yet - fall back to localStorage
+                const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                if (users[saved.username]) {
+                    currentUser = users[saved.username];
+                    enterApp();
+                } else {
+                    localStorage.removeItem('afriConnect_session');
+                    currentUser = null;
+                }
             }
         } catch (e) {
-            console.warn('Firebase session sync failed — staying logged in with cached data:', e);
+            localStorage.removeItem('afriConnect_session');
+            currentUser = null;
         }
     }
 }
@@ -451,89 +481,6 @@ async function handleSignup(e) {
     }
 }
 
-// ==========================================
-// INITIALIZE STARTER CONTENT FOR NEW USERS
-// ==========================================
-
-function initializeStarterContent() {
-    if (!currentUser) return;
-    
-    // If user already has matches and chats, don't override them
-    if (currentUser.matches && currentUser.matches.length > 0) return;
-    
-    // Select 5-8 random bot profiles as initial matches
-    const botProfiles = profiles.filter(p => p.isBot);
-    const shuffled = botProfiles.sort(() => 0.5 - Math.random());
-    const starterMatches = shuffled.slice(0, Math.floor(Math.random() * 4) + 5); // 5-8 matches
-    
-    currentUser.matches = starterMatches.map(profile => ({
-        name: profile.name,
-        age: profile.age,
-        bio: profile.bio,
-        distance: profile.distance,
-        job: profile.job,
-        company: profile.company,
-        school: profile.school,
-        phone: profile.phone,
-        country: profile.country,
-        gender: profile.gender,
-        img: profile.img,
-        photos: profile.photos,
-        verified: profile.verified,
-        verificationBadge: profile.verificationBadge,
-        isBot: profile.isBot,
-        lastActive: ['Just now', '5m ago', '2h ago', 'Today'][Math.floor(Math.random() * 4)]
-    }));
-    
-    // Create 2-3 starter chat conversations
-    const starterChats = starterMatches.slice(0, Math.floor(Math.random() * 2) + 2).map(profile => {
-        const greetings = [
-            "Hey! I saw your profile and thought we'd vibe 😊",
-            "Hi there! You seem really interesting. How's your day going?",
-            "Hello! I love your profile. What do you do for fun?",
-            "Hey! Nice to match with you. Tell me something interesting about yourself!",
-            "Hi! I'm excited to chat with you. What brought you to AfriConnect?"
-        ];
-        
-        const greeting = greetings[Math.floor(Math.random() * greetings.length)];
-        
-        return {
-            name: profile.name,
-            message: greeting,
-            time: ['Just now', '5m ago', '1h ago', '2h ago'][Math.floor(Math.random() * 4)],
-            unread: Math.random() > 0.5 ? Math.floor(Math.random() * 3) + 1 : 0,
-            img: profile.img,
-            bio: profile.bio,
-            job: profile.job,
-            company: profile.company,
-            school: profile.school,
-            phone: profile.phone,
-            age: profile.age,
-            photos: profile.photos,
-            isBot: profile.isBot
-        };
-    });
-    
-    currentUser.chats = starterChats;
-    
-    // Initialize chat histories with the greeting messages
-    starterChats.forEach(chat => {
-        chatHistories[chat.name] = [
-            { text: "You matched! Say hello 👋", sent: false, time: "Earlier" },
-            { text: chat.message, sent: false, time: chat.time }
-        ];
-    });
-    
-    // Save to storage
-    if (window._firebaseReady) {
-        window._dbSet(window._dbRef(window._db, `users/${currentUser.username}`), currentUser);
-    }
-    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-    users[currentUser.username] = currentUser;
-    localStorage.setItem('afriConnect_users', JSON.stringify(users));
-    localStorage.setItem('afriConnect_session', JSON.stringify({ username: currentUser.username }));
-}
-
 function enterApp() {
     document.getElementById('interface-container').style.display = 'none';
     document.getElementById('touchLamp').style.display = 'none';
@@ -548,18 +495,14 @@ function enterApp() {
         }
     }, 50);
     
-    // Initialize starter matches and chats for new users
-    initializeStarterContent();
-    
     loadUserProfile();
     initDiscovery();
-    initFlashView();
+    initNearby();
     initGroups();
     initMatches();
     initChats();
     initMarket();
     updateNotificationBadge();
-    applySavedTheme();
     
     // Load all Firebase users and subscribe to real-time messages
     loadFirebaseUsers();
@@ -589,59 +532,27 @@ function logout() {
 }
 
 function loadUserProfile() {
-    if (!currentUser || !currentUser.profile) return;
+    if (!currentUser) return;
     
     const profile = currentUser.profile;
-    const avatarSrc = (profile.photos && profile.photos[0]) ? profile.photos[0] : AFRICA_MAP_URL;
-
-    // Avatars with error fallback
-    const userAvatarEl = document.getElementById('userAvatar');
-    const menuAvatarEl = document.getElementById('menuUserAvatar');
-    if (userAvatarEl) { userAvatarEl.src = avatarSrc; userAvatarEl.onerror = () => { userAvatarEl.src = AFRICA_MAP_URL; }; }
-    if (menuAvatarEl) { menuAvatarEl.src = avatarSrc; menuAvatarEl.onerror = () => { menuAvatarEl.src = AFRICA_MAP_URL; }; }
-
-    // Menu name
-    const menuNameEl = document.getElementById('menuUserName');
-    if (menuNameEl) menuNameEl.textContent = profile.name || currentUser.username;
-
-    // Profile header name/age display
-    const dispName = document.getElementById('profileDisplayName');
-    const dispAge  = document.getElementById('profileDisplayAge');
-    if (dispName) dispName.textContent = profile.name || currentUser.username;
-    if (dispAge)  dispAge.textContent  = profile.age ? `${profile.age} years old` : '';
-
-    // Form fields
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-    setVal('profileName',    profile.name);
-    setVal('profileAge',     profile.age);
-    setVal('profileBio',     profile.bio);
-    setVal('profileJob',     profile.job);
-    setVal('profileCompany', profile.company);
-    setVal('profileSchool',  profile.school);
-    setVal('profilePhone',   profile.phone);
-
-    const distSlider = document.getElementById('distanceSlider');
-    const distVal    = document.getElementById('distanceValue');
-    if (distSlider) distSlider.value = profile.distance || 50;
-    if (distVal)    distVal.textContent = (profile.distance || 50) + ' km';
-
-    const ageMinEl = document.getElementById('ageMin');
-    const ageMaxEl = document.getElementById('ageMax');
-    const ageVal   = document.getElementById('ageValue');
-    if (ageMinEl) ageMinEl.value = profile.ageMin || 22;
-    if (ageMaxEl) ageMaxEl.value = profile.ageMax || 30;
-    if (ageVal)   ageVal.textContent = (profile.ageMin || 22) + ' - ' + (profile.ageMax || 30);
-
-    const lookingForEl = document.getElementById('lookingFor');
-    if (lookingForEl) lookingForEl.value = profile.lookingFor || 'everyone';
-
-    // Gender selection
-    document.querySelectorAll('.gender-option').forEach(opt => {
-        opt.classList.remove('selected');
-        if (opt.getAttribute('onclick') && opt.getAttribute('onclick').includes(`'${profile.gender}'`)) {
-            opt.classList.add('selected');
-        }
-    });
+    
+    document.getElementById('userAvatar').src = profile.photos[0] || AFRICA_MAP_URL;
+    document.getElementById('menuUserAvatar').src = profile.photos[0] || AFRICA_MAP_URL;
+    document.getElementById('menuUserName').textContent = profile.name;
+    
+    document.getElementById('profileName').value = profile.name || '';
+    document.getElementById('profileAge').value = profile.age || '';
+    document.getElementById('profileBio').value = profile.bio || '';
+    document.getElementById('profileJob').value = profile.job || '';
+    document.getElementById('profileCompany').value = profile.company || '';
+    document.getElementById('profileSchool').value = profile.school || '';
+    document.getElementById('profilePhone').value = profile.phone || '';
+    document.getElementById('distanceSlider').value = profile.distance || 50;
+    document.getElementById('distanceValue').textContent = (profile.distance || 50) + ' km';
+    document.getElementById('ageMin').value = profile.ageMin || 22;
+    document.getElementById('ageMax').value = profile.ageMax || 30;
+    document.getElementById('ageValue').textContent = (profile.ageMin || 22) + ' - ' + (profile.ageMax || 30);
+    document.getElementById('lookingFor').value = profile.lookingFor || 'everyone';
     
     renderPhotoGrid();
     updateCurrentBadgeDisplay();
@@ -822,6 +733,7 @@ let userProfile = {
     distance: 50,
     ageMin: 22,
     ageMax: 30,
+    nearbyActive: true,
     photos: [AFRICA_MAP_URL]
 };
 
@@ -1016,6 +928,17 @@ const profiles = [
     }
 ];
 
+// Nearby people seeded from all bot profiles
+let nearbyPeople = profiles.map(p => ({
+    name: p.name,
+    age: p.age,
+    distance: p.distance,
+    img: p.img,
+    online: Math.random() > 0.3,
+    isRegisteredUser: false,
+    isBot: true
+}));
+
 let matches = [];
 let chats = [];
 
@@ -1178,7 +1101,7 @@ function showSectionFromMenu(section) {
     showSection(section, true);
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (section === 'swipe') document.querySelectorAll('.nav-item')[0].classList.add('active');
-    else if (section === 'flashview') document.querySelectorAll('.nav-item')[1].classList.add('active');
+    else if (section === 'nearby') document.querySelectorAll('.nav-item')[1].classList.add('active');
     else if (section === 'matches') document.querySelectorAll('.nav-item')[2].classList.add('active');
     else if (section === 'messages') document.querySelectorAll('.nav-item')[3].classList.add('active');
 }
@@ -1277,9 +1200,9 @@ async function loadFirebaseUsers() {
             const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
             Object.assign(localUsers, window._firebaseUsersCache);
             localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
-            // Refresh discovery grid and flash view
+            // Refresh discovery grid
             initDiscovery();
-            initFlashView();
+            initNearby();
         }
     } catch (err) {
         console.warn('Could not load Firebase users:', err);
@@ -1643,6 +1566,126 @@ function updateNotificationBadge() {
     } else {
         badge.classList.add('hidden');
     }
+}
+
+// ==========================================
+// NEARBY FUNCTIONS
+// ==========================================
+
+function getAllNearbyPeople() {
+    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+    const allNearby = [...nearbyPeople];
+    
+    Object.values(users).forEach(user => {
+        if (currentUser && user.username === currentUser.username) return;
+        
+        const exists = allNearby.some(p => p.name === (user.profile.name || user.username));
+        if (!exists) {
+            const distance = (Math.random() * 5).toFixed(1);
+            const nearbyUser = {
+                name: user.profile.name || user.username,
+                age: user.profile.age || 24,
+                distance: `${distance} km`,
+                img: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos[0] : AFRICA_MAP_URL,
+                online: Math.random() > 0.3,
+                isRegisteredUser: true,
+                username: user.username,
+                isBot: false
+            };
+            allNearby.push(nearbyUser);
+        }
+    });
+    
+    return allNearby;
+}
+
+function initNearby() {
+    const allNearby = getAllNearbyPeople();
+    renderNearbyGrid(allNearby);
+}
+
+function renderNearbyGrid(peopleList) {
+    const grid = document.getElementById('nearbyGrid');
+    document.getElementById('nearbyCountText').textContent = `${peopleList.length} people within 5 km`;
+    
+    grid.innerHTML = peopleList.map(person => `
+        <div class="nearby-card" onclick="viewNearbyProfile('${person.name}')">
+            <img src="${person.img}" alt="${person.name}">
+            <div class="nearby-distance">${person.distance}</div>
+            ${person.online ? '<div class="nearby-online"></div>' : ''}
+        </div>
+    `).join('');
+}
+
+function toggleNearby(element) {
+    element.classList.toggle('active');
+    userProfile.nearbyActive = element.classList.contains('active');
+    showToast(userProfile.nearbyActive ? "Nearby mode activated! 📍" : "Nearby mode disabled");
+}
+
+function filterNearby(distance) {
+    showToast(`Showing people within ${distance} km`);
+}
+
+function viewNearbyProfile(name) {
+    const allNearby = getAllNearbyPeople();
+    const person = allNearby.find(p => p.name === name);
+    if (!person) return;
+    
+    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+    const userData = Object.values(users).find(u => (u.profile.name || u.username) === name);
+    
+    const profile = userData ? {
+        ...person,
+        bio: userData.profile.bio || 'New to AfriConnect',
+        job: userData.profile.job || 'Member',
+        company: userData.profile.company || 'AfriConnect',
+        school: userData.profile.school || '',
+        phone: userData.profile.phone || 'Hidden',
+        photos: userData.profile.photos || [person.img],
+        isBot: false
+    } : {
+        ...person,
+        bio: "Nearby user looking to connect!",
+        job: "Unknown",
+        company: "Unknown",
+        school: "Unknown",
+        phone: "Hidden",
+        photos: [person.img],
+        isBot: false
+    };
+    
+    currentViewingProfile = profile;
+    
+    const modal = document.getElementById('profileModal');
+    const content = document.getElementById('profileModalContent');
+    const actions = document.getElementById('profileModalActions');
+    
+    content.innerHTML = `
+        <div class="profile-hero">
+            <img src="${profile.img}" alt="${profile.name}">
+            <div class="profile-hero-info">
+                <h2 class="text-3xl font-bold text-white mb-2">${profile.name}, ${profile.age}</h2>
+                <p class="text-yellow-400 text-sm"><i class="fas fa-map-marker-alt mr-2"></i>${profile.distance} away</p>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h3 class="text-base font-bold text-yellow-500 mb-3">About</h3>
+            <p class="text-gray-300 text-sm leading-relaxed">${profile.bio}</p>
+        </div>
+    `;
+    
+    actions.innerHTML = `
+        <button class="action-bar-btn dislike" onclick="closeProfileModal()">
+            <i class="fas fa-times"></i>
+        </button>
+        <button class="action-bar-btn like" onclick="closeProfileModal(); showToast('Like sent! 💛')">
+            <i class="fas fa-heart"></i>
+        </button>
+    `;
+    
+    modal.classList.add('active');
 }
 
 // ==========================================
@@ -2445,25 +2488,11 @@ function closeChat() {
 function renderMessages(userName) {
     const container = document.getElementById('chatMessages');
     const messages = chatHistories[userName] || [];
-
-    const myAvatar = (currentUser && currentUser.profile && currentUser.profile.photos && currentUser.profile.photos[0])
-        ? currentUser.profile.photos[0] : AFRICA_MAP_URL;
-    const partnerAvatar = (currentChatUser && currentChatUser.img)
-        ? currentChatUser.img : AFRICA_MAP_URL;
-
-    if (messages.length === 0) {
-        container.innerHTML = '<div style="text-align:center;color:#888;padding:40px;font-size:13px;">No messages yet. Say hello! 👋</div>';
-        return;
-    }
-
+    
     container.innerHTML = messages.map(msg => `
         <div class="message ${msg.sent ? 'sent' : 'received'}">
-            ${!msg.sent ? `<img src="${partnerAvatar}" class="msg-avatar" alt="${userName}" onerror="this.src='${AFRICA_MAP_URL}'">` : ''}
-            <div class="msg-bubble">
-                <div>${msg.text}</div>
-                <div class="message-time">${msg.time}</div>
-            </div>
-            ${msg.sent ? `<img src="${myAvatar}" class="msg-avatar" alt="You" onerror="this.src='${AFRICA_MAP_URL}'">` : ''}
+            <div>${msg.text}</div>
+            <div class="message-time">${msg.time}</div>
         </div>
     `).join('');
     
@@ -2504,14 +2533,6 @@ async function sendMessage() {
             
             // Push message — onValue listener will update both sides instantly
             await window._dbPush(window._dbRef(window._db, `chats/${chatKey}/messages`), firebaseMsg);
-            
-            // Write chat meta so admin panel can display last message
-            await window._dbSet(window._dbRef(window._db, `chats/${chatKey}/meta`), {
-                lastMessage: text,
-                lastTime: time,
-                lastFrom: currentUser.username,
-                timestamp: Date.now()
-            });
             
             // Update chatList for BOTH participants so the conversation appears in both inboxes
             const chatListMeta = {
@@ -2609,24 +2630,12 @@ function initMatches() {
 }
 
 function initChats() {
-    // Merge saved chats from currentUser into the live chats array — don't overwrite
-    if (currentUser && currentUser.chats && currentUser.chats.length > 0) {
-        currentUser.chats.forEach(savedChat => {
-            const exists = chats.find(c => c.name === savedChat.name);
-            if (!exists) {
-                chats.push(savedChat);
-                // Seed chat history only if we don't already have real messages
-                if (!chatHistories[savedChat.name] || chatHistories[savedChat.name].length === 0) {
-                    chatHistories[savedChat.name] = [
-                        { text: savedChat.message || 'You matched!', sent: false, time: savedChat.time || 'Earlier' }
-                    ];
-                }
-            }
-        });
+    if (currentUser && currentUser.chats) {
+        chats = currentUser.chats;
+        initializeChatHistories();
     }
     
     const list = document.getElementById('chatList');
-    if (!list) return;
     
     if (chats.length === 0) {
         list.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">No messages yet. Match with someone to start chatting!</div>';
@@ -2635,13 +2644,13 @@ function initChats() {
     
     list.innerHTML = chats.map(chat => `
         <div class="chat-item" onclick="openChat('${chat.name}')">
-            <img src="${chat.img || ''}" class="chat-avatar" alt="${chat.name}" onerror="this.src='https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg'">
+            <img src="${chat.img}" class="chat-avatar" alt="${chat.name}">
             <div class="chat-preview">
                 <div class="chat-name">${chat.name}</div>
-                <div class="chat-message">${chat.message || ''}</div>
+                <div class="chat-message">${chat.message}</div>
             </div>
             <div class="text-right">
-                <div class="chat-time">${chat.time || ''}</div>
+                <div class="chat-time">${chat.time}</div>
                 ${chat.unread > 0 ? `<div class="unread-badge">${chat.unread}</div>` : ''}
             </div>
         </div>
@@ -2882,350 +2891,6 @@ document.addEventListener('click', (e) => {
 });
 
 // ==========================================
-// FLASH-VIEW FUNCTIONALITY
-// ==========================================
-
-let flashPosts = [];
-let currentFlashPost = null;
-
-// Load flash posts from localStorage
-function loadFlashPosts() {
-    const saved = localStorage.getItem('africonnect_flash_posts');
-    if (saved) {
-        flashPosts = JSON.parse(saved);
-        // Remove expired posts (older than 48 hours)
-        const now = Date.now();
-        flashPosts = flashPosts.filter(post => (now - post.timestamp) < 48 * 60 * 60 * 1000);
-        localStorage.setItem('africonnect_flash_posts', JSON.stringify(flashPosts));
-    }
-}
-
-// Save flash posts to localStorage
-function saveFlashPosts() {
-    localStorage.setItem('africonnect_flash_posts', JSON.stringify(flashPosts));
-}
-
-// Initialize Flash-View section
-function initFlashView() {
-    loadFlashPosts();
-    renderFlashFeed();
-}
-
-// Render flash feed
-function renderFlashFeed() {
-    const feed = document.getElementById('flashFeed');
-    if (!feed) return;
-    
-    if (flashPosts.length === 0) {
-        feed.innerHTML = `
-            <div class="p-8 text-center">
-                <i class="fas fa-bolt text-6xl text-gray-600 mb-4"></i>
-                <p class="text-gray-400">No flash posts yet</p>
-                <p class="text-xs text-gray-500 mt-2">Be the first to share a moment!</p>
-            </div>
-        `;
-        return;
-    }
-    
-    // Sort by timestamp (newest first)
-    const sortedPosts = [...flashPosts].sort((a, b) => b.timestamp - a.timestamp);
-    
-    feed.innerHTML = sortedPosts.map(post => {
-        const timeAgo = getTimeAgo(post.timestamp);
-        const timeLeft = getTimeLeft(post.timestamp);
-        const liked = post.likes && post.likes.includes(currentUser?.username);
-        
-        return `
-            <div class="flash-post">
-                <div class="flash-post-header">
-                    <img src="${post.userAvatar}" alt="${post.username}" class="flash-avatar">
-                    <div class="flex-1">
-                        <div class="font-bold text-white text-sm">${post.userName}</div>
-                        <div class="text-xs text-gray-400">${timeAgo} • ${timeLeft} left</div>
-                    </div>
-                </div>
-                <div class="flash-post-image" onclick="openFlashDetail('${post.id}')">
-                    <img src="${post.image}" alt="Flash post">
-                </div>
-                ${post.caption ? `<div class="flash-post-caption">${post.caption}</div>` : ''}
-                <div class="flash-post-actions">
-                    <button class="flash-action-btn ${liked ? 'liked' : ''}" onclick="toggleFlashLike('${post.id}')">
-                        <i class="fas fa-heart"></i>
-                        <span>${post.likes?.length || 0}</span>
-                    </button>
-                    <button class="flash-action-btn" onclick="openFlashDetail('${post.id}')">
-                        <i class="fas fa-comment"></i>
-                        <span>${post.comments?.length || 0}</span>
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-// Get time ago
-function getTimeAgo(timestamp) {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.floor(hours / 24)}d ago`;
-}
-
-// Get time left before expiry
-function getTimeLeft(timestamp) {
-    const expiryTime = timestamp + (48 * 60 * 60 * 1000);
-    const now = Date.now();
-    const diff = expiryTime - now;
-    const hours = Math.floor(diff / 3600000);
-    
-    if (hours < 1) return '<1h';
-    if (hours < 24) return `${hours}h`;
-    return `${Math.floor(hours / 24)}d`;
-}
-
-// Open create flash modal
-function openCreateFlash() {
-    document.getElementById('createFlashModal').classList.add('active');
-    document.getElementById('flashImageInput').value = '';
-    document.getElementById('flashCaption').value = '';
-    document.getElementById('flashImagePreview').classList.add('hidden');
-}
-
-// Close create flash modal
-function closeCreateFlash() {
-    document.getElementById('createFlashModal').classList.remove('active');
-}
-
-// Preview flash image
-document.addEventListener('DOMContentLoaded', function() {
-    const flashInput = document.getElementById('flashImageInput');
-    if (flashInput) {
-        flashInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    document.getElementById('flashPreviewImg').src = event.target.result;
-                    document.getElementById('flashImagePreview').classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-});
-
-// Create flash post
-function createFlashPost() {
-    const input = document.getElementById('flashImageInput');
-    const caption = document.getElementById('flashCaption').value;
-    
-    if (!input.files || !input.files[0]) {
-        showToast('Please select an image');
-        return;
-    }
-    
-    const file = input.files[0];
-    const reader = new FileReader();
-    
-    reader.onload = function(e) {
-        const post = {
-            id: 'flash_' + Date.now(),
-            username: currentUser.username,
-            userName: currentUser.profile.name || currentUser.username,
-            userAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
-            image: e.target.result,
-            caption: caption,
-            timestamp: Date.now(),
-            likes: [],
-            comments: []
-        };
-        
-        flashPosts.unshift(post);
-        saveFlashPosts();
-        renderFlashFeed();
-        closeCreateFlash();
-        showToast('Flash posted! 🎉');
-    };
-    
-    reader.readAsDataURL(file);
-}
-
-// Toggle flash like
-function toggleFlashLike(postId) {
-    const post = flashPosts.find(p => p.id === postId);
-    if (!post) return;
-    
-    if (!post.likes) post.likes = [];
-    
-    const index = post.likes.indexOf(currentUser.username);
-    if (index > -1) {
-        post.likes.splice(index, 1);
-    } else {
-        post.likes.push(currentUser.username);
-    }
-    
-    saveFlashPosts();
-    renderFlashFeed();
-    
-    if (currentFlashPost && currentFlashPost.id === postId) {
-        currentFlashPost = post;
-        renderFlashDetail();
-    }
-}
-
-// Open flash detail
-function openFlashDetail(postId) {
-    const post = flashPosts.find(p => p.id === postId);
-    if (!post) return;
-    
-    currentFlashPost = post;
-    document.getElementById('flashDetailModal').classList.add('active');
-    document.getElementById('flashDetailUsername').textContent = post.userName;
-    renderFlashDetail();
-}
-
-// Close flash detail
-function closeFlashDetail() {
-    document.getElementById('flashDetailModal').classList.remove('active');
-    currentFlashPost = null;
-}
-
-// Render flash detail
-function renderFlashDetail() {
-    if (!currentFlashPost) return;
-    
-    const content = document.getElementById('flashDetailContent');
-    const liked = currentFlashPost.likes && currentFlashPost.likes.includes(currentUser?.username);
-    const timeAgo = getTimeAgo(currentFlashPost.timestamp);
-    
-    content.innerHTML = `
-        <div class="flash-detail-image">
-            <img src="${currentFlashPost.image}" alt="Flash post">
-        </div>
-        ${currentFlashPost.caption ? `<div class="p-4 border-b border-white/10">
-            <p class="text-white">${currentFlashPost.caption}</p>
-        </div>` : ''}
-        <div class="flash-detail-actions">
-            <button class="flash-action-btn ${liked ? 'liked' : ''}" onclick="toggleFlashLike('${currentFlashPost.id}')">
-                <i class="fas fa-heart"></i>
-                <span>${currentFlashPost.likes?.length || 0} likes</span>
-            </button>
-        </div>
-        <div class="flash-comments">
-            <div class="flash-comments-header">
-                <h4 class="text-sm font-bold text-white">Comments</h4>
-            </div>
-            <div class="flash-comments-list" id="flashCommentsList">
-                ${renderFlashComments()}
-            </div>
-            <div class="flash-comment-input">
-                <input type="text" id="flashCommentInput" placeholder="Add a comment..." class="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-white text-sm">
-                <button onclick="addFlashComment()" class="ml-2 bg-yellow-500 text-black rounded-full w-10 h-10 flex items-center justify-center">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
-    `;
-}
-
-// Render flash comments
-function renderFlashComments() {
-    if (!currentFlashPost.comments || currentFlashPost.comments.length === 0) {
-        return '<div class="p-4 text-center text-gray-500 text-sm">No comments yet</div>';
-    }
-    
-    return currentFlashPost.comments.map(comment => `
-        <div class="flash-comment">
-            <img src="${comment.userAvatar}" alt="${comment.userName}" class="flash-comment-avatar">
-            <div class="flex-1">
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="font-bold text-white text-sm">${comment.userName}</span>
-                    <span class="text-xs text-gray-500">${getTimeAgo(comment.timestamp)}</span>
-                </div>
-                <p class="text-gray-300 text-sm">${comment.text}</p>
-            </div>
-        </div>
-    `).join('');
-}
-
-// Add flash comment
-function addFlashComment() {
-    const input = document.getElementById('flashCommentInput');
-    const text = input.value.trim();
-    
-    if (!text) return;
-    
-    if (!currentFlashPost.comments) currentFlashPost.comments = [];
-    
-    const comment = {
-        id: 'comment_' + Date.now(),
-        username: currentUser.username,
-        userName: currentUser.profile.name || currentUser.username,
-        userAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
-        text: text,
-        timestamp: Date.now()
-    };
-    
-    currentFlashPost.comments.push(comment);
-    saveFlashPosts();
-    renderFlashDetail();
-    renderFlashFeed();
-    input.value = '';
-}
-
-// Save flash image
-function saveFlashImage() {
-    if (!currentFlashPost) return;
-    
-    const link = document.createElement('a');
-    link.href = currentFlashPost.image;
-    link.download = `flash_${currentFlashPost.id}.jpg`;
-    link.click();
-    showToast('Image saved! 📥');
-}
-
-// ==========================================
-// THEME MODE FUNCTIONALITY
-// ==========================================
-
-// Set theme mode
-function setThemeMode(mode) {
-    const body = document.body;
-    const lightTick = document.getElementById('menuLightTick');
-    const darkTick = document.getElementById('menuDarkTick');
-    
-    if (mode === 'light') {
-        body.classList.add('light-mode');
-        if (lightTick) lightTick.style.display = 'inline';
-        if (darkTick) darkTick.style.display = 'none';
-        localStorage.setItem('africonnect_theme', 'light');
-    } else {
-        body.classList.remove('light-mode');
-        if (lightTick) lightTick.style.display = 'none';
-        if (darkTick) darkTick.style.display = 'inline';
-        localStorage.setItem('africonnect_theme', 'dark');
-    }
-}
-
-// Apply saved theme on page load
-function applySavedTheme() {
-    const saved = localStorage.getItem('africonnect_theme') || 'dark';
-    setThemeMode(saved);
-}
-
-// ==========================================
-// FIX PROFILE VIEWING IN DISCOVER
-// ==========================================
-
-// Make viewProfileDetails globally accessible
-window.viewProfileDetails = viewProfileDetails;
-
-// ==========================================
 // INITIALIZE ON PAGE LOAD
 // ==========================================
 
@@ -3242,19 +2907,20 @@ document.addEventListener('DOMContentLoaded', function() {
         if (banner) banner.style.display = 'block';
     }
     
-    // Initialize auth — prevent double-call
-    let _authInitialized = false;
-    function _runInitAuth() {
-        if (_authInitialized) return;
-        _authInitialized = true;
-        initAuth();
-    }
-
+    // Initialize auth — Firebase may or may not be ready
     if (window._firebaseReady) {
-        _runInitAuth();
+        initAuth();
     } else {
-        window.addEventListener('firebaseReady', () => { _runInitAuth(); });
-        setTimeout(() => { _runInitAuth(); }, 600);
+        // Listen for firebaseReady (real config provided)
+        window.addEventListener('firebaseReady', () => {
+            initAuth();
+        });
+        // If Firebase is not configured, init immediately with localStorage
+        setTimeout(() => {
+            if (!window._firebaseReady) {
+                initAuth();
+            }
+        }, 500);
     }
     
     // Setup online/offline listeners
