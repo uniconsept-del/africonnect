@@ -245,6 +245,19 @@
                     <span>Install App</span>
                 </div>
 
+                <!-- Theme Switcher -->
+                <div class="main-menu-item" id="menuLightModeBtn" onclick="setThemeMode('light'); toggleMainMenu();">
+                    <i class="fas fa-sun"></i>
+                    <span>Light Mode</span>
+                    <span id="menuLightTick" style="margin-left:auto; color:#fbbf24; display:none;"><i class="fas fa-check"></i></span>
+                </div>
+
+                <div class="main-menu-item" id="menuDarkModeBtn" onclick="setThemeMode('dark'); toggleMainMenu();">
+                    <i class="fas fa-moon"></i>
+                    <span>Dark Mode</span>
+                    <span id="menuDarkTick" style="margin-left:auto; color:#fbbf24; display:inline;"><i class="fas fa-check"></i></span>
+                </div>
+
                 <div class="main-menu-divider"></div>
 
                 <div class="main-menu-section-title">Verification</div>
@@ -324,29 +337,25 @@
             <div class="discovery-grid" id="discoveryGrid"></div>
         </div>
 
-        <!-- NEARBY SECTION -->
-        <div id="section-nearby" class="app-section">
-            <div class="nearby-toggle">
-                <div class="nearby-status"></div>
-                <div class="flex-1">
-                    <div class="font-bold text-white text-sm">Nearby Active</div>
-                    <div class="text-xs text-gray-400">People within 5 km can see you</div>
-                </div>
-                <div class="toggle-switch active" onclick="toggleNearby(this)"></div>
+
+        <!-- FLASH-VIEW SECTION -->
+        <div id="section-flashview" class="app-section">
+            <div class="section-header">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-bolt text-yellow-500"></i>
+                    Flash-View
+                </h2>
+                <button class="ml-auto px-4 py-2 bg-yellow-500 text-black font-bold rounded-lg text-sm" onclick="openCreateFlash()">
+                    <i class="fas fa-plus mr-1"></i> Post Flash
+                </button>
             </div>
-            <div class="p-3 border-b border-white/10 flex justify-between items-center">
-                <div>
-                    <h2 class="text-lg font-bold text-white">People Nearby</h2>
-                    <p class="text-xs text-gray-400" id="nearbyCountText">12 people within 5 km</p>
-                </div>
-                <select class="text-xs" onchange="filterNearby(this.value)">
-                    <option value="5">Within 5 km</option>
-                    <option value="10">Within 10 km</option>
-                    <option value="20">Within 20 km</option>
-                    <option value="50">Within 50 km</option>
-                </select>
+            <div class="p-3 bg-yellow-500/10 border-b border-yellow-500/20">
+                <p class="text-xs text-yellow-400">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Flash posts disappear after 48 hours • Share your moments!
+                </p>
             </div>
-            <div class="nearby-grid" id="nearbyGrid"></div>
+            <div class="flash-feed" id="flashFeed"></div>
         </div>
 
         <!-- GROUP CHAT SECTION -->
@@ -592,11 +601,6 @@
                         <span class="text-sm">Show me on AfriConnect</span>
                         <div class="toggle-switch active" id="showMeToggle" onclick="this.classList.toggle('active')"></div>
                     </div>
-
-                    <div class="setting-item">
-                        <span class="text-sm">Appear in Nearby</span>
-                        <div class="toggle-switch active" id="nearbyToggle" onclick="this.classList.toggle('active')"></div>
-                    </div>
                 </div>
 
                 <!-- Notifications -->
@@ -642,9 +646,9 @@
                 <i class="fas fa-fire text-lg"></i>
                 <span>Discover</span>
             </div>
-            <div class="nav-item" onclick="showSection('nearby')">
-                <i class="fas fa-map-marker-alt text-lg"></i>
-                <span>Nearby</span>
+            <div class="nav-item" onclick="showSection('flashview')">
+                <i class="fas fa-bolt text-lg"></i>
+                <span>Flash-View</span>
             </div>
             <div class="nav-item" onclick="showSection('matches')">
                 <i class="fas fa-heart text-lg"></i>
@@ -964,6 +968,50 @@
                 ✅ I've Made the Payment
             </button>
             <button class="verif-btn-cancel" onclick="closeVerifModal()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- FLASH-VIEW CREATE MODAL -->
+    <div class="flash-modal" id="createFlashModal" onclick="if(event.target===this)closeCreateFlash()">
+        <div class="flash-modal-content">
+            <div class="flash-modal-header">
+                <h3 class="text-xl font-bold text-white">Create Flash Post</h3>
+                <button onclick="closeCreateFlash()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-4">
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-400 mb-2">Choose Image</label>
+                    <input type="file" id="flashImageInput" accept="image/*" class="w-full p-2 bg-white/5 border border-white/10 rounded text-white">
+                    <div id="flashImagePreview" class="mt-2 hidden">
+                        <img id="flashPreviewImg" class="w-full rounded-lg" alt="Preview">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm text-gray-400 mb-2">Caption (optional)</label>
+                    <textarea id="flashCaption" class="w-full p-3 bg-white/5 border border-white/10 rounded text-white" rows="3" placeholder="Write a caption..."></textarea>
+                </div>
+                <button onclick="createFlashPost()" class="w-full py-3 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400">
+                    <i class="fas fa-bolt mr-2"></i>Post Flash
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLASH-VIEW DETAIL MODAL -->
+    <div class="flash-modal" id="flashDetailModal" onclick="if(event.target===this)closeFlashDetail()">
+        <div class="flash-modal-content">
+            <div class="flash-modal-header">
+                <button onclick="closeFlashDetail()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </button>
+                <h3 class="text-lg font-bold text-white" id="flashDetailUsername"></h3>
+                <button onclick="saveFlashImage()" class="text-yellow-500 hover:text-yellow-400">
+                    <i class="fas fa-download text-xl"></i>
+                </button>
+            </div>
+            <div id="flashDetailContent" class="flash-detail-content"></div>
         </div>
     </div>
 

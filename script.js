@@ -460,12 +460,13 @@ function enterApp() {
     
     loadUserProfile();
     initDiscovery();
-    initNearby();
+    initFlashView();
     initGroups();
     initMatches();
     initChats();
     initMarket();
     updateNotificationBadge();
+    applySavedTheme();
     
     // Load all Firebase users and subscribe to real-time messages
     loadFirebaseUsers();
@@ -696,7 +697,6 @@ let userProfile = {
     distance: 50,
     ageMin: 22,
     ageMax: 30,
-    nearbyActive: true,
     photos: [AFRICA_MAP_URL]
 };
 
@@ -891,17 +891,6 @@ const profiles = [
     }
 ];
 
-// Nearby people seeded from all bot profiles
-let nearbyPeople = profiles.map(p => ({
-    name: p.name,
-    age: p.age,
-    distance: p.distance,
-    img: p.img,
-    online: Math.random() > 0.3,
-    isRegisteredUser: false,
-    isBot: true
-}));
-
 let matches = [];
 let chats = [];
 
@@ -1064,7 +1053,7 @@ function showSectionFromMenu(section) {
     showSection(section, true);
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (section === 'swipe') document.querySelectorAll('.nav-item')[0].classList.add('active');
-    else if (section === 'nearby') document.querySelectorAll('.nav-item')[1].classList.add('active');
+    else if (section === 'flashview') document.querySelectorAll('.nav-item')[1].classList.add('active');
     else if (section === 'matches') document.querySelectorAll('.nav-item')[2].classList.add('active');
     else if (section === 'messages') document.querySelectorAll('.nav-item')[3].classList.add('active');
 }
@@ -1163,9 +1152,9 @@ async function loadFirebaseUsers() {
             const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
             Object.assign(localUsers, window._firebaseUsersCache);
             localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
-            // Refresh discovery grid
+            // Refresh discovery grid and flash view
             initDiscovery();
-            initNearby();
+            initFlashView();
         }
     } catch (err) {
         console.warn('Could not load Firebase users:', err);
@@ -1529,126 +1518,6 @@ function updateNotificationBadge() {
     } else {
         badge.classList.add('hidden');
     }
-}
-
-// ==========================================
-// NEARBY FUNCTIONS
-// ==========================================
-
-function getAllNearbyPeople() {
-    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-    const allNearby = [...nearbyPeople];
-    
-    Object.values(users).forEach(user => {
-        if (currentUser && user.username === currentUser.username) return;
-        
-        const exists = allNearby.some(p => p.name === (user.profile.name || user.username));
-        if (!exists) {
-            const distance = (Math.random() * 5).toFixed(1);
-            const nearbyUser = {
-                name: user.profile.name || user.username,
-                age: user.profile.age || 24,
-                distance: `${distance} km`,
-                img: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos[0] : AFRICA_MAP_URL,
-                online: Math.random() > 0.3,
-                isRegisteredUser: true,
-                username: user.username,
-                isBot: false
-            };
-            allNearby.push(nearbyUser);
-        }
-    });
-    
-    return allNearby;
-}
-
-function initNearby() {
-    const allNearby = getAllNearbyPeople();
-    renderNearbyGrid(allNearby);
-}
-
-function renderNearbyGrid(peopleList) {
-    const grid = document.getElementById('nearbyGrid');
-    document.getElementById('nearbyCountText').textContent = `${peopleList.length} people within 5 km`;
-    
-    grid.innerHTML = peopleList.map(person => `
-        <div class="nearby-card" onclick="viewNearbyProfile('${person.name}')">
-            <img src="${person.img}" alt="${person.name}">
-            <div class="nearby-distance">${person.distance}</div>
-            ${person.online ? '<div class="nearby-online"></div>' : ''}
-        </div>
-    `).join('');
-}
-
-function toggleNearby(element) {
-    element.classList.toggle('active');
-    userProfile.nearbyActive = element.classList.contains('active');
-    showToast(userProfile.nearbyActive ? "Nearby mode activated! 📍" : "Nearby mode disabled");
-}
-
-function filterNearby(distance) {
-    showToast(`Showing people within ${distance} km`);
-}
-
-function viewNearbyProfile(name) {
-    const allNearby = getAllNearbyPeople();
-    const person = allNearby.find(p => p.name === name);
-    if (!person) return;
-    
-    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-    const userData = Object.values(users).find(u => (u.profile.name || u.username) === name);
-    
-    const profile = userData ? {
-        ...person,
-        bio: userData.profile.bio || 'New to AfriConnect',
-        job: userData.profile.job || 'Member',
-        company: userData.profile.company || 'AfriConnect',
-        school: userData.profile.school || '',
-        phone: userData.profile.phone || 'Hidden',
-        photos: userData.profile.photos || [person.img],
-        isBot: false
-    } : {
-        ...person,
-        bio: "Nearby user looking to connect!",
-        job: "Unknown",
-        company: "Unknown",
-        school: "Unknown",
-        phone: "Hidden",
-        photos: [person.img],
-        isBot: false
-    };
-    
-    currentViewingProfile = profile;
-    
-    const modal = document.getElementById('profileModal');
-    const content = document.getElementById('profileModalContent');
-    const actions = document.getElementById('profileModalActions');
-    
-    content.innerHTML = `
-        <div class="profile-hero">
-            <img src="${profile.img}" alt="${profile.name}">
-            <div class="profile-hero-info">
-                <h2 class="text-3xl font-bold text-white mb-2">${profile.name}, ${profile.age}</h2>
-                <p class="text-yellow-400 text-sm"><i class="fas fa-map-marker-alt mr-2"></i>${profile.distance} away</p>
-            </div>
-        </div>
-        
-        <div class="info-section">
-            <h3 class="text-base font-bold text-yellow-500 mb-3">About</h3>
-            <p class="text-gray-300 text-sm leading-relaxed">${profile.bio}</p>
-        </div>
-    `;
-    
-    actions.innerHTML = `
-        <button class="action-bar-btn dislike" onclick="closeProfileModal()">
-            <i class="fas fa-times"></i>
-        </button>
-        <button class="action-bar-btn like" onclick="closeProfileModal(); showToast('Like sent! 💛')">
-            <i class="fas fa-heart"></i>
-        </button>
-    `;
-    
-    modal.classList.add('active');
 }
 
 // ==========================================
@@ -2852,6 +2721,350 @@ document.addEventListener('click', (e) => {
         resultsContainer.classList.remove('active');
     }
 });
+
+// ==========================================
+// FLASH-VIEW FUNCTIONALITY
+// ==========================================
+
+let flashPosts = [];
+let currentFlashPost = null;
+
+// Load flash posts from localStorage
+function loadFlashPosts() {
+    const saved = localStorage.getItem('africonnect_flash_posts');
+    if (saved) {
+        flashPosts = JSON.parse(saved);
+        // Remove expired posts (older than 48 hours)
+        const now = Date.now();
+        flashPosts = flashPosts.filter(post => (now - post.timestamp) < 48 * 60 * 60 * 1000);
+        localStorage.setItem('africonnect_flash_posts', JSON.stringify(flashPosts));
+    }
+}
+
+// Save flash posts to localStorage
+function saveFlashPosts() {
+    localStorage.setItem('africonnect_flash_posts', JSON.stringify(flashPosts));
+}
+
+// Initialize Flash-View section
+function initFlashView() {
+    loadFlashPosts();
+    renderFlashFeed();
+}
+
+// Render flash feed
+function renderFlashFeed() {
+    const feed = document.getElementById('flashFeed');
+    if (!feed) return;
+    
+    if (flashPosts.length === 0) {
+        feed.innerHTML = `
+            <div class="p-8 text-center">
+                <i class="fas fa-bolt text-6xl text-gray-600 mb-4"></i>
+                <p class="text-gray-400">No flash posts yet</p>
+                <p class="text-xs text-gray-500 mt-2">Be the first to share a moment!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort by timestamp (newest first)
+    const sortedPosts = [...flashPosts].sort((a, b) => b.timestamp - a.timestamp);
+    
+    feed.innerHTML = sortedPosts.map(post => {
+        const timeAgo = getTimeAgo(post.timestamp);
+        const timeLeft = getTimeLeft(post.timestamp);
+        const liked = post.likes && post.likes.includes(currentUser?.username);
+        
+        return `
+            <div class="flash-post">
+                <div class="flash-post-header">
+                    <img src="${post.userAvatar}" alt="${post.username}" class="flash-avatar">
+                    <div class="flex-1">
+                        <div class="font-bold text-white text-sm">${post.userName}</div>
+                        <div class="text-xs text-gray-400">${timeAgo} • ${timeLeft} left</div>
+                    </div>
+                </div>
+                <div class="flash-post-image" onclick="openFlashDetail('${post.id}')">
+                    <img src="${post.image}" alt="Flash post">
+                </div>
+                ${post.caption ? `<div class="flash-post-caption">${post.caption}</div>` : ''}
+                <div class="flash-post-actions">
+                    <button class="flash-action-btn ${liked ? 'liked' : ''}" onclick="toggleFlashLike('${post.id}')">
+                        <i class="fas fa-heart"></i>
+                        <span>${post.likes?.length || 0}</span>
+                    </button>
+                    <button class="flash-action-btn" onclick="openFlashDetail('${post.id}')">
+                        <i class="fas fa-comment"></i>
+                        <span>${post.comments?.length || 0}</span>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Get time ago
+function getTimeAgo(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+}
+
+// Get time left before expiry
+function getTimeLeft(timestamp) {
+    const expiryTime = timestamp + (48 * 60 * 60 * 1000);
+    const now = Date.now();
+    const diff = expiryTime - now;
+    const hours = Math.floor(diff / 3600000);
+    
+    if (hours < 1) return '<1h';
+    if (hours < 24) return `${hours}h`;
+    return `${Math.floor(hours / 24)}d`;
+}
+
+// Open create flash modal
+function openCreateFlash() {
+    document.getElementById('createFlashModal').classList.add('active');
+    document.getElementById('flashImageInput').value = '';
+    document.getElementById('flashCaption').value = '';
+    document.getElementById('flashImagePreview').classList.add('hidden');
+}
+
+// Close create flash modal
+function closeCreateFlash() {
+    document.getElementById('createFlashModal').classList.remove('active');
+}
+
+// Preview flash image
+document.addEventListener('DOMContentLoaded', function() {
+    const flashInput = document.getElementById('flashImageInput');
+    if (flashInput) {
+        flashInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('flashPreviewImg').src = event.target.result;
+                    document.getElementById('flashImagePreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+
+// Create flash post
+function createFlashPost() {
+    const input = document.getElementById('flashImageInput');
+    const caption = document.getElementById('flashCaption').value;
+    
+    if (!input.files || !input.files[0]) {
+        showToast('Please select an image');
+        return;
+    }
+    
+    const file = input.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        const post = {
+            id: 'flash_' + Date.now(),
+            username: currentUser.username,
+            userName: currentUser.profile.name || currentUser.username,
+            userAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
+            image: e.target.result,
+            caption: caption,
+            timestamp: Date.now(),
+            likes: [],
+            comments: []
+        };
+        
+        flashPosts.unshift(post);
+        saveFlashPosts();
+        renderFlashFeed();
+        closeCreateFlash();
+        showToast('Flash posted! 🎉');
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+// Toggle flash like
+function toggleFlashLike(postId) {
+    const post = flashPosts.find(p => p.id === postId);
+    if (!post) return;
+    
+    if (!post.likes) post.likes = [];
+    
+    const index = post.likes.indexOf(currentUser.username);
+    if (index > -1) {
+        post.likes.splice(index, 1);
+    } else {
+        post.likes.push(currentUser.username);
+    }
+    
+    saveFlashPosts();
+    renderFlashFeed();
+    
+    if (currentFlashPost && currentFlashPost.id === postId) {
+        currentFlashPost = post;
+        renderFlashDetail();
+    }
+}
+
+// Open flash detail
+function openFlashDetail(postId) {
+    const post = flashPosts.find(p => p.id === postId);
+    if (!post) return;
+    
+    currentFlashPost = post;
+    document.getElementById('flashDetailModal').classList.add('active');
+    document.getElementById('flashDetailUsername').textContent = post.userName;
+    renderFlashDetail();
+}
+
+// Close flash detail
+function closeFlashDetail() {
+    document.getElementById('flashDetailModal').classList.remove('active');
+    currentFlashPost = null;
+}
+
+// Render flash detail
+function renderFlashDetail() {
+    if (!currentFlashPost) return;
+    
+    const content = document.getElementById('flashDetailContent');
+    const liked = currentFlashPost.likes && currentFlashPost.likes.includes(currentUser?.username);
+    const timeAgo = getTimeAgo(currentFlashPost.timestamp);
+    
+    content.innerHTML = `
+        <div class="flash-detail-image">
+            <img src="${currentFlashPost.image}" alt="Flash post">
+        </div>
+        ${currentFlashPost.caption ? `<div class="p-4 border-b border-white/10">
+            <p class="text-white">${currentFlashPost.caption}</p>
+        </div>` : ''}
+        <div class="flash-detail-actions">
+            <button class="flash-action-btn ${liked ? 'liked' : ''}" onclick="toggleFlashLike('${currentFlashPost.id}')">
+                <i class="fas fa-heart"></i>
+                <span>${currentFlashPost.likes?.length || 0} likes</span>
+            </button>
+        </div>
+        <div class="flash-comments">
+            <div class="flash-comments-header">
+                <h4 class="text-sm font-bold text-white">Comments</h4>
+            </div>
+            <div class="flash-comments-list" id="flashCommentsList">
+                ${renderFlashComments()}
+            </div>
+            <div class="flash-comment-input">
+                <input type="text" id="flashCommentInput" placeholder="Add a comment..." class="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-white text-sm">
+                <button onclick="addFlashComment()" class="ml-2 bg-yellow-500 text-black rounded-full w-10 h-10 flex items-center justify-center">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Render flash comments
+function renderFlashComments() {
+    if (!currentFlashPost.comments || currentFlashPost.comments.length === 0) {
+        return '<div class="p-4 text-center text-gray-500 text-sm">No comments yet</div>';
+    }
+    
+    return currentFlashPost.comments.map(comment => `
+        <div class="flash-comment">
+            <img src="${comment.userAvatar}" alt="${comment.userName}" class="flash-comment-avatar">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="font-bold text-white text-sm">${comment.userName}</span>
+                    <span class="text-xs text-gray-500">${getTimeAgo(comment.timestamp)}</span>
+                </div>
+                <p class="text-gray-300 text-sm">${comment.text}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Add flash comment
+function addFlashComment() {
+    const input = document.getElementById('flashCommentInput');
+    const text = input.value.trim();
+    
+    if (!text) return;
+    
+    if (!currentFlashPost.comments) currentFlashPost.comments = [];
+    
+    const comment = {
+        id: 'comment_' + Date.now(),
+        username: currentUser.username,
+        userName: currentUser.profile.name || currentUser.username,
+        userAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
+        text: text,
+        timestamp: Date.now()
+    };
+    
+    currentFlashPost.comments.push(comment);
+    saveFlashPosts();
+    renderFlashDetail();
+    renderFlashFeed();
+    input.value = '';
+}
+
+// Save flash image
+function saveFlashImage() {
+    if (!currentFlashPost) return;
+    
+    const link = document.createElement('a');
+    link.href = currentFlashPost.image;
+    link.download = `flash_${currentFlashPost.id}.jpg`;
+    link.click();
+    showToast('Image saved! 📥');
+}
+
+// ==========================================
+// THEME MODE FUNCTIONALITY
+// ==========================================
+
+// Set theme mode
+function setThemeMode(mode) {
+    const body = document.body;
+    const lightTick = document.getElementById('menuLightTick');
+    const darkTick = document.getElementById('menuDarkTick');
+    
+    if (mode === 'light') {
+        body.classList.add('light-mode');
+        if (lightTick) lightTick.style.display = 'inline';
+        if (darkTick) darkTick.style.display = 'none';
+        localStorage.setItem('africonnect_theme', 'light');
+    } else {
+        body.classList.remove('light-mode');
+        if (lightTick) lightTick.style.display = 'none';
+        if (darkTick) darkTick.style.display = 'inline';
+        localStorage.setItem('africonnect_theme', 'dark');
+    }
+}
+
+// Apply saved theme on page load
+function applySavedTheme() {
+    const saved = localStorage.getItem('africonnect_theme') || 'dark';
+    setThemeMode(saved);
+}
+
+// ==========================================
+// FIX PROFILE VIEWING IN DISCOVER
+// ==========================================
+
+// Make viewProfileDetails globally accessible
+window.viewProfileDetails = viewProfileDetails;
 
 // ==========================================
 // INITIALIZE ON PAGE LOAD
