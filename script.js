@@ -192,7 +192,7 @@ async function initAuth() {
     try { saved = JSON.parse(session); } catch(e) { localStorage.removeItem('afriConnect_session'); return; }
     if (!saved || !saved.username) { localStorage.removeItem('afriConnect_session'); return; }
 
-    // Always try localStorage cache first for instant load
+    // Step 1: Restore immediately from localStorage cache (prevents logout on refresh)
     const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
     if (localUsers[saved.username]) {
         currentUser = localUsers[saved.username];
@@ -200,28 +200,25 @@ async function initAuth() {
         subscribeToIncomingMessages();
     }
 
-    // Then sync with Firebase in the background (don't block or logout on failure)
+    // Step 2: Sync with Firebase in background — never log out on error
     if (window._firebaseReady) {
         try {
             const snapshot = await window._dbGet(window._dbRef(window._db, `users/${saved.username}`));
             if (snapshot.exists()) {
                 currentUser = snapshot.val();
-                // Update local cache
                 localUsers[saved.username] = currentUser;
                 localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
-                // If we hadn't entered the app yet (no local cache), enter now
-                if (!document.getElementById('swipe-interface').classList.contains('active')) {
+                if (document.getElementById('swipe-interface').classList.contains('active')) {
+                    loadUserProfile();
+                } else {
                     enterApp();
                     subscribeToIncomingMessages();
-                } else {
-                    // Already in app — just refresh profile display
-                    loadUserProfile();
                 }
             } else if (!currentUser) {
                 localStorage.removeItem('afriConnect_session');
             }
         } catch (e) {
-            console.warn('Firebase session sync failed, using cached data:', e);
+            console.warn('Firebase session sync failed — staying logged in with cached data:', e);
         }
     }
 }
@@ -592,55 +589,54 @@ function logout() {
 }
 
 function loadUserProfile() {
-    if (!currentUser) return;
+    if (!currentUser || !currentUser.profile) return;
     
     const profile = currentUser.profile;
     const avatarSrc = (profile.photos && profile.photos[0]) ? profile.photos[0] : AFRICA_MAP_URL;
 
-    // Set avatars
+    // Avatars with error fallback
     const userAvatarEl = document.getElementById('userAvatar');
-    const menuUserAvatarEl = document.getElementById('menuUserAvatar');
-    if (userAvatarEl) { userAvatarEl.src = avatarSrc; userAvatarEl.onerror = function(){ this.src = AFRICA_MAP_URL; }; }
-    if (menuUserAvatarEl) { menuUserAvatarEl.src = avatarSrc; menuUserAvatarEl.onerror = function(){ this.src = AFRICA_MAP_URL; }; }
+    const menuAvatarEl = document.getElementById('menuUserAvatar');
+    if (userAvatarEl) { userAvatarEl.src = avatarSrc; userAvatarEl.onerror = () => { userAvatarEl.src = AFRICA_MAP_URL; }; }
+    if (menuAvatarEl) { menuAvatarEl.src = avatarSrc; menuAvatarEl.onerror = () => { menuAvatarEl.src = AFRICA_MAP_URL; }; }
 
-    // Set display name in menu
-    const menuUserNameEl = document.getElementById('menuUserName');
-    if (menuUserNameEl) menuUserNameEl.textContent = profile.name || currentUser.username;
+    // Menu name
+    const menuNameEl = document.getElementById('menuUserName');
+    if (menuNameEl) menuNameEl.textContent = profile.name || currentUser.username;
 
-    // Update profile header name/age display
-    const profileDisplayName = document.getElementById('profileDisplayName');
-    const profileDisplayAge = document.getElementById('profileDisplayAge');
-    if (profileDisplayName) profileDisplayName.textContent = profile.name || currentUser.username;
-    if (profileDisplayAge) profileDisplayAge.textContent = profile.age ? `${profile.age} years old` : '';
+    // Profile header name/age display
+    const dispName = document.getElementById('profileDisplayName');
+    const dispAge  = document.getElementById('profileDisplayAge');
+    if (dispName) dispName.textContent = profile.name || currentUser.username;
+    if (dispAge)  dispAge.textContent  = profile.age ? `${profile.age} years old` : '';
 
-    // Fill form fields
-    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-    set('profileName', profile.name);
-    set('profileAge', profile.age);
-    set('profileBio', profile.bio);
-    set('profileJob', profile.job);
-    set('profileCompany', profile.company);
-    set('profileSchool', profile.school);
-    set('profilePhone', profile.phone);
+    // Form fields
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    setVal('profileName',    profile.name);
+    setVal('profileAge',     profile.age);
+    setVal('profileBio',     profile.bio);
+    setVal('profileJob',     profile.job);
+    setVal('profileCompany', profile.company);
+    setVal('profileSchool',  profile.school);
+    setVal('profilePhone',   profile.phone);
 
     const distSlider = document.getElementById('distanceSlider');
-    const distVal = document.getElementById('distanceValue');
+    const distVal    = document.getElementById('distanceValue');
     if (distSlider) distSlider.value = profile.distance || 50;
-    if (distVal) distVal.textContent = (profile.distance || 50) + ' km';
+    if (distVal)    distVal.textContent = (profile.distance || 50) + ' km';
 
-    const ageMin = document.getElementById('ageMin');
-    const ageMax = document.getElementById('ageMax');
-    const ageVal = document.getElementById('ageValue');
-    if (ageMin) ageMin.value = profile.ageMin || 22;
-    if (ageMax) ageMax.value = profile.ageMax || 30;
-    if (ageVal) ageVal.textContent = (profile.ageMin || 22) + ' - ' + (profile.ageMax || 30);
+    const ageMinEl = document.getElementById('ageMin');
+    const ageMaxEl = document.getElementById('ageMax');
+    const ageVal   = document.getElementById('ageValue');
+    if (ageMinEl) ageMinEl.value = profile.ageMin || 22;
+    if (ageMaxEl) ageMaxEl.value = profile.ageMax || 30;
+    if (ageVal)   ageVal.textContent = (profile.ageMin || 22) + ' - ' + (profile.ageMax || 30);
 
-    const lookingFor = document.getElementById('lookingFor');
-    if (lookingFor) lookingFor.value = profile.lookingFor || 'everyone';
+    const lookingForEl = document.getElementById('lookingFor');
+    if (lookingForEl) lookingForEl.value = profile.lookingFor || 'everyone';
 
     // Gender selection
-    const genderOpts = document.querySelectorAll('.gender-option');
-    genderOpts.forEach(opt => {
+    document.querySelectorAll('.gender-option').forEach(opt => {
         opt.classList.remove('selected');
         if (opt.getAttribute('onclick') && opt.getAttribute('onclick').includes(`'${profile.gender}'`)) {
             opt.classList.add('selected');
@@ -2455,14 +2451,19 @@ function renderMessages(userName) {
     const partnerAvatar = (currentChatUser && currentChatUser.img)
         ? currentChatUser.img : AFRICA_MAP_URL;
 
+    if (messages.length === 0) {
+        container.innerHTML = '<div style="text-align:center;color:#888;padding:40px;font-size:13px;">No messages yet. Say hello! 👋</div>';
+        return;
+    }
+
     container.innerHTML = messages.map(msg => `
         <div class="message ${msg.sent ? 'sent' : 'received'}">
-            ${!msg.sent ? `<img src="${partnerAvatar}" class="msg-avatar msg-avatar-left" alt="${userName}" onerror="this.src='${AFRICA_MAP_URL}'">` : ''}
+            ${!msg.sent ? `<img src="${partnerAvatar}" class="msg-avatar" alt="${userName}" onerror="this.src='${AFRICA_MAP_URL}'">` : ''}
             <div class="msg-bubble">
                 <div>${msg.text}</div>
                 <div class="message-time">${msg.time}</div>
             </div>
-            ${msg.sent ? `<img src="${myAvatar}" class="msg-avatar msg-avatar-right" alt="You" onerror="this.src='${AFRICA_MAP_URL}'">` : ''}
+            ${msg.sent ? `<img src="${myAvatar}" class="msg-avatar" alt="You" onerror="this.src='${AFRICA_MAP_URL}'">` : ''}
         </div>
     `).join('');
     
@@ -2503,6 +2504,14 @@ async function sendMessage() {
             
             // Push message — onValue listener will update both sides instantly
             await window._dbPush(window._dbRef(window._db, `chats/${chatKey}/messages`), firebaseMsg);
+            
+            // Write chat meta so admin panel can display last message
+            await window._dbSet(window._dbRef(window._db, `chats/${chatKey}/meta`), {
+                lastMessage: text,
+                lastTime: time,
+                lastFrom: currentUser.username,
+                timestamp: Date.now()
+            });
             
             // Update chatList for BOTH participants so the conversation appears in both inboxes
             const chatListMeta = {
@@ -2600,12 +2609,24 @@ function initMatches() {
 }
 
 function initChats() {
-    if (currentUser && currentUser.chats) {
-        chats = currentUser.chats;
-        initializeChatHistories();
+    // Merge saved chats from currentUser into the live chats array — don't overwrite
+    if (currentUser && currentUser.chats && currentUser.chats.length > 0) {
+        currentUser.chats.forEach(savedChat => {
+            const exists = chats.find(c => c.name === savedChat.name);
+            if (!exists) {
+                chats.push(savedChat);
+                // Seed chat history only if we don't already have real messages
+                if (!chatHistories[savedChat.name] || chatHistories[savedChat.name].length === 0) {
+                    chatHistories[savedChat.name] = [
+                        { text: savedChat.message || 'You matched!', sent: false, time: savedChat.time || 'Earlier' }
+                    ];
+                }
+            }
+        });
     }
     
     const list = document.getElementById('chatList');
+    if (!list) return;
     
     if (chats.length === 0) {
         list.innerHTML = '<div style="text-align: center; color: #888; padding: 40px;">No messages yet. Match with someone to start chatting!</div>';
@@ -2614,13 +2635,13 @@ function initChats() {
     
     list.innerHTML = chats.map(chat => `
         <div class="chat-item" onclick="openChat('${chat.name}')">
-            <img src="${chat.img}" class="chat-avatar" alt="${chat.name}">
+            <img src="${chat.img || ''}" class="chat-avatar" alt="${chat.name}" onerror="this.src='https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg'">
             <div class="chat-preview">
                 <div class="chat-name">${chat.name}</div>
-                <div class="chat-message">${chat.message}</div>
+                <div class="chat-message">${chat.message || ''}</div>
             </div>
             <div class="text-right">
-                <div class="chat-time">${chat.time}</div>
+                <div class="chat-time">${chat.time || ''}</div>
                 ${chat.unread > 0 ? `<div class="unread-badge">${chat.unread}</div>` : ''}
             </div>
         </div>
@@ -3221,7 +3242,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (banner) banner.style.display = 'block';
     }
     
-    // Initialize auth — Firebase may or may not be ready
+    // Initialize auth — prevent double-call
     let _authInitialized = false;
     function _runInitAuth() {
         if (_authInitialized) return;
@@ -3233,7 +3254,7 @@ document.addEventListener('DOMContentLoaded', function() {
         _runInitAuth();
     } else {
         window.addEventListener('firebaseReady', () => { _runInitAuth(); });
-        setTimeout(() => { _runInitAuth(); }, 500);
+        setTimeout(() => { _runInitAuth(); }, 600);
     }
     
     // Setup online/offline listeners

@@ -964,32 +964,13 @@ body.lights-on .bulb-glow {
     color: #555;
 }
 
-/* Profile name display under avatar */
-.profile-name-display {
-    text-align: center;
-    padding: 58px 16px 8px;
-    background: rgba(0,0,0,0.6);
-}
-
-.profile-display-name {
-    font-size: 22px;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 0.5px;
-}
-
-.profile-display-age {
-    font-size: 13px;
-    color: #fbbf24;
-    margin-top: 2px;
-}
-
-/* Message avatars */
+/* Message avatars + bubble layout */
 .message {
     display: flex;
     align-items: flex-end;
     gap: 8px;
     max-width: 82%;
+    margin-bottom: 4px;
 }
 
 .message.sent {
@@ -1008,7 +989,7 @@ body.lights-on .bulb-glow {
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 2px solid rgba(251,191,36,0.5);
+    border: 2px solid rgba(251,191,36,0.4);
 }
 
 .msg-bubble {
@@ -1017,6 +998,7 @@ body.lights-on .bulb-glow {
     max-width: calc(100% - 38px);
     word-break: break-word;
     font-size: 14px;
+    line-height: 1.4;
 }
 
 .message.sent .msg-bubble {

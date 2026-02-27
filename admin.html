@@ -887,6 +887,7 @@
             </div>
 
             <!-- Bots Page -->
+            <div id="page-bots" class="page">
                 <div class="page-header">
                     <h1>Bot Profiles</h1>
                     <p>The 10 African bot profiles seeded in the app.</p>
@@ -1360,40 +1361,97 @@ function loadBots() {
 async function loadChats() {
     if (!window._adminFirebaseReady) { setTimeout(loadChats, 1000); return; }
     const tbody = document.getElementById('chatsTable');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;"><span class="loading-spinner"></span></td></tr>';
 
     try {
         const snap = await window._adminGet(window._adminRef(window._adminDb, 'chats'));
         if (!snap.exists()) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#666; padding:32px;">No chat threads yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#666; padding:32px;">No chat threads yet.</td></tr>';
+            document.getElementById('statChats').textContent = '0';
             return;
         }
 
         const chats = snap.val();
-        document.getElementById('statChats').textContent = Object.keys(chats).length;
+        const chatKeys = Object.keys(chats);
+        document.getElementById('statChats').textContent = chatKeys.length;
 
-        tbody.innerHTML = Object.entries(chats).map(([key, chat]) => {
+        tbody.innerHTML = chatKeys.map(key => {
+            const chat = chats[key];
             const participants = key.split('__');
-            const lastMsg = chat.meta?.lastMessage || '—';
-            const lastTime = chat.meta?.lastTime || '—';
+            // Support both meta node (new) and direct fields (old)
+            const meta = chat.meta || {};
+            const lastMsg = meta.lastMessage || chat.lastMessage || '—';
+            const lastTime = meta.lastTime || chat.lastTime || '—';
             const msgCount = chat.messages ? Object.keys(chat.messages).length : 0;
 
             return `<tr>
                 <td>
-                    <div style="font-family:monospace; font-size:12px; color:#fbbf24;">@${participants[0]}</div>
-                    <div style="font-size:10px; color:#666;">↔ @${participants[1]}</div>
+                    <div style="font-family:monospace; font-size:13px; color:#fbbf24; font-weight:700;">@${participants[0]}</div>
+                    <div style="font-size:11px; color:#666; margin-top:2px;">↔ @${participants[1] || '?'}</div>
                 </td>
-                <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#aaa; font-size:12px;">${lastMsg}</td>
-                <td style="font-family:monospace; font-size:11px; color:#666;">${lastTime}</td>
-                <td>
-                    <span class="badge badge-gray">${msgCount} msgs</span>
-                    <button class="btn btn-danger" style="margin-left:6px; font-size:10px; padding:4px 8px;" onclick="deleteChat('${key}')">
+                <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ccc; font-size:13px;">${lastMsg}</td>
+                <td style="font-family:monospace; font-size:11px; color:#666; white-space:nowrap;">${lastTime}</td>
+                <td><span class="badge badge-gray">${msgCount} msg${msgCount !== 1 ? 's' : ''}</span></td>
+                <td style="white-space:nowrap;">
+                    <button class="btn btn-ghost" style="font-size:10px; padding:4px 8px; margin-right:4px;" onclick="viewChatThread('${key}', '${participants[0]}', '${participants[1] || ''}')">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                    <button class="btn btn-danger" style="font-size:10px; padding:4px 8px;" onclick="deleteChat('${key}')">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
             </tr>`;
         }).join('');
+
+        // Update thead to match 5 columns
+        const thead = document.querySelector('#page-messages table thead tr');
+        if (thead) thead.innerHTML = '<th>Participants</th><th>Last Message</th><th>Time</th><th>Count</th><th>Actions</th>';
+
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#ef4444; padding:32px;">Error: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:32px;">Error loading chats: ${e.message}</td></tr>`;
+    }
+}
+
+// View full chat thread in admin
+async function viewChatThread(chatKey, user1, user2) {
+    if (!window._adminFirebaseReady) return;
+    try {
+        const snap = await window._adminGet(window._adminRef(window._adminDb, `chats/${chatKey}/messages`));
+        const msgs = snap.exists() ? Object.values(snap.val()).sort((a,b) => a.timestamp - b.timestamp) : [];
+
+        const html = msgs.length === 0
+            ? '<p style="color:#666; text-align:center; padding:20px;">No messages in this thread.</p>'
+            : msgs.map(m => `
+                <div style="margin-bottom:12px; padding:10px 14px; background:${m.from === user1 ? 'rgba(251,191,36,0.08)' : 'rgba(255,255,255,0.05)'}; border-radius:10px; border-left:3px solid ${m.from === user1 ? '#fbbf24' : '#3b82f6'};">
+                    <div style="font-size:11px; font-family:monospace; color:${m.from === user1 ? '#fbbf24' : '#60a5fa'}; margin-bottom:4px; font-weight:700;">@${m.from} · ${m.time || ''}</div>
+                    <div style="font-size:14px; color:#e5e5e5;">${m.text}</div>
+                </div>
+            `).join('');
+
+        // Show in a modal-like overlay
+        let overlay = document.getElementById('chatThreadOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'chatThreadOverlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+            document.body.appendChild(overlay);
+        }
+        overlay.innerHTML = `
+            <div style="background:#141414;border:1px solid rgba(251,191,36,0.2);border-radius:16px;width:90%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;">
+                <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div style="font-weight:800;font-size:15px;">💬 Chat Thread</div>
+                        <div style="font-size:12px;color:#888;font-family:monospace;margin-top:2px;">@${user1} ↔ @${user2}</div>
+                    </div>
+                    <button onclick="document.getElementById('chatThreadOverlay').remove()" style="background:none;border:none;color:#666;font-size:20px;cursor:pointer;">✕</button>
+                </div>
+                <div style="padding:20px;overflow-y:auto;flex:1;">${html}</div>
+            </div>`;
+        document.body.appendChild(overlay);
+    } catch(e) {
+        showAdminToast('Error loading thread: ' + e.message);
     }
 }
 
