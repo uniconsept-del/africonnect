@@ -89,15 +89,39 @@ const VERIF_TIERS = {
 
 let _pendingVerifTier = null;
 
+function openVerifMenu() {
+    toggleMainMenu();
+    // Update current badge display
+    const display = document.getElementById('verifMenuCurrentBadge');
+    if (display && currentUser && currentUser.verificationBadge && currentUser.verificationBadge !== 'none') {
+        const t = VERIF_TIERS[currentUser.verificationBadge];
+        display.textContent = t ? `Current: ${t.icon} ${t.name}` : '';
+    } else if (display) {
+        display.textContent = 'No badge yet — choose a tier below';
+    }
+    document.getElementById('verifMenuModal').classList.add('active');
+}
+
+function closeVerifMenu() {
+    document.getElementById('verifMenuModal').classList.remove('active');
+}
+
 function purchaseVerification(tier) {
     const t = VERIF_TIERS[tier];
     if (!t) return;
     _pendingVerifTier = tier;
 
+    // Close the menu modal if open
+    const menuModal = document.getElementById('verifMenuModal');
+    if (menuModal) menuModal.classList.remove('active');
+
     document.getElementById('verifModalIcon').textContent = t.icon;
     document.getElementById('verifModalTitle').textContent = t.name;
     document.getElementById('verifModalDesc').textContent = t.desc;
     document.getElementById('verifModalPrice').textContent = t.price;
+    // Update payment step amount
+    const payStep = document.getElementById('payStepAmount');
+    if (payStep) payStep.textContent = t.price;
     document.getElementById('verifPurchaseModal').classList.add('active');
 }
 
@@ -106,91 +130,30 @@ function closeVerifModal() {
     _pendingVerifTier = null;
 }
 
+// NOTE: Badge granting is done by admin only via admin.html panel.
+// Users pay and notify admin via WhatsApp; admin grants badge from the backend.
 async function confirmVerificationPurchase() {
-    if (!_pendingVerifTier || !currentUser) return;
-
-    const tier = _pendingVerifTier;
-    const t = VERIF_TIERS[tier];
-
-    const btn = document.getElementById('verifConfirmBtn');
-    btn.textContent = '⏳ Submitting...';
-    btn.disabled = true;
-
-    try {
-        // Save pending verification request to Firebase for admin to approve
-        const pendingPayload = {
-            username: currentUser.username,
-            name: currentUser.profile.name,
-            avatar: (currentUser.profile.photos && currentUser.profile.photos[0]) || '',
-            tier: tier,
-            price: t.price,
-            requestedAt: Date.now(),
-            status: 'pending'
-        };
-        if (window._firebaseReady) {
-            await window._dbSet(
-                window._dbRef(window._db, `verificationRequests/${currentUser.username}`),
-                pendingPayload
-            );
-            // Mark user as pending
-            await window._dbSet(
-                window._dbRef(window._db, `users/${currentUser.username}/verificationPending`), tier
-            );
-        }
-        // Also save locally
-        currentUser.verificationPending = tier;
-        const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
-        if (localUsers[currentUser.username]) {
-            localUsers[currentUser.username].verificationPending = tier;
-            localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
-        }
-
-        // Show pending status in modal
-        document.getElementById('verifPaymentInstructions').style.display = 'none';
-        document.getElementById('verifPendingStatus').style.display = 'block';
-        btn.textContent = '✅ Submitted!';
-        showToast(`${t.icon} Payment notification sent! Admin will verify within 24hrs.`);
-
-        setTimeout(() => {
-            closeVerifModal();
-            btn.textContent = '✅ I\'ve Paid — Notify Admin';
-            btn.disabled = false;
-            document.getElementById('verifPaymentInstructions').style.display = 'block';
-            document.getElementById('verifPendingStatus').style.display = 'none';
-        }, 2500);
-
-    } catch(e) {
-        showToast('Error submitting request. Please try again.');
-        console.error(e);
-        btn.textContent = '✅ I\'ve Paid — Notify Admin';
-        btn.disabled = false;
-    }
-    _pendingVerifTier = null;
+    // This function is now only called by admin panel indirectly.
+    // User flow: pay → WhatsApp → admin grants badge.
+    closeVerifModal();
 }
 
 function updateCurrentBadgeDisplay() {
     const display = document.getElementById('currentBadgeDisplay');
-    const label = document.getElementById('currentBadgeLabel');
-    if (!display || !currentUser) return;
-    const tier = currentUser.verificationBadge;
-    const pending = currentUser.verificationPending;
-    if (!tier || tier === 'none') {
-        display.textContent = pending ? '⏳' : '🔓';
-        if (label) label.textContent = pending 
-            ? `${VERIF_TIERS[pending]?.name} — Pending Approval` 
-            : 'Tap to Get Verified ›';
-    } else {
-        display.textContent = VERIF_TIERS[tier]?.icon || '✅';
-        if (label) label.textContent = VERIF_TIERS[tier]?.name || 'Verified';
+    if (display && currentUser) {
+        const tier = currentUser.verificationBadge;
+        if (!tier || tier === 'none') {
+            display.textContent = '';
+        } else {
+            display.textContent = VERIF_TIERS[tier]?.icon || '';
+        }
     }
-}
-
-function openVerifShopFromMenu() {
-    // Navigate to profile section which now has badge shortcut,
-    // or open the first tier (gold) modal directly
-    document.getElementById('mainMenuPanel') && document.getElementById('mainMenuPanel').classList.remove('active');
-    document.getElementById('mainMenuOverlay') && document.getElementById('mainMenuOverlay').classList.remove('active');
-    purchaseVerification('gold');
+    // Also update hamburger menu badge display
+    const menuBadge = document.getElementById('menuBadgeDisplay');
+    if (menuBadge && currentUser) {
+        const tier = currentUser.verificationBadge;
+        menuBadge.textContent = (tier && tier !== 'none') ? (VERIF_TIERS[tier]?.icon || '') : '';
+    }
 }
 
 // Close on overlay click

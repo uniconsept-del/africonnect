@@ -247,38 +247,15 @@
 
                 <div class="main-menu-divider"></div>
 
-                <div class="main-menu-section-title">✨ Get Verified</div>
+                <div class="main-menu-section-title">Verification</div>
 
-                <!-- Silver -->
-                <div class="main-menu-item verif-menu-silver" onclick="purchaseVerification('silver'); toggleMainMenu();" style="border:1px solid #94a3b830;border-radius:10px;margin:4px 0;background:rgba(148,163,184,0.06);">
-                    <span style="font-size:20px;">🥈</span>
-                    <div style="flex:1;">
-                        <div style="font-size:13px;color:#94a3b8;font-weight:700;">Silver Verified</div>
-                        <div style="font-size:10px;color:#666;">Basic trust badge · Profile visibility boost</div>
-                    </div>
-                    <div style="font-size:13px;font-weight:800;color:#94a3b8;">₦3,000</div>
+                <!-- Get Verified -->
+                <div class="main-menu-item" onclick="openVerifMenu()">
+                    <i class="fas fa-shield-alt" style="color:#fbbf24;"></i>
+                    <span>Get Verified</span>
+                    <span id="menuBadgeDisplay" style="margin-left:auto; font-size:16px;"></span>
                 </div>
-
-                <!-- Gold -->
-                <div class="main-menu-item verif-menu-gold" onclick="purchaseVerification('gold'); toggleMainMenu();" style="border:1px solid #fbbf2440;border-radius:10px;margin:4px 0;background:rgba(251,191,36,0.08);">
-                    <span style="font-size:20px;">🥇</span>
-                    <div style="flex:1;">
-                        <div style="font-size:13px;color:#fbbf24;font-weight:700;">Gold Verified <span style="font-size:9px;background:#fbbf24;color:#000;padding:1px 5px;border-radius:4px;margin-left:4px;">POPULAR</span></div>
-                        <div style="font-size:10px;color:#666;">Priority in Discover · Gold badge · More matches</div>
-                    </div>
-                    <div style="font-size:13px;font-weight:800;color:#fbbf24;">₦5,000</div>
-                </div>
-
-                <!-- Diamond -->
-                <div class="main-menu-item verif-menu-diamond" onclick="purchaseVerification('diamond'); toggleMainMenu();" style="border:1px solid #67e8f940;border-radius:10px;margin:4px 0;background:rgba(103,232,249,0.06);">
-                    <span style="font-size:20px;">💎</span>
-                    <div style="flex:1;">
-                        <div style="font-size:13px;color:#67e8f9;font-weight:700;">Diamond Verified</div>
-                        <div style="font-size:10px;color:#666;">Top placement · Diamond badge · Unlimited likes</div>
-                    </div>
-                    <div style="font-size:13px;font-weight:800;color:#67e8f9;">₦10,000</div>
-                </div>
-
+                
                 <div class="main-menu-divider"></div>
                 
                 <div class="main-menu-section-title">Support</div>
@@ -639,15 +616,8 @@
                     </div>
                 </div>
 
-                <!-- Verification Purchase -->
-                <!-- Verification Badge Display (shop is in hamburger menu) -->
-                <div class="settings-card" id="verificationShopCard" style="display:flex;align-items:center;gap:12px;cursor:pointer;" onclick="openVerifShopFromMenu()">
-                    <span id="currentBadgeDisplay" style="font-size:28px;">🔓</span>
-                    <div>
-                        <div class="text-sm font-bold text-yellow-500">Verification Badge</div>
-                        <div id="currentBadgeLabel" class="text-xs text-gray-400">Tap to Get Verified ›</div>
-                    </div>
-                </div>
+                <!-- Verification Purchase (moved to hamburger menu) -->
+                <span id="currentBadgeDisplay" style="display:none;"></span>
 
                 <!-- Account -->
                 <div class="settings-card">
@@ -913,39 +883,85 @@
     <!-- Your JavaScript File -->
     <script src="script.js"></script>
 
-    <!-- Verification Purchase Modal -->
-    <div class="verif-purchase-modal" id="verifPurchaseModal">
-        <div class="verif-purchase-card">
+    <!-- Verification Menu Modal (in hamburger) -->
+    <div class="verif-purchase-modal" id="verifMenuModal" onclick="if(event.target===this)closeVerifMenu()">
+        <div class="verif-purchase-card" style="max-width:400px; width:94%;">
+            <div style="text-align:center; margin-bottom:20px;">
+                <div style="font-size:28px;">🛡️</div>
+                <div style="font-size:18px; font-weight:800; color:#fbbf24; margin-top:6px;">Get Verified</div>
+                <div style="font-size:12px; color:#888; margin-top:4px;">Choose your verification tier</div>
+                <div id="verifMenuCurrentBadge" style="margin-top:8px; font-size:13px; color:#22c55e;"></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+                <!-- Silver -->
+                <div onclick="purchaseVerification('silver')" style="display:flex; align-items:center; gap:12px; background:rgba(148,163,184,0.08); border:1.5px solid rgba(148,163,184,0.3); border-radius:14px; padding:14px 16px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#94a3b8'" onmouseout="this.style.borderColor='rgba(148,163,184,0.3)'">
+                    <div style="font-size:28px;">🥈</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:700; color:#94a3b8; font-size:14px;">Silver Verified</div>
+                        <div style="font-size:11px; color:#666; margin-top:2px;">Basic trust badge · Shows on your profile</div>
+                    </div>
+                    <div style="font-weight:800; color:#94a3b8; font-size:16px; white-space:nowrap;">₦3,000</div>
+                </div>
+                <!-- Gold -->
+                <div onclick="purchaseVerification('gold')" style="display:flex; align-items:center; gap:12px; background:rgba(251,191,36,0.08); border:1.5px solid rgba(251,191,36,0.4); border-radius:14px; padding:14px 16px; cursor:pointer; position:relative; transition:all 0.2s;" onmouseover="this.style.borderColor='#fbbf24'" onmouseout="this.style.borderColor='rgba(251,191,36,0.4)'">
+                    <div style="position:absolute; top:-8px; left:50%; transform:translateX(-50%); background:#fbbf24; color:#000; font-size:9px; font-weight:800; padding:2px 10px; border-radius:20px; letter-spacing:1px;">POPULAR</div>
+                    <div style="font-size:28px;">🥇</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:700; color:#fbbf24; font-size:14px;">Gold Verified</div>
+                        <div style="font-size:11px; color:#666; margin-top:2px;">Priority in Discover · More matches</div>
+                    </div>
+                    <div style="font-weight:800; color:#fbbf24; font-size:16px; white-space:nowrap;">₦5,000</div>
+                </div>
+                <!-- Diamond -->
+                <div onclick="purchaseVerification('diamond')" style="display:flex; align-items:center; gap:12px; background:rgba(103,232,249,0.08); border:1.5px solid rgba(103,232,249,0.3); border-radius:14px; padding:14px 16px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#67e8f9'" onmouseout="this.style.borderColor='rgba(103,232,249,0.3)'">
+                    <div style="font-size:28px;">💎</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:700; color:#67e8f9; font-size:14px;">Diamond Verified</div>
+                        <div style="font-size:11px; color:#666; margin-top:2px;">Top placement · Unlimited likes</div>
+                    </div>
+                    <div style="font-weight:800; color:#67e8f9; font-size:16px; white-space:nowrap;">₦10,000</div>
+                </div>
+            </div>
+            <button class="verif-btn-cancel" onclick="closeVerifMenu()">Close</button>
+        </div>
+    </div>
+
+    <!-- Verification Purchase Modal (payment details) -->
+    <div class="verif-purchase-modal" id="verifPurchaseModal" onclick="if(event.target===this)closeVerifModal()">
+        <div class="verif-purchase-card" style="max-width:400px; width:94%;">
             <span class="verif-purchase-icon" id="verifModalIcon">🥇</span>
             <div class="verif-purchase-title" id="verifModalTitle">Gold Verified</div>
             <div class="verif-purchase-desc" id="verifModalDesc">Get the Gold badge and appear higher in Discovery results.</div>
             <div class="verif-purchase-price-box">
                 <div class="verif-purchase-price" id="verifModalPrice">₦5,000</div>
-                <div class="verif-purchase-price-label">One-time payment · Lifetime badge</div>
+                <div class="verif-purchase-price-label">One-time payment · Badge granted after confirmation</div>
             </div>
 
             <!-- Payment Instructions -->
-            <div id="verifPaymentInstructions" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:12px;padding:14px 16px;margin:12px 0;text-align:left;">
-                <div style="font-size:12px;color:#fbbf24;font-weight:700;margin-bottom:8px;letter-spacing:0.5px;">📋 HOW TO PAY</div>
-                <div style="font-size:12px;color:#d1d5db;line-height:1.7;">
-                    <div>🏦 <strong style="color:#fff;">Bank Transfer</strong></div>
-                    <div style="margin-left:18px;color:#9ca3af;">Account No: <strong style="color:#fbbf24;font-size:14px;letter-spacing:1px;">5414596742</strong></div>
-                    <div style="margin-left:18px;color:#9ca3af;margin-bottom:8px;">Bank: (your bank)</div>
-                    <div>💬 <strong style="color:#fff;">After Payment</strong></div>
-                    <div style="margin-left:18px;color:#9ca3af;">Send proof to WhatsApp:</div>
-                    <div style="margin-left:18px;">
-                        <a href="https://wa.me/2347089970137" target="_blank" style="color:#25D366;font-weight:700;font-size:14px;text-decoration:none;">+234 708 997 0137 ›</a>
+            <div style="background:rgba(251,191,36,0.07); border:1px solid rgba(251,191,36,0.25); border-radius:14px; padding:16px; margin:14px 0; text-align:left;">
+                <div style="font-size:12px; font-weight:800; color:#fbbf24; letter-spacing:1px; margin-bottom:10px; text-align:center;">📲 HOW TO PAY</div>
+                <div style="font-size:13px; color:#e5e5e5; line-height:1.8;">
+                    <div>1. Transfer <strong id="payStepAmount" style="color:#fbbf24;">₦5,000</strong> to:</div>
+                    <div style="background:rgba(0,0,0,0.4); border-radius:10px; padding:10px 14px; margin:8px 0; font-family:monospace;">
+                        <div style="font-size:11px; color:#888;">Bank</div>
+                        <div style="font-weight:700; color:#fff; font-size:15px;">Moniepoint</div>
+                        <div style="font-size:11px; color:#888; margin-top:6px;">Account Number</div>
+                        <div style="font-weight:800; color:#fbbf24; font-size:18px; letter-spacing:2px;">5414596742</div>
+                        <div style="font-size:11px; color:#888; margin-top:6px;">Account Name</div>
+                        <div style="font-weight:700; color:#fff;">OLAYINKA-IYIOLA</div>
                     </div>
+                    <div>2. Send your <strong style="color:#fbbf24;">username</strong> + <strong style="color:#fbbf24;">payment proof</strong> to WhatsApp:</div>
+                    <div style="text-align:center; margin-top:8px;">
+                        <a href="https://wa.me/2347089970137" target="_blank" style="display:inline-flex; align-items:center; gap:8px; background:#25D366; color:#fff; text-decoration:none; padding:10px 20px; border-radius:10px; font-weight:700; font-size:13px;">
+                            <i class="fab fa-whatsapp" style="font-size:18px;"></i> +234 708 997 0137
+                        </a>
+                    </div>
+                    <div style="color:#888; font-size:11px; text-align:center; margin-top:8px;">Your badge will be activated within 24 hours of confirmation</div>
                 </div>
-                <div style="font-size:10px;color:#6b7280;margin-top:10px;text-align:center;">Your badge will be activated within 24 hours after payment confirmation.</div>
             </div>
 
-            <div id="verifPendingStatus" style="display:none;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:10px;text-align:center;color:#fbbf24;font-size:13px;">
-                ⏳ Payment submitted — awaiting admin approval
-            </div>
-
-            <button class="verif-btn-confirm" id="verifConfirmBtn" onclick="confirmVerificationPurchase()">
-                ✅ I've Paid — Notify Admin
+            <button class="verif-btn-confirm" id="verifConfirmBtn" onclick="closeVerifModal(); showToast('✅ Payment instructions sent! Message us on WhatsApp after transferring.');">
+                ✅ I've Made the Payment
             </button>
             <button class="verif-btn-cancel" onclick="closeVerifModal()">Cancel</button>
         </div>
