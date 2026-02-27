@@ -2606,6 +2606,204 @@
         }
     </style>
 <base target="_blank">
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+      import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      import { getDatabase, ref, push, onValue, set, get, update, remove, query, orderByChild, limitToLast, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+      // ============================================
+      // FIREBASE CONFIG - Using AfriConnect project
+      // ============================================
+      const firebaseConfig = {
+        apiKey: "AIzaSyAC-xvFTIF-Tw4w5AoJAZdDZkpTuIygqwY",
+        authDomain: "africonnect-50b9f.firebaseapp.com",
+        databaseURL: "https://africonnect-50b9f-default-rtdb.firebaseio.com",
+        projectId: "africonnect-50b9f",
+        storageBucket: "africonnect-50b9f.appspot.com",
+        messagingSenderId: "000000000000",
+        appId: "1:000000000000:web:0000000000000000"
+      };
+
+      // AfriConnect Firebase project - africonnect-50b9f
+      // NOTE: If messagingSenderId or appId are needed, add them from your Firebase console → Project Settings
+
+      let firebaseApp, firebaseAuth, firebaseDb;
+      let firebaseReady = false;
+
+      try {
+        firebaseApp = initializeApp(firebaseConfig);
+        firebaseAuth = getAuth(firebaseApp);
+        firebaseDb = getDatabase(firebaseApp);
+        firebaseReady = true;
+        console.log("Firebase initialized");
+      } catch (e) {
+        console.warn("Firebase init failed, using localStorage fallback:", e.message);
+      }
+
+      // Expose to global scope for use in main scripts
+      window._firebase = {
+        auth: firebaseAuth,
+        db: firebaseDb,
+        ready: firebaseReady,
+        push, ref, onValue, set, get, update, remove, query, orderByChild, limitToLast, onChildAdded,
+        createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged
+      };
+
+      // ============================================
+      // REAL-TIME MESSAGE LISTENERS
+      // ============================================
+      
+      window._fbListeners = {};
+
+      window._listenToConversation = function(conversationId, callback) {
+        if (!firebaseReady || !firebaseDb) return;
+        const key = `conversation_${conversationId}`;
+        if (window._fbListeners[key]) return; // Already listening
+        
+        const msgsRef = ref(firebaseDb, `messages/${conversationId}`);
+        const unsubscribe = onChildAdded(msgsRef, (snapshot) => {
+          const msg = snapshot.val();
+          if (msg) callback(msg, snapshot.key);
+        });
+        window._fbListeners[key] = unsubscribe;
+      };
+
+      window._stopListening = function(conversationId) {
+        const key = `conversation_${conversationId}`;
+        if (window._fbListeners[key]) {
+          window._fbListeners[key](); // Call unsubscribe
+          delete window._fbListeners[key];
+        }
+      };
+
+      window._sendFirebaseMessage = async function(conversationId, message) {
+        if (!firebaseReady || !firebaseDb) return false;
+        try {
+          const msgsRef = ref(firebaseDb, `messages/${conversationId}`);
+          await push(msgsRef, message);
+          return true;
+        } catch (e) {
+          console.warn("Firebase send failed:", e.message);
+          return false;
+        }
+      };
+
+      window._sendGroupFirebaseMessage = async function(roomId, message) {
+        if (!firebaseReady || !firebaseDb) return false;
+        try {
+          const msgsRef = ref(firebaseDb, `groupMessages/${roomId}`);
+          await push(msgsRef, message);
+          return true;
+        } catch (e) {
+          console.warn("Firebase group send failed:", e.message);
+          return false;
+        }
+      };
+
+      window._listenToGroupChat = function(roomId, callback) {
+        if (!firebaseReady || !firebaseDb) return;
+        const key = `group_${roomId}`;
+        if (window._fbListeners[key]) return;
+        
+        const msgsRef = ref(firebaseDb, `groupMessages/${roomId}`);
+        const unsubscribe = onChildAdded(msgsRef, (snapshot) => {
+          const msg = snapshot.val();
+          if (msg) callback(msg, snapshot.key);
+        });
+        window._fbListeners[key] = unsubscribe;
+      };
+
+      // ============================================
+      // FIREBASE AUTH HELPERS
+      // ============================================
+
+      window._firebaseLogin = async function(email, password) {
+        if (!firebaseReady || !firebaseAuth) return { success: false, error: "Firebase not available" };
+        try {
+          const cred = await signInWithEmailAndPassword(firebaseAuth, email, password);
+          return { success: true, user: cred.user };
+        } catch (e) {
+          return { success: false, error: e.message };
+        }
+      };
+
+      window._firebaseSignup = async function(email, password) {
+        if (!firebaseReady || !firebaseAuth) return { success: false, error: "Firebase not available" };
+        try {
+          const cred = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+          return { success: true, user: cred.user };
+        } catch (e) {
+          return { success: false, error: e.message };
+        }
+      };
+
+      window._firebaseLogout = async function() {
+        if (!firebaseReady || !firebaseAuth) return;
+        try { await signOut(firebaseAuth); } catch (e) {}
+      };
+
+      // ============================================
+      // ADMIN PANEL - Firebase data access
+      // ============================================
+      
+      window._adminGetAllUsers = async function() {
+        if (!firebaseReady || !firebaseDb) {
+          // Fallback to localStorage
+          return JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+        }
+        try {
+          const snapshot = await get(ref(firebaseDb, 'users'));
+          return snapshot.val() || {};
+        } catch (e) {
+          return JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+        }
+      };
+
+      window._adminGetAllMessages = async function() {
+        if (!firebaseReady || !firebaseDb) return {};
+        try {
+          const snapshot = await get(ref(firebaseDb, 'messages'));
+          return snapshot.val() || {};
+        } catch (e) { return {}; }
+      };
+
+      window._adminDeleteUser = async function(username) {
+        if (!firebaseReady || !firebaseDb) {
+          const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+          delete users[username];
+          localStorage.setItem('afriConnect_users', JSON.stringify(users));
+          return true;
+        }
+        try {
+          await remove(ref(firebaseDb, `users/${username}`));
+          return true;
+        } catch (e) { return false; }
+      };
+
+      window._adminSaveUserToDB = async function(username, userData) {
+        if (!firebaseReady || !firebaseDb) return;
+        try {
+          await set(ref(firebaseDb, `users/${username}`), userData);
+        } catch (e) {}
+      };
+
+      window._adminGetStats = async function() {
+        const users = await window._adminGetAllUsers();
+        const msgs = await window._adminGetAllMessages();
+        
+        const totalUsers = Object.keys(users).length;
+        const totalMsgConvs = Object.keys(msgs).length;
+        let totalMsgCount = 0;
+        Object.values(msgs).forEach(conv => {
+          totalMsgCount += Object.keys(conv || {}).length;
+        });
+        
+        return { totalUsers, totalMsgConvs, totalMsgCount };
+      };
+
+      console.log("AfriConnect Firebase module loaded");
+    </script>
 </head>
 <body class="text-gray-200 font-sans min-h-screen flex flex-col relative">
 
@@ -2799,6 +2997,11 @@
                 <div class="main-menu-item" onclick="showHelp()">
                     <i class="fas fa-question-circle"></i>
                     <span>Help & Support</span>
+                </div>
+                
+                <div class="main-menu-item" onclick="openAdminPanel()" style="background: rgba(251,191,36,0.05); border: 1px solid rgba(251,191,36,0.15); border-radius: 10px; margin-top: 4px;">
+                    <i class="fas fa-shield-alt" style="color: #fbbf24;"></i>
+                    <span style="color: #fbbf24;">Backend Panel</span>
                 </div>
                 
                 <div class="main-menu-item" onclick="logout()">
@@ -3338,6 +3541,225 @@
 
     <!-- Notification Toast -->
     <div class="toast" id="toast">It's a Match! 🎉</div>
+
+    <!-- ============================================ -->
+    <!-- ADMIN PANEL - PASSWORD PROTECTED             -->
+    <!-- ============================================ -->
+
+    <!-- Admin Lock Screen -->
+    <div id="adminLockScreen" style="
+        display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+        background: rgba(0,0,0,0.97); z-index: 9999; flex-direction: column;
+        align-items: center; justify-content: center; backdrop-filter: blur(20px);
+    ">
+        <div style="
+            background: linear-gradient(135deg, #1a1a1a, #111);
+            border: 1px solid rgba(251,191,36,0.3);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 90%;
+            max-width: 380px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.8), 0 0 40px rgba(251,191,36,0.05);
+            text-align: center;
+        ">
+            <div style="
+                width: 70px; height: 70px; background: linear-gradient(135deg, #fbbf24, #d4af37);
+                border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                margin: 0 auto 20px; box-shadow: 0 10px 30px rgba(251,191,36,0.3);
+            ">
+                <i class="fas fa-shield-alt" style="font-size: 28px; color: #1a1a1a;"></i>
+            </div>
+            <h2 style="color: white; font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 8px;">Backend Panel</h2>
+            <p style="color: #888; font-size: 13px; margin-bottom: 30px;">Enter your admin access code to continue</p>
+            
+            <div style="position: relative; margin-bottom: 20px;">
+                <input type="password" id="adminCodeInput" placeholder="Enter access code" 
+                    style="width: 100%; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.1);
+                    border-radius: 12px; padding: 15px 50px 15px 18px; color: white; font-size: 18px;
+                    letter-spacing: 4px; text-align: center; outline: none; box-sizing: border-box;
+                    transition: border-color 0.3s;"
+                    onkeypress="if(event.key==='Enter')verifyAdminCode()"
+                    oninput="this.style.borderColor='rgba(255,255,255,0.1)'; document.getElementById('adminCodeError').style.display='none'">
+                <button onclick="toggleAdminCodeVis()" style="
+                    position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+                    background: none; border: none; color: #888; cursor: pointer; font-size: 16px;">
+                    <i class="fas fa-eye" id="adminEyeIcon"></i>
+                </button>
+            </div>
+            
+            <div id="adminCodeError" style="color: #ef4444; font-size: 13px; margin-bottom: 15px; display: none;">
+                <i class="fas fa-exclamation-circle"></i> Incorrect access code
+            </div>
+            
+            <button onclick="verifyAdminCode()" style="
+                width: 100%; background: linear-gradient(135deg, #fbbf24, #d4af37);
+                color: black; border: none; border-radius: 12px; padding: 15px;
+                font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s;
+                margin-bottom: 12px;
+            " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                <i class="fas fa-unlock-alt"></i> Access Panel
+            </button>
+            
+            <button onclick="closeAdminPanel()" style="
+                background: none; border: 1px solid rgba(255,255,255,0.1); color: #888;
+                border-radius: 12px; padding: 10px 20px; cursor: pointer; font-size: 14px; transition: all 0.3s;
+            ">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Admin Main Panel -->
+    <div id="adminMainPanel" style="
+        display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+        background: #0a0a0a; z-index: 9998; flex-direction: column; overflow: hidden;
+    ">
+        <!-- Admin Header -->
+        <div style="
+            background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(251,191,36,0.05));
+            border-bottom: 1px solid rgba(251,191,36,0.2);
+            padding: 15px 20px;
+            display: flex; align-items: center; gap: 15px;
+            backdrop-filter: blur(10px);
+        ">
+            <div style="
+                width: 40px; height: 40px; background: linear-gradient(135deg, #fbbf24, #d4af37);
+                border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            ">
+                <i class="fas fa-shield-alt" style="color: #1a1a1a; font-size: 18px;"></i>
+            </div>
+            <div style="flex:1">
+                <h1 style="color: white; font-size: 18px; font-weight: bold; font-family: 'Playfair Display', serif; margin:0;">AfriConnect Admin</h1>
+                <p style="color: #fbbf24; font-size: 11px; margin:0;" id="adminSubtitle">Backend Management Panel</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div id="adminFirebaseStatus" style="
+                    padding: 4px 10px; border-radius: 10px; font-size: 11px; font-weight: bold;
+                    background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.2);
+                ">
+                    <span class="online-dot" style="width:6px;height:6px;display:inline-block;border-radius:50%;background:#22c55e;margin-right:4px;"></span>Live
+                </div>
+                <button onclick="closeAdminPanel()" style="
+                    background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.2);
+                    color: #ef4444; border-radius: 8px; padding: 8px 15px; cursor: pointer;
+                    font-size: 13px; transition: all 0.3s;
+                ">
+                    <i class="fas fa-times"></i> Close
+                </button>
+            </div>
+        </div>
+        
+        <!-- Admin Tabs -->
+        <div style="
+            display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+            background: rgba(0,0,0,0.3); overflow-x: auto;
+        " id="adminTabs">
+            <button onclick="switchAdminTab('dashboard')" class="admin-tab active" data-tab="dashboard">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </button>
+            <button onclick="switchAdminTab('users')" class="admin-tab" data-tab="users">
+                <i class="fas fa-users"></i> Users
+            </button>
+            <button onclick="switchAdminTab('messages')" class="admin-tab" data-tab="messages">
+                <i class="fas fa-comments"></i> Messages
+            </button>
+            <button onclick="switchAdminTab('firebase')" class="admin-tab" data-tab="firebase">
+                <i class="fas fa-database"></i> Firebase Config
+            </button>
+            <button onclick="switchAdminTab('broadcast')" class="admin-tab" data-tab="broadcast">
+                <i class="fas fa-bullhorn"></i> Broadcast
+            </button>
+        </div>
+        
+        <!-- Admin Content -->
+        <div style="flex: 1; overflow-y: auto; padding: 20px;" id="adminContent">
+            <!-- Content rendered by JS -->
+        </div>
+    </div>
+
+    <style>
+        .admin-tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+        .admin-tab:hover { color: #fbbf24; background: rgba(251,191,36,0.05); }
+        .admin-tab.active { color: #fbbf24; border-bottom-color: #fbbf24; background: rgba(251,191,36,0.08); }
+        
+        .admin-stat-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        .admin-stat-card:hover { border-color: rgba(251,191,36,0.3); transform: translateY(-2px); }
+        
+        .admin-user-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        .admin-user-row:hover { background: rgba(255,255,255,0.06); border-color: rgba(251,191,36,0.2); }
+        
+        .admin-badge {
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .admin-badge-green { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+        .admin-badge-red { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+        .admin-badge-yellow { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+        
+        .admin-action-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .admin-action-btn:hover { transform: scale(1.05); }
+        
+        .admin-input {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        .admin-input:focus { border-color: #fbbf24; }
+        
+        #adminCodeInput:focus { border-color: #fbbf24 !important; }
+
+        .realtime-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            margin-right: 6px;
+        }
+    </style>
 
     <script>
         // ==========================================
@@ -5963,6 +6385,593 @@
 
         // Initialize auth on load
         initAuth();
+
+        // ============================================
+        // FIREBASE REAL-TIME MESSAGING INTEGRATION
+        // ============================================
+        
+        // Override sendMessage to use Firebase when available
+        const _originalSendMessage = sendMessage;
+        window.sendMessage = async function() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text || !currentChatUser) return;
+
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const senderName = currentUser ? currentUser.profile.name : 'You';
+
+            const messageData = {
+                text: text,
+                sent: true,
+                time: time,
+                senderId: currentUser ? currentUser.username : 'guest',
+                senderName: senderName,
+                timestamp: Date.now()
+            };
+
+            // Add to local history immediately for instant UI
+            if (!chatHistories[currentChatUser.name]) {
+                chatHistories[currentChatUser.name] = [];
+            }
+            chatHistories[currentChatUser.name].push(messageData);
+
+            // Update chat preview
+            const chat = chats.find(c => c.name === currentChatUser.name);
+            if (chat) {
+                chat.message = text;
+                chat.time = "Just now";
+                initChats();
+                if (currentUser) {
+                    currentUser.chats = chats;
+                    const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                    users[currentUser.username] = currentUser;
+                    localStorage.setItem('afriConnect_users', JSON.stringify(users));
+                    localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+                }
+            }
+
+            input.value = '';
+            renderMessages(currentChatUser.name);
+
+            // Send to Firebase if available
+            if (window._firebase && window._firebase.ready) {
+                const conversationId = [currentUser ? currentUser.username : 'guest', currentChatUser.name]
+                    .sort().join('_');
+                const fbMsg = { ...messageData };
+                await window._sendFirebaseMessage(conversationId, fbMsg);
+            }
+        };
+
+        // Override sendGroupMessage to use Firebase
+        const _originalSendGroupMessage = sendGroupMessage;
+        window.sendGroupMessage = async function() {
+            const input = document.getElementById('groupChatInput');
+            const text = input.value.trim();
+            if (!text || !currentGroupRoom) return;
+
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const senderName = currentUser ? currentUser.profile.name : 'Anonymous';
+            const key = `${currentGroupRoom.country}-${currentGroupRoom.room}`;
+
+            if (!groupChatHistories[key]) groupChatHistories[key] = [];
+
+            const msgData = {
+                text: text,
+                sent: true,
+                time: time,
+                user: senderName,
+                userId: currentUser ? currentUser.username : 'guest',
+                timestamp: Date.now()
+            };
+
+            groupChatHistories[key].push(msgData);
+            input.value = '';
+            renderGroupMessages(currentGroupRoom.country, currentGroupRoom.room);
+
+            // Send to Firebase
+            if (window._firebase && window._firebase.ready) {
+                const roomId = key.replace(/[^a-zA-Z0-9_-]/g, '_');
+                await window._sendGroupFirebaseMessage(roomId, msgData);
+            }
+        };
+
+        // Override openChat to set up Firebase listener
+        const _originalOpenChat = openChat;
+        window.openChat = function(name) {
+            _originalOpenChat(name);
+            
+            if (window._firebase && window._firebase.ready && currentUser) {
+                const conversationId = [currentUser.username, name.toLowerCase().replace(/\s+/g, '_')]
+                    .sort().join('_');
+                
+                window._listenToConversation(conversationId, (msg, key) => {
+                    // Only add if not from us (avoid duplicates)
+                    if (msg.senderId !== (currentUser ? currentUser.username : 'guest')) {
+                        if (!chatHistories[name]) chatHistories[name] = [];
+                        
+                        const exists = chatHistories[name].some(m => m.timestamp === msg.timestamp && m.text === msg.text);
+                        if (!exists) {
+                            chatHistories[name].push({ ...msg, sent: false });
+                            if (currentChatUser && currentChatUser.name === name) {
+                                renderMessages(name);
+                            }
+                        }
+                    }
+                });
+            }
+        };
+
+        // ============================================
+        // ADMIN PANEL FUNCTIONS
+        // ============================================
+        
+        const ADMIN_CODE = 'ENNY5969@';
+        let adminAuthenticated = false;
+
+        window.openAdminPanel = function() {
+            toggleMainMenu();
+            
+            if (adminAuthenticated) {
+                showAdminMainPanel();
+                return;
+            }
+            
+            const lockScreen = document.getElementById('adminLockScreen');
+            lockScreen.style.display = 'flex';
+            document.getElementById('adminCodeInput').value = '';
+            document.getElementById('adminCodeError').style.display = 'none';
+            setTimeout(() => document.getElementById('adminCodeInput').focus(), 100);
+        };
+
+        window.verifyAdminCode = function() {
+            const code = document.getElementById('adminCodeInput').value;
+            if (code === ADMIN_CODE) {
+                adminAuthenticated = true;
+                document.getElementById('adminLockScreen').style.display = 'none';
+                showAdminMainPanel();
+            } else {
+                const input = document.getElementById('adminCodeInput');
+                const err = document.getElementById('adminCodeError');
+                input.style.borderColor = '#ef4444';
+                err.style.display = 'block';
+                input.value = '';
+                setTimeout(() => input.focus(), 100);
+            }
+        };
+
+        window.toggleAdminCodeVis = function() {
+            const input = document.getElementById('adminCodeInput');
+            const icon = document.getElementById('adminEyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        };
+
+        window.closeAdminPanel = function() {
+            document.getElementById('adminLockScreen').style.display = 'none';
+            document.getElementById('adminMainPanel').style.display = 'none';
+        };
+
+        function showAdminMainPanel() {
+            const panel = document.getElementById('adminMainPanel');
+            panel.style.display = 'flex';
+            switchAdminTab('dashboard');
+            
+            // Update firebase status indicator
+            if (window._firebase && window._firebase.ready) {
+                document.getElementById('adminFirebaseStatus').innerHTML = 
+                    '<span class="realtime-dot"></span>Firebase Live';
+                document.getElementById('adminFirebaseStatus').style.color = '#22c55e';
+            } else {
+                document.getElementById('adminFirebaseStatus').innerHTML = 
+                    '⚠ LocalStorage Mode';
+                document.getElementById('adminFirebaseStatus').style.color = '#fbbf24';
+            }
+        }
+
+        window.switchAdminTab = function(tab) {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-tab').forEach(t => {
+                if (t.dataset.tab === tab) t.classList.add('active');
+            });
+            renderAdminTab(tab);
+        };
+
+        async function renderAdminTab(tab) {
+            const content = document.getElementById('adminContent');
+            
+            if (tab === 'dashboard') {
+                content.innerHTML = '<div style="display:flex;align-items:center;gap:10px;color:#888;padding:40px;justify-content:center;"><i class="fas fa-spinner fa-spin" style="color:#fbbf24;"></i> Loading stats...</div>';
+                
+                const stats = window._adminGetStats ? await window._adminGetStats() : { totalUsers: 0, totalMsgConvs: 0, totalMsgCount: 0 };
+                const users = await window._adminGetAllUsers();
+                const userCount = Object.keys(users).length;
+                
+                const fbMode = (window._firebase && window._firebase.ready) ? 
+                    '<span style="color:#22c55e"><i class="fas fa-check-circle"></i> Firebase Realtime Database</span>' :
+                    '<span style="color:#fbbf24"><i class="fas fa-exclamation-triangle"></i> LocalStorage (Firebase not configured)</span>';
+
+                content.innerHTML = `
+                    <h2 style="color:#fbbf24;font-size:20px;margin-bottom:20px;font-family:'Playfair Display',serif;">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </h2>
+                    
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin-bottom:25px;">
+                        <div class="admin-stat-card">
+                            <div style="color:#888;font-size:12px;margin-bottom:8px;">TOTAL USERS</div>
+                            <div style="color:white;font-size:36px;font-weight:bold;">${userCount}</div>
+                            <div style="color:#22c55e;font-size:12px;margin-top:4px;"><i class="fas fa-user-plus"></i> Registered</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div style="color:#888;font-size:12px;margin-bottom:8px;">CONVERSATIONS</div>
+                            <div style="color:white;font-size:36px;font-weight:bold;">${stats.totalMsgConvs || 0}</div>
+                            <div style="color:#3b82f6;font-size:12px;margin-top:4px;"><i class="fas fa-comments"></i> Active chats</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div style="color:#888;font-size:12px;margin-bottom:8px;">MESSAGES SENT</div>
+                            <div style="color:white;font-size:36px;font-weight:bold;">${stats.totalMsgCount || 0}</div>
+                            <div style="color:#fbbf24;font-size:12px;margin-top:4px;"><i class="fas fa-paper-plane"></i> Total</div>
+                        </div>
+                        <div class="admin-stat-card">
+                            <div style="color:#888;font-size:12px;margin-bottom:8px;">ADVERTS</div>
+                            <div style="color:white;font-size:36px;font-weight:bold;">${Object.values(users).reduce((acc, u) => acc + (u.adverts ? u.adverts.length : 0), 0)}</div>
+                            <div style="color:#a855f7;font-size:12px;margin-top:4px;"><i class="fas fa-store"></i> Marketplace</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;margin-bottom:20px;">
+                        <h3 style="color:white;font-size:16px;margin-bottom:12px;"><i class="fas fa-database" style="color:#fbbf24;"></i> Database Status</h3>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
+                            <span style="color:#ccc;font-size:14px;">Backend Mode</span>
+                            <span style="font-size:14px;">${fbMode}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);">
+                            <span style="color:#ccc;font-size:14px;">Real-time Messaging</span>
+                            <span style="color:${window._firebase && window._firebase.ready ? '#22c55e' : '#ef4444'};font-size:14px;">
+                                ${window._firebase && window._firebase.ready ? '✓ Active' : '✗ Requires Firebase Config'}
+                            </span>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;">
+                            <span style="color:#ccc;font-size:14px;">Admin Code</span>
+                            <span style="color:#22c55e;font-size:14px;"><i class="fas fa-lock"></i> Protected</span>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.2);border-radius:16px;padding:20px;">
+                        <h3 style="color:#fbbf24;margin-bottom:10px;font-size:15px;"><i class="fas fa-info-circle"></i> Setup Guide</h3>
+                        <p style="color:#ccc;font-size:13px;line-height:1.7;">
+                            To enable full real-time Firebase features:<br>
+                            1. Create a project at <strong style="color:#fbbf24;">console.firebase.google.com</strong><br>
+                            2. Enable <strong>Realtime Database</strong> and <strong>Authentication</strong><br>
+                            3. Copy your config and replace the <code style="color:#fbbf24;background:rgba(251,191,36,0.1);padding:2px 6px;border-radius:4px;">firebaseConfig</code> object in the &lt;script type="module"&gt; block<br>
+                            4. Set database rules to allow authenticated users<br>
+                            5. Done! Messages will sync in real-time across all devices.
+                        </p>
+                    </div>
+                `;
+            }
+            
+            else if (tab === 'users') {
+                content.innerHTML = '<div style="text-align:center;padding:40px;color:#888;"><i class="fas fa-spinner fa-spin" style="color:#fbbf24;font-size:24px;"></i></div>';
+                const users = await window._adminGetAllUsers();
+                const userList = Object.values(users);
+
+                content.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                        <h2 style="color:#fbbf24;font-size:20px;font-family:'Playfair Display',serif;">
+                            <i class="fas fa-users"></i> Registered Users (${userList.length})
+                        </h2>
+                        <button onclick="refreshAdminUsers()" style="
+                            background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2);
+                            color:#fbbf24;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;">
+                            <i class="fas fa-refresh"></i> Refresh
+                        </button>
+                    </div>
+                    
+                    <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:12px;margin-bottom:15px;">
+                        <input class="admin-input" placeholder="Search users..." oninput="filterAdminUsers(this.value)" id="adminUserSearch" style="margin-bottom:0;">
+                    </div>
+                    
+                    <div id="adminUserList">
+                        ${userList.length === 0 ? '<p style="text-align:center;color:#888;padding:40px;">No registered users yet</p>' : 
+                            userList.map(user => `
+                                <div class="admin-user-row" id="userRow_${user.username}">
+                                    <img src="${user.profile && user.profile.photos && user.profile.photos[0] ? user.profile.photos[0] : 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg'}" 
+                                        style="width:45px;height:45px;border-radius:50%;object-fit:cover;border:2px solid #fbbf24;">
+                                    <div style="flex:1">
+                                        <div style="color:white;font-weight:bold;font-size:14px;">${user.profile ? user.profile.name : user.username} <span class="admin-badge admin-badge-yellow" style="font-size:10px;">@${user.username}</span></div>
+                                        <div style="color:#888;font-size:12px;">${user.profile ? (user.profile.bio || 'No bio') : 'No profile'}</div>
+                                        <div style="color:#666;font-size:11px;margin-top:3px;">
+                                            <i class="fas fa-heart" style="color:#ef4444;"></i> ${user.matches ? user.matches.length : 0} matches &nbsp;
+                                            <i class="fas fa-comment" style="color:#3b82f6;"></i> ${user.chats ? user.chats.length : 0} chats &nbsp;
+                                            <i class="fas fa-store" style="color:#a855f7;"></i> ${user.adverts ? user.adverts.length : 0} adverts
+                                        </div>
+                                    </div>
+                                    <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end;">
+                                        <span class="admin-badge admin-badge-green">Active</span>
+                                        <button onclick="adminDeleteUser('${user.username}')" class="admin-action-btn" 
+                                            style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.2);">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                `;
+                
+                window._currentAdminUsers = userList;
+            }
+            
+            else if (tab === 'messages') {
+                content.innerHTML = `
+                    <h2 style="color:#fbbf24;font-size:20px;margin-bottom:20px;font-family:'Playfair Display',serif;">
+                        <i class="fas fa-comments"></i> Message Monitor
+                    </h2>
+                    
+                    <div style="background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);border-radius:12px;padding:20px;margin-bottom:20px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                            <span class="realtime-dot"></span>
+                            <strong style="color:white;">Real-time Message Feed</strong>
+                            <span class="admin-badge admin-badge-green">Live</span>
+                        </div>
+                        <p style="color:#888;font-size:13px;">
+                            ${window._firebase && window._firebase.ready ? 
+                                'Firebase is active. All messages are stored and synced in real-time.' :
+                                'Firebase not configured. Messages are stored locally per-device. Configure Firebase to enable cross-device real-time chat.'}
+                        </p>
+                    </div>
+                    
+                    <div id="adminMsgsList">
+                        <div style="text-align:center;padding:40px;color:#888;">
+                            <i class="fas fa-spinner fa-spin" style="color:#fbbf24;font-size:24px;"></i><br><br>
+                            Loading messages...
+                        </div>
+                    </div>
+                `;
+                
+                setTimeout(async () => {
+                    const msgs = await window._adminGetAllMessages();
+                    const msgsList = document.getElementById('adminMsgsList');
+                    
+                    if (Object.keys(msgs).length === 0) {
+                        // Load from localStorage as fallback
+                        const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+                        let localMsgCount = 0;
+                        Object.values(users).forEach(u => {
+                            if (u.chats) localMsgCount += u.chats.length;
+                        });
+                        msgsList.innerHTML = `
+                            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;">
+                                <p style="color:#888;text-align:center;">No Firebase messages yet. ${localMsgCount} local chat sessions found.</p>
+                                <p style="color:#666;text-align:center;font-size:12px;margin-top:8px;">Messages will appear here once Firebase is configured and users start chatting.</p>
+                            </div>`;
+                        return;
+                    }
+                    
+                    const convIds = Object.keys(msgs);
+                    msgsList.innerHTML = convIds.map(convId => {
+                        const convMsgs = Object.values(msgs[convId] || {});
+                        return `
+                            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:12px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                    <h4 style="color:#fbbf24;font-size:14px;"><i class="fas fa-comment-dots"></i> ${convId.replace(/_/g, ' ↔ ')}</h4>
+                                    <span class="admin-badge admin-badge-yellow">${convMsgs.length} msgs</span>
+                                </div>
+                                ${convMsgs.slice(-3).map(m => `
+                                    <div style="display:flex;gap:10px;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:6px;">
+                                        <div style="color:#fbbf24;font-size:12px;font-weight:bold;min-width:80px;">${m.senderName || m.user || 'Unknown'}</div>
+                                        <div style="color:#ccc;font-size:13px;flex:1;">${m.text}</div>
+                                        <div style="color:#666;font-size:11px;">${m.time || ''}</div>
+                                    </div>
+                                `).join('')}
+                            </div>`;
+                    }).join('');
+                }, 500);
+            }
+            
+            else if (tab === 'firebase') {
+                const isReady = window._firebase && window._firebase.ready;
+                content.innerHTML = `
+                    <h2 style="color:#fbbf24;font-size:20px;margin-bottom:20px;font-family:'Playfair Display',serif;">
+                        <i class="fas fa-database"></i> Firebase Configuration
+                    </h2>
+                    
+                    <div style="background:${isReady ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)'};border:1px solid ${isReady ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'};border-radius:12px;padding:20px;margin-bottom:20px;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <i class="fas fa-${isReady ? 'check-circle' : 'exclamation-circle'}" style="color:${isReady ? '#22c55e' : '#ef4444'};font-size:24px;"></i>
+                            <div>
+                                <div style="color:white;font-weight:bold;">${isReady ? 'Firebase Connected' : 'Firebase Not Configured'}</div>
+                                <div style="color:#888;font-size:13px;">${isReady ? 'Real-time database is active and working.' : 'Replace the firebaseConfig in the code with your real project credentials.'}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;margin-bottom:20px;">
+                        <h3 style="color:white;margin-bottom:15px;">How to Configure Firebase</h3>
+                        
+                        <div style="counter-reset:steps;">
+                            ${['Go to console.firebase.google.com',
+                               'Click "Add Project" and follow the setup wizard',
+                               'In your project, click "Web" (</>) to add a web app',
+                               'Copy the firebaseConfig object provided',
+                               'In this HTML file, find the &lt;script type="module"&gt; block near the top',
+                               'Replace the placeholder firebaseConfig with your real one',
+                               'Enable "Realtime Database" in Firebase Console → Build → Realtime Database',
+                               'Set rules: allow read, write: if request.auth != null',
+                               'Enable "Authentication" → Sign-in method → Email/Password'
+                            ].map((step, i) => `
+                                <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+                                    <div style="width:24px;height:24px;background:rgba(251,191,36,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fbbf24;font-size:12px;font-weight:bold;flex-shrink:0;">${i+1}</div>
+                                    <div style="color:#ccc;font-size:13px;line-height:1.5;">${step}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:20px;">
+                        <h3 style="color:#fbbf24;margin-bottom:12px;font-size:14px;"><i class="fas fa-code"></i> Example Database Rules</h3>
+                        <pre style="color:#22c55e;font-size:12px;line-height:1.8;overflow-x:auto;">{
+  "rules": {
+    "messages": {
+      "$convId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "groupMessages": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth.uid === $uid || auth.token.admin === true"
+      }
+    }
+  }
+}</pre>
+                    </div>
+                `;
+            }
+            
+            else if (tab === 'broadcast') {
+                content.innerHTML = `
+                    <h2 style="color:#fbbf24;font-size:20px;margin-bottom:20px;font-family:'Playfair Display',serif;">
+                        <i class="fas fa-bullhorn"></i> Broadcast Message
+                    </h2>
+                    
+                    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;">
+                        <p style="color:#888;font-size:13px;margin-bottom:20px;">
+                            Send a notification to all registered users. This will appear in their notifications panel.
+                        </p>
+                        
+                        <div style="margin-bottom:15px;">
+                            <label style="color:#fbbf24;font-size:13px;display:block;margin-bottom:6px;">Message Title</label>
+                            <input class="admin-input" id="broadcastTitle" placeholder="e.g. New feature available!">
+                        </div>
+                        
+                        <div style="margin-bottom:15px;">
+                            <label style="color:#fbbf24;font-size:13px;display:block;margin-bottom:6px;">Message Body</label>
+                            <textarea class="admin-input" id="broadcastBody" style="min-height:100px;resize:vertical;" placeholder="Write your announcement here..."></textarea>
+                        </div>
+                        
+                        <div style="margin-bottom:20px;">
+                            <label style="color:#fbbf24;font-size:13px;display:block;margin-bottom:6px;">Message Type</label>
+                            <select class="admin-input" id="broadcastType" style="cursor:pointer;">
+                                <option value="announcement">📢 Announcement</option>
+                                <option value="update">🚀 App Update</option>
+                                <option value="promo">🎁 Promotion</option>
+                                <option value="warning">⚠️ Important Notice</option>
+                            </select>
+                        </div>
+                        
+                        <button onclick="sendAdminBroadcast()" style="
+                            width:100%;background:linear-gradient(135deg,#fbbf24,#d4af37);color:black;
+                            border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:bold;
+                            cursor:pointer;transition:all 0.3s;
+                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <i class="fas fa-paper-plane"></i> Send Broadcast
+                        </button>
+                        
+                        <div id="broadcastStatus" style="margin-top:15px;text-align:center;display:none;"></div>
+                    </div>
+                `;
+            }
+        }
+
+        window.refreshAdminUsers = function() {
+            switchAdminTab('users');
+        };
+        
+        window.filterAdminUsers = function(query) {
+            const users = window._currentAdminUsers || [];
+            const filtered = users.filter(u => 
+                (u.username || '').includes(query.toLowerCase()) ||
+                (u.profile && (u.profile.name || '').toLowerCase().includes(query.toLowerCase()))
+            );
+            
+            const list = document.getElementById('adminUserList');
+            if (!list) return;
+            
+            if (filtered.length === 0) {
+                list.innerHTML = '<p style="text-align:center;color:#888;padding:20px;">No users found</p>';
+                return;
+            }
+            
+            list.innerHTML = filtered.map(user => `
+                <div class="admin-user-row">
+                    <img src="${user.profile && user.profile.photos && user.profile.photos[0] ? user.profile.photos[0] : 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg'}" 
+                        style="width:45px;height:45px;border-radius:50%;object-fit:cover;border:2px solid #fbbf24;">
+                    <div style="flex:1">
+                        <div style="color:white;font-weight:bold;font-size:14px;">${user.profile ? user.profile.name : user.username} <span class="admin-badge admin-badge-yellow" style="font-size:10px;">@${user.username}</span></div>
+                        <div style="color:#888;font-size:12px;">${user.profile ? (user.profile.bio || 'No bio') : 'No profile'}</div>
+                    </div>
+                    <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end;">
+                        <span class="admin-badge admin-badge-green">Active</span>
+                        <button onclick="adminDeleteUser('${user.username}')" class="admin-action-btn" 
+                            style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.2);">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.adminDeleteUser = async function(username) {
+            if (!confirm(`Are you sure you want to delete user @${username}? This cannot be undone.`)) return;
+            
+            const success = await window._adminDeleteUser(username);
+            if (success) {
+                const row = document.getElementById(`userRow_${username}`);
+                if (row) { row.style.opacity = '0.3'; row.style.pointerEvents = 'none'; }
+                showToast(`User @${username} deleted ✓`);
+                setTimeout(() => switchAdminTab('users'), 1000);
+            } else {
+                showToast('Failed to delete user');
+            }
+        };
+
+        window.sendAdminBroadcast = function() {
+            const title = document.getElementById('broadcastTitle').value.trim();
+            const body = document.getElementById('broadcastBody').value.trim();
+            const type = document.getElementById('broadcastType').value;
+            
+            if (!title || !body) {
+                showToast('Please fill in all fields');
+                return;
+            }
+            
+            const typeEmojis = { announcement: '📢', update: '🚀', promo: '🎁', warning: '⚠️' };
+            const emoji = typeEmojis[type] || '📢';
+            
+            addNotification({
+                id: Date.now(),
+                type: 'broadcast',
+                user: 'AfriConnect Admin',
+                avatar: 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg',
+                text: `${emoji} <strong>${title}</strong>: ${body}`,
+                time: 'Just now',
+                read: false
+            });
+            
+            const status = document.getElementById('broadcastStatus');
+            status.style.display = 'block';
+            status.innerHTML = '<span style="color:#22c55e;"><i class="fas fa-check-circle"></i> Broadcast sent successfully!</span>';
+            
+            document.getElementById('broadcastTitle').value = '';
+            document.getElementById('broadcastBody').value = '';
+            
+            showToast(`Broadcast sent! ${emoji}`);
+            setTimeout(() => { status.style.display = 'none'; }, 3000);
+        };
+
     </script>
 </body>
 </html>
