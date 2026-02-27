@@ -1809,6 +1809,7 @@ function updateGroupChatLimitUI() {
         }
     }
 
+}
 function closeGroupChat() {
     document.getElementById('groupChatBox').classList.remove('active');
     currentGroupRoom = null;
@@ -3094,4 +3095,3 @@ document.addEventListener('DOMContentLoaded', function() {
         if (offlineOverlay) offlineOverlay.classList.add('active');
     });
 });
-}
