@@ -3,14 +3,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soul of Africa - Find Your Connection</title>
+    <title>AfriConnect - Find Your Connection</title>
+    <meta name="theme-color" content="#fbbf24">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AfriConnect">
+    <link rel="manifest" id="pwaManifest">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+    // Create PWA manifest inline
+    const manifest = {
+      name: "AfriConnect",
+      short_name: "AfriConnect",
+      description: "Soul of Africa - Find Your Connection",
+      start_url: "./",
+      display: "standalone",
+      background_color: "#020202",
+      theme_color: "#fbbf24",
+      orientation: "portrait-primary",
+      icons: [
+        { src: "https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg", sizes: "192x192", type: "image/jpeg" },
+        { src: "https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg", sizes: "512x512", type: "image/jpeg" }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    document.getElementById('pwaManifest').href = url;
+    </script>
     <style>
         /* Custom Fonts */
         .font-serif { font-family: 'Playfair Display', serif; }
         .font-sans { font-family: 'Lato', sans-serif; }
+
+        /* ===== LIGHT/DARK MODE ===== */
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2a2a2a;
+            --bg-card: rgba(255,255,255,0.05);
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --border-color: rgba(255,255,255,0.1);
+            --input-bg: rgba(255,255,255,0.1);
+            --nav-bg: rgba(0,0,0,0.9);
+        }
+        body.light-mode {
+            --bg-primary: #f5f5f0;
+            --bg-secondary: #ffffff;
+            --bg-card: rgba(0,0,0,0.04);
+            --text-primary: #111111;
+            --text-secondary: #555555;
+            --border-color: rgba(0,0,0,0.1);
+            --input-bg: rgba(0,0,0,0.06);
+            --nav-bg: rgba(255,255,255,0.95);
+        }
+        body.light-mode #swipe-interface { background: var(--bg-primary); }
+        body.light-mode .app-section { background: var(--bg-primary); }
+        body.light-mode .bottom-nav { background: var(--nav-bg); border-color: var(--border-color); }
+        body.light-mode .chat-item:hover, body.light-mode .settings-card { background: var(--bg-card); }
+        body.light-mode .chat-name, body.light-mode .group-chat-name { color: var(--text-primary); }
+        body.light-mode .chat-box, body.light-mode .group-chat-box { background: var(--bg-primary); }
+        body.light-mode .chat-input { background: var(--input-bg); color: var(--text-primary); }
+        body.light-mode .message.received { background: var(--input-bg); color: var(--text-primary); }
+        body.light-mode .main-menu-panel { background: var(--bg-secondary); color: var(--text-primary); }
+        body.light-mode .main-menu-user-info h3 { color: var(--text-primary); }
+        body.light-mode .main-menu-item { color: var(--text-primary); }
+        body.light-mode .main-menu-item:hover { background: rgba(251,191,36,0.15); }
+        body.light-mode .settings-card { border: 1px solid var(--border-color); }
+        body.light-mode .editable-field { color: var(--text-primary); }
+        body.light-mode .flash-post-card { background: var(--bg-secondary); border-color: var(--border-color); }
+        body.light-mode .flash-post-card .post-username { color: var(--text-primary); }
+        body.light-mode .flash-comment { background: var(--bg-card); }
+        body.light-mode .flash-comment-text { color: var(--text-primary); }
+
+        /* ===== DESKTOP MODE ===== */
+        body.desktop-mode #swipe-interface {
+            max-width: 1200px;
+            margin: 0 auto;
+            border-left: 1px solid rgba(255,255,255,0.1);
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+        body.desktop-mode .discovery-grid { grid-template-columns: repeat(6, 1fr); }
+        body.desktop-mode .matches-grid { grid-template-columns: repeat(5, 1fr); }
+        body.desktop-mode .main-menu-panel { width: 400px; right: -400px; }
+        body.desktop-mode .main-menu-panel.active { right: 0; }
+
+        /* ===== FLASH SECTION ===== */
+        .flash-feed {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+        .flash-post-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+        .flash-post-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+        }
+        .flash-post-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fbbf24;
+        }
+        .post-username { font-weight: bold; color: white; font-size: 14px; }
+        .post-time { color: #888; font-size: 11px; }
+        .flash-expiry {
+            margin-left: auto;
+            background: rgba(239,68,68,0.2);
+            color: #f87171;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .flash-post-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .flash-post-caption {
+            padding: 10px 14px;
+            color: #ccc;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .flash-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 8px 14px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .flash-action-btn {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .flash-action-btn:hover { background: rgba(255,255,255,0.08); color: white; }
+        .flash-action-btn.liked { color: #ef4444; }
+        .flash-action-btn.liked i { color: #ef4444; }
+        .flash-comments-section {
+            padding: 0 14px 12px;
+            display: none;
+        }
+        .flash-comments-section.open { display: block; }
+        .flash-comment {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 8px 10px;
+        }
+        .flash-comment-avatar {
+            width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+        }
+        .flash-comment-text { color: #ccc; font-size: 12px; line-height: 1.4; }
+        .flash-comment-user { color: #fbbf24; font-weight: bold; font-size: 12px; }
+        .flash-comment-input-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .flash-comment-input {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 8px 14px;
+            color: white;
+            font-size: 12px;
+            outline: none;
+        }
+        .flash-comment-input:focus { border-color: #fbbf24; }
+        .flash-comment-send {
+            background: #fbbf24; color: black; border: none;
+            border-radius: 50%; width: 32px; height: 32px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; flex-shrink: 0;
+        }
+        .flash-create-btn {
+            position: fixed;
+            bottom: 90px;
+            right: 15px;
+            width: 52px; height: 52px;
+            background: linear-gradient(135deg, #fbbf24, #d4af37);
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 85;
+            box-shadow: 0 4px 15px rgba(251,191,36,0.5);
+            border: none;
+            font-size: 22px;
+            color: black;
+            transition: all 0.3s;
+        }
+        .flash-create-btn:hover { transform: scale(1.1); }
+        .flash-create-btn.visible { display: flex; }
+        .flash-create-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 400;
+            display: none; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            overflow-y: auto;
+        }
+        .flash-create-modal.active { display: flex; }
+        .flash-create-content {
+            width: 100%; max-width: 500px; padding: 20px;
+        }
+        .flash-upload-area {
+            border: 2px dashed rgba(251,191,36,0.4);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 16px;
+        }
+        .flash-upload-area:hover {
+            border-color: #fbbf24;
+            background: rgba(251,191,36,0.05);
+        }
+        .flash-timer-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(239,68,68,0.15);
+            border: 1px solid rgba(239,68,68,0.3);
+            color: #f87171; border-radius: 20px;
+            padding: 6px 14px; font-size: 13px;
+            margin: 12px 0;
+        }
+
+        /* Install button */
+        .install-btn {
+            background: linear-gradient(135deg, #fbbf24, #d4af37);
+            color: black;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+        .install-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(251,191,36,0.4); }
+        .install-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         /* The Dark Room State */
         body {
@@ -2966,9 +3235,9 @@
                     <span>African Market Zone</span>
                 </div>
                 
-                <div class="main-menu-item" onclick="showSectionFromMenu('groups')">
-                    <i class="fas fa-users"></i>
-                    <span>Community Groups</span>
+                <div class="main-menu-item" onclick="showSectionFromMenu('nearby')">
+                    <i class="fas fa-bolt"></i>
+                    <span>FLASH</span>
                 </div>
                 
                 <div class="main-menu-item" onclick="showSectionFromMenu('profile')">
@@ -2988,6 +3257,34 @@
                 <div class="main-menu-item" onclick="openCreateAdvert()">
                     <i class="fas fa-plus-circle"></i>
                     <span>Create Advert</span>
+                </div>
+
+                <div class="main-menu-divider"></div>
+                
+                <div class="main-menu-section-title">Appearance</div>
+                
+                <!-- Dark / Light Mode Toggle -->
+                <div class="main-menu-item" onclick="toggleDarkLight()" id="darkLightMenuItem">
+                    <i class="fas fa-moon" id="darkLightIcon"></i>
+                    <span id="darkLightLabel">Dark Mode</span>
+                    <div id="darkLightToggle" class="toggle-switch active" style="margin-left:auto;pointer-events:none;"></div>
+                </div>
+
+                <!-- Desktop / Mobile Mode Toggle -->
+                <div class="main-menu-item" onclick="toggleDesktopMode()" id="desktopModeMenuItem">
+                    <i class="fas fa-desktop" id="desktopModeIcon"></i>
+                    <span id="desktopModeLabel">Desktop Mode</span>
+                    <div id="desktopModeToggle" class="toggle-switch" style="margin-left:auto;pointer-events:none;"></div>
+                </div>
+
+                <div class="main-menu-divider"></div>
+                
+                <!-- Install App Button -->
+                <div style="padding: 8px 12px;">
+                    <button class="install-btn" id="installAppBtn" onclick="installApp()" disabled>
+                        <i class="fas fa-download"></i>
+                        <span id="installBtnText">Add to Home Screen</span>
+                    </button>
                 </div>
 
                 <div class="main-menu-divider"></div>
@@ -3015,6 +3312,11 @@
         <div class="eniola-bot" onclick="toggleEniola()" title="Chat with ENIOLA">
             <i class="fas fa-robot"></i>
         </div>
+
+        <!-- FLASH CREATE BUTTON -->
+        <button class="flash-create-btn" id="flashCreateBtn" onclick="openFlashCreate()" title="Post a Flash">
+            <i class="fas fa-bolt"></i>
+        </button>
 
         <!-- ENIOLA CHAT -->
         <div class="eniola-chat" id="eniolaChat">
@@ -3057,29 +3359,22 @@
             <div class="discovery-grid" id="discoveryGrid"></div>
         </div>
 
-        <!-- NEARBY SECTION -->
+        <!-- FLASH SECTION (replaces Nearby) -->
         <div id="section-nearby" class="app-section">
-            <div class="nearby-toggle">
-                <div class="nearby-status"></div>
-                <div class="flex-1">
-                    <div class="font-bold text-white text-sm">Nearby Active</div>
-                    <div class="text-xs text-gray-400">People within 5 km can see you</div>
-                </div>
-                <div class="toggle-switch active" onclick="toggleNearby(this)"></div>
-            </div>
-            <div class="p-3 border-b border-white/10 flex justify-between items-center">
+            <div style="padding:12px 15px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;">
                 <div>
-                    <h2 class="text-lg font-bold text-white">People Nearby</h2>
-                    <p class="text-xs text-gray-400" id="nearbyCountText">12 people within 5 km</p>
+                    <h2 style="font-size:20px;font-weight:bold;color:#fbbf24;font-family:'Playfair Display',serif;display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-bolt"></i> FLASH
+                    </h2>
+                    <p style="font-size:11px;color:#888;">Posts vanish after 48 hours ⚡</p>
                 </div>
-                <select class="text-xs" onchange="filterNearby(this.value)">
-                    <option value="5">Within 5 km</option>
-                    <option value="10">Within 10 km</option>
-                    <option value="20">Within 20 km</option>
-                    <option value="50">Within 50 km</option>
-                </select>
+                <div class="flash-timer-badge">
+                    <i class="fas fa-clock"></i> 48hr posts
+                </div>
             </div>
-            <div class="nearby-grid" id="nearbyGrid"></div>
+            <div class="flash-feed" id="flashFeed">
+                <!-- Flash posts injected here -->
+            </div>
         </div>
 
         <!-- GROUP CHAT SECTION -->
@@ -3360,8 +3655,8 @@
                 <span>Discover</span>
             </div>
             <div class="nav-item" onclick="showSection('nearby')">
-                <i class="fas fa-map-marker-alt text-lg"></i>
-                <span>Nearby</span>
+                <i class="fas fa-bolt text-lg"></i>
+                <span>FLASH</span>
             </div>
             <div class="nav-item" onclick="showSection('matches')">
                 <i class="fas fa-heart text-lg"></i>
@@ -3445,7 +3740,43 @@
         </div>
     </div>
 
-    <!-- CREATE ADVERT MODAL -->
+    <!-- FLASH CREATE MODAL -->
+    <div class="flash-create-modal" id="flashCreateModal">
+        <div class="flash-create-content">
+            <div style="display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:20px;">
+                <button onclick="closeFlashCreate()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h2 style="color:#fbbf24;font-size:18px;font-family:'Playfair Display',serif;"><i class="fas fa-bolt"></i> Post a Flash</h2>
+            </div>
+
+            <div class="flash-timer-badge" style="margin-bottom:16px;">
+                <i class="fas fa-clock"></i> This post will automatically delete after <strong>48 hours</strong>
+            </div>
+
+            <div class="flash-upload-area" onclick="document.getElementById('flashImageInput').click()" id="flashUploadArea">
+                <i class="fas fa-camera" style="font-size:32px;color:#888;display:block;margin-bottom:10px;"></i>
+                <p style="color:#888;font-size:14px;">Tap to add a photo</p>
+                <p style="color:#555;font-size:12px;margin-top:4px;">JPG, PNG or GIF</p>
+            </div>
+            <input type="file" id="flashImageInput" accept="image/*" style="display:none;" onchange="previewFlashImage(event)">
+            <div id="flashImagePreview" style="display:none;margin-bottom:16px;border-radius:12px;overflow:hidden;">
+                <img id="flashPreviewImg" style="width:100%;max-height:300px;object-fit:cover;">
+                <button onclick="clearFlashImage()" style="width:100%;background:rgba(239,68,68,0.2);color:#f87171;border:none;padding:8px;cursor:pointer;font-size:12px;">
+                    <i class="fas fa-times"></i> Remove Image
+                </button>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label style="color:#fbbf24;font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">Caption (optional)</label>
+                <textarea id="flashCaption" placeholder="What's happening? Share with the community..." style="width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:12px;color:white;font-size:14px;resize:vertical;min-height:80px;outline:none;" onfocus="this.style.borderColor='#fbbf24'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'"></textarea>
+            </div>
+
+            <button onclick="submitFlashPost()" style="width:100%;background:linear-gradient(135deg,#fbbf24,#d4af37);color:black;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:bold;cursor:pointer;transition:all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                <i class="fas fa-bolt"></i> Post Flash (48hrs)
+            </button>
+        </div>
+    </div>
     <div class="create-advert-modal" id="createAdvertModal">
         <div class="create-advert-content">
             <div class="create-advert-header">
@@ -3983,6 +4314,15 @@
                     showEniolaWelcome();
                 }
             }, 3000);
+
+            // Check install availability
+            setTimeout(() => {
+                const btn = document.getElementById('installAppBtn');
+                if (btn && !_deferredPrompt) {
+                    btn.disabled = true;
+                    btn.querySelector('#installBtnText').textContent = 'Add to Home Screen';
+                }
+            }, 2000);
         }
 
         // Logout
@@ -6971,6 +7311,483 @@
             showToast(`Broadcast sent! ${emoji}`);
             setTimeout(() => { status.style.display = 'none'; }, 3000);
         };
+
+        // ==========================================
+        // DARK / LIGHT MODE
+        // ==========================================
+        let _isDarkMode = true;
+        function toggleDarkLight() {
+            _isDarkMode = !_isDarkMode;
+            document.body.classList.toggle('light-mode', !_isDarkMode);
+            const icon = document.getElementById('darkLightIcon');
+            const label = document.getElementById('darkLightLabel');
+            const tog = document.getElementById('darkLightToggle');
+            if (_isDarkMode) {
+                icon.className = 'fas fa-moon';
+                label.textContent = 'Dark Mode';
+                tog.classList.add('active');
+            } else {
+                icon.className = 'fas fa-sun';
+                label.textContent = 'Light Mode';
+                tog.classList.remove('active');
+            }
+            localStorage.setItem('afriConnect_darkMode', _isDarkMode ? '1' : '0');
+        }
+
+        // ==========================================
+        // DESKTOP / MOBILE MODE
+        // ==========================================
+        let _isDesktopMode = false;
+        function toggleDesktopMode() {
+            _isDesktopMode = !_isDesktopMode;
+            document.body.classList.toggle('desktop-mode', _isDesktopMode);
+            const icon = document.getElementById('desktopModeIcon');
+            const label = document.getElementById('desktopModeLabel');
+            const tog = document.getElementById('desktopModeToggle');
+            if (_isDesktopMode) {
+                icon.className = 'fas fa-mobile-alt';
+                label.textContent = 'Mobile Mode';
+                tog.classList.add('active');
+            } else {
+                icon.className = 'fas fa-desktop';
+                label.textContent = 'Desktop Mode';
+                tog.classList.remove('active');
+            }
+            localStorage.setItem('afriConnect_desktopMode', _isDesktopMode ? '1' : '0');
+            showToast(_isDesktopMode ? '🖥 Desktop mode ON' : '📱 Mobile mode ON');
+        }
+
+        // Restore preferences
+        (function restorePrefs() {
+            const dm = localStorage.getItem('afriConnect_darkMode');
+            if (dm === '0') { _isDarkMode = true; toggleDarkLight(); } // start dark, toggle to light
+            const desktop = localStorage.getItem('afriConnect_desktopMode');
+            if (desktop === '1') { _isDesktopMode = false; toggleDesktopMode(); }
+        })();
+
+        // ==========================================
+        // PWA INSTALL BUTTON
+        // ==========================================
+        let _deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            _deferredPrompt = e;
+            const btn = document.getElementById('installAppBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.querySelector('#installBtnText').textContent = 'Install App';
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            _deferredPrompt = null;
+            const btn = document.getElementById('installAppBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.querySelector('#installBtnText').textContent = 'App Installed ✓';
+            }
+            showToast('AfriConnect installed! 🎉');
+        });
+
+        async function installApp() {
+            const btn = document.getElementById('installAppBtn');
+            if (_deferredPrompt) {
+                _deferredPrompt.prompt();
+                const { outcome } = await _deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    showToast('Installing AfriConnect...');
+                }
+                _deferredPrompt = null;
+            } else {
+                // Fallback instructions
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                if (isIOS) {
+                    showToast('Tap Share → Add to Home Screen 📱');
+                } else {
+                    showToast('Open browser menu → Install App / Add to Home Screen');
+                }
+            }
+        }
+
+        // ==========================================
+        // FLASH SECTION - Firebase + localStorage
+        // ==========================================
+        
+        let _flashImageData = null;
+
+        function openFlashCreate() {
+            document.getElementById('flashCreateModal').classList.add('active');
+        }
+
+        function closeFlashCreate() {
+            document.getElementById('flashCreateModal').classList.remove('active');
+            clearFlashImage();
+            document.getElementById('flashCaption').value = '';
+        }
+
+        function previewFlashImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                _flashImageData = e.target.result;
+                document.getElementById('flashUploadArea').style.display = 'none';
+                document.getElementById('flashImagePreview').style.display = 'block';
+                document.getElementById('flashPreviewImg').src = _flashImageData;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearFlashImage() {
+            _flashImageData = null;
+            document.getElementById('flashUploadArea').style.display = 'block';
+            document.getElementById('flashImagePreview').style.display = 'none';
+            document.getElementById('flashImageInput').value = '';
+        }
+
+        async function submitFlashPost() {
+            if (!currentUser) { showToast('Please login first'); return; }
+            const caption = document.getElementById('flashCaption').value.trim();
+            if (!_flashImageData && !caption) {
+                showToast('Please add an image or caption'); return;
+            }
+
+            const post = {
+                id: 'flash_' + Date.now(),
+                authorUsername: currentUser.username,
+                authorName: currentUser.profile.name,
+                authorAvatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
+                imageData: _flashImageData || null,
+                caption: caption,
+                timestamp: Date.now(),
+                expiresAt: Date.now() + (48 * 60 * 60 * 1000), // 48 hours
+                likes: [],
+                comments: []
+            };
+
+            // Save to Firebase if available
+            if (window._firebase && window._firebase.ready && window._firebase.db) {
+                try {
+                    await window._firebase.push(
+                        window._firebase.ref(window._firebase.db, 'flashPosts'),
+                        post
+                    );
+                } catch(e) {
+                    console.warn('Firebase flash save failed, using localStorage', e);
+                    saveFlashToLocal(post);
+                }
+            } else {
+                saveFlashToLocal(post);
+            }
+
+            showToast('Flash posted! ⚡ Expires in 48hrs');
+            closeFlashCreate();
+            loadFlashFeed();
+        }
+
+        function saveFlashToLocal(post) {
+            const posts = JSON.parse(localStorage.getItem('afriConnect_flashPosts') || '[]');
+            posts.unshift(post);
+            localStorage.setItem('afriConnect_flashPosts', JSON.stringify(posts));
+        }
+
+        async function loadFlashFeed() {
+            const feed = document.getElementById('flashFeed');
+            if (!feed) return;
+            feed.innerHTML = '<div style="text-align:center;padding:40px;color:#888;"><i class="fas fa-spinner fa-spin" style="color:#fbbf24;font-size:24px;"></i></div>';
+
+            let posts = [];
+            const now = Date.now();
+
+            if (window._firebase && window._firebase.ready && window._firebase.db) {
+                try {
+                    const snap = await window._firebase.get(
+                        window._firebase.ref(window._firebase.db, 'flashPosts')
+                    );
+                    if (snap.val()) {
+                        const all = Object.entries(snap.val()).map(([key, val]) => ({...val, _fbKey: key}));
+                        // Filter expired & sort newest first
+                        posts = all.filter(p => p.expiresAt > now).sort((a, b) => b.timestamp - a.timestamp);
+                        
+                        // Auto-delete expired ones from Firebase
+                        all.filter(p => p.expiresAt <= now).forEach(async (p) => {
+                            try {
+                                await window._firebase.remove(
+                                    window._firebase.ref(window._firebase.db, `flashPosts/${p._fbKey}`)
+                                );
+                            } catch(e){}
+                        });
+                    }
+                } catch(e) {
+                    posts = getLocalFlashPosts(now);
+                }
+            } else {
+                posts = getLocalFlashPosts(now);
+            }
+
+            if (posts.length === 0) {
+                feed.innerHTML = `
+                    <div style="text-align:center;padding:60px 20px;color:#888;">
+                        <i class="fas fa-bolt" style="font-size:48px;color:rgba(251,191,36,0.3);margin-bottom:16px;display:block;"></i>
+                        <p style="font-size:16px;margin-bottom:8px;color:#ccc;">No flashes yet!</p>
+                        <p style="font-size:13px;">Be the first to post a 48-hour flash</p>
+                    </div>`;
+                return;
+            }
+
+            feed.innerHTML = posts.map(post => renderFlashPost(post, now)).join('');
+        }
+
+        function getLocalFlashPosts(now) {
+            const posts = JSON.parse(localStorage.getItem('afriConnect_flashPosts') || '[]');
+            const valid = posts.filter(p => p.expiresAt > now);
+            // Clean up expired
+            if (valid.length !== posts.length) {
+                localStorage.setItem('afriConnect_flashPosts', JSON.stringify(valid));
+            }
+            return valid.sort((a, b) => b.timestamp - a.timestamp);
+        }
+
+        function renderFlashPost(post, now) {
+            const remaining = post.expiresAt - now;
+            const hoursLeft = Math.max(0, Math.floor(remaining / 3600000));
+            const minsLeft = Math.max(0, Math.floor((remaining % 3600000) / 60000));
+            const timeLabel = hoursLeft > 0 ? `${hoursLeft}h ${minsLeft}m left` : `${minsLeft}m left`;
+
+            const postDate = new Date(post.timestamp);
+            const timeAgo = getTimeAgo(post.timestamp);
+
+            const likes = post.likes || [];
+            const comments = post.comments || [];
+            const isLiked = currentUser && likes.includes(currentUser.username);
+
+            const imageHtml = post.imageData ? 
+                `<img src="${post.imageData}" class="flash-post-image" alt="Flash post" onclick="fullscreenFlashImage(this)">` : '';
+
+            const commentsHtml = comments.slice(0, 3).map(c => `
+                <div class="flash-comment">
+                    <img src="${c.avatar || AFRICA_MAP_URL}" class="flash-comment-avatar" alt="">
+                    <div>
+                        <span class="flash-comment-user">${c.authorName}</span>
+                        <div class="flash-comment-text">${c.text}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            return `
+            <div class="flash-post-card" data-post-id="${post.id}" data-fb-key="${post._fbKey || ''}">
+                <div class="flash-post-header">
+                    <img src="${post.authorAvatar}" class="flash-post-avatar" alt="">
+                    <div>
+                        <div class="post-username">${post.authorName}</div>
+                        <div class="post-time">${timeAgo}</div>
+                    </div>
+                    <div class="flash-expiry"><i class="fas fa-clock"></i> ${timeLabel}</div>
+                </div>
+                ${imageHtml}
+                ${post.caption ? `<div class="flash-post-caption">${post.caption}</div>` : ''}
+                <div class="flash-actions">
+                    <button class="flash-action-btn ${isLiked ? 'liked' : ''}" onclick="toggleFlashLike('${post.id}', '${post._fbKey || ''}', this)">
+                        <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
+                        <span>${likes.length}</span>
+                    </button>
+                    <button class="flash-action-btn" onclick="toggleFlashComments('${post.id}', this)">
+                        <i class="far fa-comment"></i>
+                        <span>${comments.length}</span>
+                    </button>
+                    <button class="flash-action-btn" onclick="shareFlashPost('${post.id}')">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                </div>
+                <div class="flash-comments-section" id="flashComments_${post.id}">
+                    <div id="flashCommentsList_${post.id}">${commentsHtml}</div>
+                    <div class="flash-comment-input-row">
+                        <input type="text" class="flash-comment-input" placeholder="Add a comment..." id="flashCommentInput_${post.id}" 
+                            onkeypress="if(event.key==='Enter') submitFlashComment('${post.id}', '${post._fbKey || ''}')">
+                        <button class="flash-comment-send" onclick="submitFlashComment('${post.id}', '${post._fbKey || ''}')">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function getTimeAgo(ts) {
+            const diff = Date.now() - ts;
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
+            return `${Math.floor(diff/86400000)}d ago`;
+        }
+
+        function toggleFlashComments(postId, btn) {
+            const section = document.getElementById(`flashComments_${postId}`);
+            section.classList.toggle('open');
+            if (section.classList.contains('open')) {
+                document.getElementById(`flashCommentInput_${postId}`).focus();
+            }
+        }
+
+        async function toggleFlashLike(postId, fbKey, btn) {
+            if (!currentUser) { showToast('Login to like posts'); return; }
+            const uname = currentUser.username;
+
+            // Optimistic UI
+            const isNowLiked = !btn.classList.contains('liked');
+            btn.classList.toggle('liked', isNowLiked);
+            const icon = btn.querySelector('i');
+            icon.className = isNowLiked ? 'fas fa-heart' : 'far fa-heart';
+            const countSpan = btn.querySelector('span');
+            let count = parseInt(countSpan.textContent);
+            countSpan.textContent = isNowLiked ? count + 1 : Math.max(0, count - 1);
+
+            if (window._firebase && window._firebase.ready && window._firebase.db && fbKey) {
+                try {
+                    const postRef = window._firebase.ref(window._firebase.db, `flashPosts/${fbKey}`);
+                    const snap = await window._firebase.get(postRef);
+                    if (snap.val()) {
+                        const post = snap.val();
+                        const likes = post.likes || [];
+                        const idx = likes.indexOf(uname);
+                        if (idx > -1) likes.splice(idx, 1);
+                        else likes.push(uname);
+                        await window._firebase.update(postRef, { likes });
+                    }
+                } catch(e) { updateLocalFlashLike(postId, uname, isNowLiked); }
+            } else {
+                updateLocalFlashLike(postId, uname, isNowLiked);
+            }
+        }
+
+        function updateLocalFlashLike(postId, uname, add) {
+            const posts = JSON.parse(localStorage.getItem('afriConnect_flashPosts') || '[]');
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            if (!post.likes) post.likes = [];
+            const idx = post.likes.indexOf(uname);
+            if (add && idx === -1) post.likes.push(uname);
+            else if (!add && idx > -1) post.likes.splice(idx, 1);
+            localStorage.setItem('afriConnect_flashPosts', JSON.stringify(posts));
+        }
+
+        async function submitFlashComment(postId, fbKey) {
+            if (!currentUser) { showToast('Login to comment'); return; }
+            const input = document.getElementById(`flashCommentInput_${postId}`);
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+
+            const comment = {
+                id: 'c' + Date.now(),
+                authorUsername: currentUser.username,
+                authorName: currentUser.profile.name,
+                avatar: currentUser.profile.photos[0] || AFRICA_MAP_URL,
+                text: text,
+                timestamp: Date.now()
+            };
+
+            // Add to UI
+            const list = document.getElementById(`flashCommentsList_${postId}`);
+            list.insertAdjacentHTML('beforeend', `
+                <div class="flash-comment">
+                    <img src="${comment.avatar}" class="flash-comment-avatar" alt="">
+                    <div>
+                        <span class="flash-comment-user">${comment.authorName}</span>
+                        <div class="flash-comment-text">${comment.text}</div>
+                    </div>
+                </div>`);
+
+            if (window._firebase && window._firebase.ready && window._firebase.db && fbKey) {
+                try {
+                    const commentsRef = window._firebase.ref(window._firebase.db, `flashPosts/${fbKey}/comments`);
+                    const snap = await window._firebase.get(commentsRef.parent);
+                    if (snap.val()) {
+                        const comments = snap.val().comments || [];
+                        comments.push(comment);
+                        await window._firebase.update(snap.ref, { comments });
+                    }
+                } catch(e) { addLocalFlashComment(postId, comment); }
+            } else {
+                addLocalFlashComment(postId, comment);
+            }
+        }
+
+        function addLocalFlashComment(postId, comment) {
+            const posts = JSON.parse(localStorage.getItem('afriConnect_flashPosts') || '[]');
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            if (!post.comments) post.comments = [];
+            post.comments.push(comment);
+            localStorage.setItem('afriConnect_flashPosts', JSON.stringify(posts));
+        }
+
+        function shareFlashPost(postId) {
+            if (navigator.share) {
+                navigator.share({ title: 'AfriConnect Flash', text: 'Check out this Flash post!', url: window.location.href });
+            } else {
+                showToast('Share: ' + window.location.href);
+            }
+        }
+
+        function fullscreenFlashImage(img) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+            const i = document.createElement('img');
+            i.src = img.src;
+            i.style.cssText = 'max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;';
+            overlay.appendChild(i);
+            overlay.onclick = () => overlay.remove();
+            document.body.appendChild(overlay);
+        }
+
+        // Override showSection to handle flash button visibility
+        const _origShowSection = window.showSection || function(){};
+        function showSection(section) {
+            document.querySelectorAll('.app-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(`section-${section}`).classList.add('active');
+            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+
+            // Show/hide flash create button
+            const flashBtn = document.getElementById('flashCreateBtn');
+            if (flashBtn) {
+                flashBtn.classList.toggle('visible', section === 'nearby');
+            }
+            // Load flash feed when switching to flash tab
+            if (section === 'nearby') {
+                loadFlashFeed();
+            }
+        }
+
+        // Also override initNearby to init flash instead
+        function initNearby() {
+            loadFlashFeed();
+        }
+
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Create inline service worker
+                const swContent = `
+                    self.addEventListener('install', e => self.skipWaiting());
+                    self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+                    self.addEventListener('fetch', e => {
+                        if (e.request.destination === 'image') {
+                            e.respondWith(
+                                caches.open('africonnect-v1').then(cache =>
+                                    cache.match(e.request).then(r => r || fetch(e.request).then(res => {
+                                        cache.put(e.request, res.clone()); return res;
+                                    }))
+                                )
+                            );
+                        }
+                    });
+                `;
+                const blob = new Blob([swContent], { type: 'application/javascript' });
+                const url = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(url).catch(() => {});
+            });
+        }
 
     </script>
 </body>
