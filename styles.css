@@ -186,6 +186,11 @@ body.lights-on .glow-text {
     transition: transform 0.2s;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
+    pointer-events: auto !important;
+}
+
+.lamp-container:hover {
+    transform: scale(1.05);
 }
 
 .lamp-container:active {
@@ -327,6 +332,8 @@ body.lights-on .bulb-glow {
     flex-direction: column;
     align-items: center;
     cursor: pointer;
+    pointer-events: auto !important;
+    z-index: 52;
 }
 
 .rope-base {
@@ -343,6 +350,8 @@ body.lights-on .bulb-glow {
     transform-origin: top;
     transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     position: relative;
+    cursor: pointer;
+    pointer-events: auto !important;
 }
 
 .rope.pulled {
@@ -358,6 +367,8 @@ body.lights-on .bulb-glow {
     height: 16px;
     background: linear-gradient(to bottom, #d4a574, #8b4513);
     border-radius: 6px;
+    cursor: pointer;
+    pointer-events: auto !important;
     box-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 

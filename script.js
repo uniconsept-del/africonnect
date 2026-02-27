@@ -6,20 +6,45 @@ let isLightOn = false;
 let isAnimating = false;
 
 function initLamp() {
+    console.log('🔧 Initializing lamp...');
+    
     const touchLamp = document.getElementById('touchLamp');
     const ropeSwitch = document.getElementById('ropeSwitch');
     const ropeContainer = document.getElementById('ropeSwitchContainer');
     const clickFeedback = document.getElementById('clickFeedback');
     const body = document.body;
 
+    // Debug log
+    console.log('Lamp elements:', {
+        touchLamp: !!touchLamp,
+        ropeSwitch: !!ropeSwitch,
+        ropeContainer: !!ropeContainer,
+        clickFeedback: !!clickFeedback
+    });
+
     if (!touchLamp || !ropeSwitch || !ropeContainer) {
-        console.error('Lamp elements not found');
+        console.error('❌ Lamp elements not found', {
+            touchLamp: !!touchLamp,
+            ropeSwitch: !!ropeSwitch,
+            ropeContainer: !!ropeContainer
+        });
         return;
     }
 
     function toggleLight(e) {
+        console.log('🔦 Toggle light clicked!');
+        
+        // Prevent default and stop propagation
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
         // Prevent rapid clicking
-        if (isAnimating) return;
+        if (isAnimating) {
+            console.log('⏳ Animation in progress, skipping...');
+            return;
+        }
         isAnimating = true;
         
         // Show click feedback animation
@@ -30,7 +55,9 @@ function initLamp() {
         }
         
         // Animate rope pull
-        ropeSwitch.classList.add('pulled');
+        if (ropeSwitch) {
+            ropeSwitch.classList.add('pulled');
+        }
         
         // Toggle light state
         setTimeout(() => {
@@ -47,7 +74,9 @@ function initLamp() {
         
         // Reset rope and animation lock
         setTimeout(() => {
-            ropeSwitch.classList.remove('pulled');
+            if (ropeSwitch) {
+                ropeSwitch.classList.remove('pulled');
+            }
         }, 400);
         
         setTimeout(() => {
@@ -55,26 +84,46 @@ function initLamp() {
         }, 500);
     }
 
+    // Remove any existing listeners by cloning elements
+    const newTouchLamp = touchLamp.cloneNode(true);
+    touchLamp.parentNode.replaceChild(newTouchLamp, touchLamp);
+    
+    const newRopeContainer = newTouchLamp.querySelector('#ropeSwitchContainer');
+    const newRopeSwitch = newTouchLamp.querySelector('#ropeSwitch');
+    const newClickFeedback = newTouchLamp.querySelector('#clickFeedback');
+
     // Click on lamp container
-    touchLamp.addEventListener('click', toggleLight);
+    newTouchLamp.addEventListener('click', function(e) {
+        console.log('🖱️ Lamp clicked');
+        toggleLight(e);
+    }, true);
     
     // Click specifically on the rope
-    ropeContainer.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleLight();
-    });
+    if (newRopeContainer) {
+        newRopeContainer.addEventListener('click', function(e) {
+            console.log('🪢 Rope clicked');
+            e.stopPropagation();
+            toggleLight(e);
+        }, true);
+    }
 
     // Touch support for mobile
-    touchLamp.addEventListener('touchstart', (e) => {
+    newTouchLamp.addEventListener('touchstart', function(e) {
+        console.log('👆 Lamp touched');
         e.preventDefault();
-        toggleLight();
-    }, { passive: false });
+        toggleLight(e);
+    }, { passive: false, capture: true });
     
-    ropeContainer.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleLight();
-    }, { passive: false });
+    if (newRopeContainer) {
+        newRopeContainer.addEventListener('touchstart', function(e) {
+            console.log('👆 Rope touched');
+            e.preventDefault();
+            e.stopPropagation();
+            toggleLight(e);
+        }, { passive: false, capture: true });
+    }
+    
+    console.log('✅ Lamp initialized successfully');
 }
 
 // ==========================================
