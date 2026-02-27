@@ -213,13 +213,14 @@ async function initAuth() {
                 if (!document.getElementById('swipe-interface').classList.contains('active')) {
                     enterApp();
                     subscribeToIncomingMessages();
+                } else {
+                    // Already in app — just refresh profile display
+                    loadUserProfile();
                 }
             } else if (!currentUser) {
-                // Account truly doesn't exist anywhere
                 localStorage.removeItem('afriConnect_session');
             }
         } catch (e) {
-            // Firebase failed — we already restored from localStorage above, so stay logged in
             console.warn('Firebase session sync failed, using cached data:', e);
         }
     }
@@ -594,24 +595,57 @@ function loadUserProfile() {
     if (!currentUser) return;
     
     const profile = currentUser.profile;
-    
-    document.getElementById('userAvatar').src = profile.photos[0] || AFRICA_MAP_URL;
-    document.getElementById('menuUserAvatar').src = profile.photos[0] || AFRICA_MAP_URL;
-    document.getElementById('menuUserName').textContent = profile.name;
-    
-    document.getElementById('profileName').value = profile.name || '';
-    document.getElementById('profileAge').value = profile.age || '';
-    document.getElementById('profileBio').value = profile.bio || '';
-    document.getElementById('profileJob').value = profile.job || '';
-    document.getElementById('profileCompany').value = profile.company || '';
-    document.getElementById('profileSchool').value = profile.school || '';
-    document.getElementById('profilePhone').value = profile.phone || '';
-    document.getElementById('distanceSlider').value = profile.distance || 50;
-    document.getElementById('distanceValue').textContent = (profile.distance || 50) + ' km';
-    document.getElementById('ageMin').value = profile.ageMin || 22;
-    document.getElementById('ageMax').value = profile.ageMax || 30;
-    document.getElementById('ageValue').textContent = (profile.ageMin || 22) + ' - ' + (profile.ageMax || 30);
-    document.getElementById('lookingFor').value = profile.lookingFor || 'everyone';
+    const avatarSrc = (profile.photos && profile.photos[0]) ? profile.photos[0] : AFRICA_MAP_URL;
+
+    // Set avatars
+    const userAvatarEl = document.getElementById('userAvatar');
+    const menuUserAvatarEl = document.getElementById('menuUserAvatar');
+    if (userAvatarEl) { userAvatarEl.src = avatarSrc; userAvatarEl.onerror = function(){ this.src = AFRICA_MAP_URL; }; }
+    if (menuUserAvatarEl) { menuUserAvatarEl.src = avatarSrc; menuUserAvatarEl.onerror = function(){ this.src = AFRICA_MAP_URL; }; }
+
+    // Set display name in menu
+    const menuUserNameEl = document.getElementById('menuUserName');
+    if (menuUserNameEl) menuUserNameEl.textContent = profile.name || currentUser.username;
+
+    // Update profile header name/age display
+    const profileDisplayName = document.getElementById('profileDisplayName');
+    const profileDisplayAge = document.getElementById('profileDisplayAge');
+    if (profileDisplayName) profileDisplayName.textContent = profile.name || currentUser.username;
+    if (profileDisplayAge) profileDisplayAge.textContent = profile.age ? `${profile.age} years old` : '';
+
+    // Fill form fields
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    set('profileName', profile.name);
+    set('profileAge', profile.age);
+    set('profileBio', profile.bio);
+    set('profileJob', profile.job);
+    set('profileCompany', profile.company);
+    set('profileSchool', profile.school);
+    set('profilePhone', profile.phone);
+
+    const distSlider = document.getElementById('distanceSlider');
+    const distVal = document.getElementById('distanceValue');
+    if (distSlider) distSlider.value = profile.distance || 50;
+    if (distVal) distVal.textContent = (profile.distance || 50) + ' km';
+
+    const ageMin = document.getElementById('ageMin');
+    const ageMax = document.getElementById('ageMax');
+    const ageVal = document.getElementById('ageValue');
+    if (ageMin) ageMin.value = profile.ageMin || 22;
+    if (ageMax) ageMax.value = profile.ageMax || 30;
+    if (ageVal) ageVal.textContent = (profile.ageMin || 22) + ' - ' + (profile.ageMax || 30);
+
+    const lookingFor = document.getElementById('lookingFor');
+    if (lookingFor) lookingFor.value = profile.lookingFor || 'everyone';
+
+    // Gender selection
+    const genderOpts = document.querySelectorAll('.gender-option');
+    genderOpts.forEach(opt => {
+        opt.classList.remove('selected');
+        if (opt.getAttribute('onclick') && opt.getAttribute('onclick').includes(`'${profile.gender}'`)) {
+            opt.classList.add('selected');
+        }
+    });
     
     renderPhotoGrid();
     updateCurrentBadgeDisplay();
@@ -2416,7 +2450,6 @@ function renderMessages(userName) {
     const container = document.getElementById('chatMessages');
     const messages = chatHistories[userName] || [];
 
-    // Get avatars
     const myAvatar = (currentUser && currentUser.profile && currentUser.profile.photos && currentUser.profile.photos[0])
         ? currentUser.profile.photos[0] : AFRICA_MAP_URL;
     const partnerAvatar = (currentChatUser && currentChatUser.img)
@@ -3199,14 +3232,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window._firebaseReady) {
         _runInitAuth();
     } else {
-        // Listen for firebaseReady (real config provided)
-        window.addEventListener('firebaseReady', () => {
-            _runInitAuth();
-        });
-        // If Firebase is not configured, init immediately with localStorage after short delay
-        setTimeout(() => {
-            _runInitAuth();
-        }, 500);
+        window.addEventListener('firebaseReady', () => { _runInitAuth(); });
+        setTimeout(() => { _runInitAuth(); }, 500);
     }
     
     // Setup online/offline listeners
