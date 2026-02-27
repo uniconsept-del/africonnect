@@ -1808,6 +1808,7 @@ function updateGroupChatLimitUI() {
             }
         }
     }
+}
 
 function closeGroupChat() {
     document.getElementById('groupChatBox').classList.remove('active');
