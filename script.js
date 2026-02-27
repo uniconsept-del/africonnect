@@ -82,10 +82,26 @@ function initLamp() {
 // ==========================================
 
 const VERIF_TIERS = {
-    silver:  { icon: '🥈', name: 'Silver Verified',  price: '$2.99', desc: 'Get the Silver trust badge visible on your profile and in Discovery.' },
-    gold:    { icon: '🥇', name: 'Gold Verified',    price: '$7.99', desc: 'Gold badge + appear higher in Discovery. More visibility, more matches.' },
-    diamond: { icon: '💎', name: 'Diamond Verified', price: '$14.99', desc: 'Diamond badge + top placement in Discovery + unlimited super likes.' }
+    silver:  {
+        icon: '🥈', name: 'Silver Verified', price: '₦3,000',
+        desc: 'Silver trust badge on your profile · 70 messages/day in community groups for 30 days.',
+        account: '5414596742', bank: 'Moniepoint', name_on_acct: 'Olayinka Iyiola', amount: '3,000',
+        msgLimit: 70, days: 30
+    },
+    gold: {
+        icon: '🥇', name: 'Gold Verified', price: '₦5,000',
+        desc: 'Gold badge + priority in Discover · 100 messages/day in community groups for 30 days.',
+        account: '5414596742', bank: 'Moniepoint', name_on_acct: 'Olayinka Iyiola', amount: '5,000',
+        msgLimit: 100, days: 30
+    },
+    diamond: {
+        icon: '💎', name: 'Diamond Verified', price: '₦10,000',
+        desc: 'Diamond badge + top placement + UNLIMITED messages in community groups for 30 days.',
+        account: '5414596742', bank: 'Moniepoint', name_on_acct: 'Olayinka Iyiola', amount: '10,000',
+        msgLimit: Infinity, days: 30
+    }
 };
+const WHATSAPP_LINK = 'https://wa.me/2347089970137?text=Hello%2C%20I%20just%20made%20payment%20for%20AfriConnect%20verification.%20Please%20activate%20my%20badge.';
 
 let _pendingVerifTier = null;
 
@@ -98,6 +114,37 @@ function purchaseVerification(tier) {
     document.getElementById('verifModalTitle').textContent = t.name;
     document.getElementById('verifModalDesc').textContent = t.desc;
     document.getElementById('verifModalPrice').textContent = t.price;
+
+    // Build payment details
+    const payEl = document.getElementById('verifPaymentDetails');
+    if (payEl) {
+        payEl.innerHTML = \`
+            <div class="verif-payment-box">
+                <div class="verif-payment-label">MAKE PAYMENT TO:</div>
+                <div class="verif-payment-row">
+                    <span class="verif-payment-field">Account Number</span>
+                    <span class="verif-payment-value">\${t.account}</span>
+                </div>
+                <div class="verif-payment-row">
+                    <span class="verif-payment-field">Bank</span>
+                    <span class="verif-payment-value">\${t.bank}</span>
+                </div>
+                <div class="verif-payment-row">
+                    <span class="verif-payment-field">Account Name</span>
+                    <span class="verif-payment-value">\${t.name_on_acct}</span>
+                </div>
+                <div class="verif-payment-row verif-payment-amount-row">
+                    <span class="verif-payment-field">Amount</span>
+                    <span class="verif-payment-value verif-payment-amount">₦\${t.amount}</span>
+                </div>
+            </div>
+            <a href="${WHATSAPP_LINK}" target="_blank" class="verif-whatsapp-btn">
+                <i class="fab fa-whatsapp"></i> Send Payment Proof on WhatsApp
+            </a>
+            <p class="verif-payment-note">After payment, send your screenshot on WhatsApp. Your badge will be activated within 24 hours.</p>
+        \`;
+    }
+
     document.getElementById('verifPurchaseModal').classList.add('active');
 }
 
@@ -114,7 +161,7 @@ async function confirmVerificationPurchase() {
 
     // Update button to show processing
     const btn = document.getElementById('verifConfirmBtn');
-    btn.textContent = '⏳ Processing...';
+    btn.textContent = '⏳ Verifying...';
     btn.disabled = true;
 
     // Simulate payment processing (demo mode)
@@ -127,12 +174,19 @@ async function confirmVerificationPurchase() {
                 window._dbRef(window._db, `users/${currentUser.username}/verificationBadge`), tier
             );
         }
-        // Also save locally
+        // Also save locally with 30-day expiry
+        const expiryDate = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 days
         currentUser.verificationBadge = tier;
+        currentUser.verificationExpiry = expiryDate;
         const localUsers = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
         if (localUsers[currentUser.username]) {
             localUsers[currentUser.username].verificationBadge = tier;
+            localUsers[currentUser.username].verificationExpiry = expiryDate;
             localStorage.setItem('afriConnect_users', JSON.stringify(localUsers));
+        }
+        // Save expiry to Firebase too
+        if (window._firebaseReady && currentUser) {
+            window._dbSet(window._dbRef(window._db, `users/${currentUser.username}/verificationExpiry`), expiryDate);
         }
 
         closeVerifModal();
@@ -144,7 +198,7 @@ async function confirmVerificationPurchase() {
         console.error(e);
     }
 
-    btn.textContent = '🔒 Complete Purchase';
+    btn.textContent = "✅ I've Made Payment";
     btn.disabled = false;
     _pendingVerifTier = null;
 }
@@ -1714,7 +1768,46 @@ function openGroupChat(country, room) {
     chatBox.classList.add('active');
     renderGroupMessages(country, room);
     _pushNav({ type: 'groupChat' });
+
+    // Update group chat UI based on verification status
+    updateGroupChatLimitUI();
 }
+
+function updateGroupChatLimitUI() {
+    const inputArea   = document.getElementById('groupChatInputArea');
+    const lockedBanner = document.getElementById('groupLockedBanner');
+    const limitBar    = document.getElementById('groupMsgLimitBar');
+    const limitText   = document.getElementById('groupMsgLimitText');
+
+    if (!currentUser) return;
+
+    const { limit, tier } = getUserMsgLimit();
+
+    if (limit === 0) {
+        // No badge — show locked
+        if (inputArea)    inputArea.style.display   = 'none';
+        if (lockedBanner) lockedBanner.style.display = 'flex';
+        if (limitBar)     limitBar.style.display     = 'none';
+    } else {
+        if (inputArea)    inputArea.style.display    = '';
+        if (lockedBanner) lockedBanner.style.display = 'none';
+
+        if (limit === Infinity) {
+            if (limitBar) limitBar.style.display = 'none';
+        } else {
+            // Show daily message counter
+            const today = new Date().toDateString();
+            const storageKey = `group_msg_count_${currentUser.username}_${today}`;
+            const used = parseInt(localStorage.getItem(storageKey) || '0');
+            const remaining = Math.max(0, limit - used);
+            if (limitBar) limitBar.style.display = '';
+            if (limitText) {
+                const tierIcon = tier === 'gold' ? '🥇' : '🥈';
+                limitText.textContent = `${tierIcon} ${remaining} group messages remaining today (${limit}/day)`;
+                limitText.style.color = remaining <= 10 ? '#ef4444' : '#888';
+            }
+        }
+    }
 
 function closeGroupChat() {
     document.getElementById('groupChatBox').classList.remove('active');
@@ -1732,15 +1825,65 @@ function renderGroupMessages(country, room) {
     }
     
     const messages = groupChatHistories[key];
-    container.innerHTML = messages.map(msg => `
+    container.innerHTML = messages.map((msg, idx) => {
+        let statusIcon = '';
+        if (msg.sent) {
+            const isLast = idx === messages.length - 1 || !messages.slice(idx+1).some(m => m.sent);
+            statusIcon = isLast
+                ? `<span class="msg-status msg-read" title="Read">✓✓</span>`
+                : `<span class="msg-status msg-delivered" title="Delivered">✓✓</span>`;
+        }
+        return `
         <div class="message ${msg.sent ? 'sent' : 'received'}">
-            ${!msg.sent ? `<div style="font-size: 10px; color: #fbbf24; margin-bottom: 2px;">${msg.user}</div>` : ''}
-            <div>${msg.text}</div>
-            <div class="message-time">${msg.time}</div>
-        </div>
-    `).join('');
+            ${!msg.sent ? `<div class="msg-sender-name">${msg.user || 'Member'}</div>` : ''}
+            <div class="msg-text">${msg.text}</div>
+            <div class="msg-meta">
+                <span class="message-time">${msg.time}</span>
+                ${statusIcon}
+            </div>
+        </div>`;
+    }).join('');
     
     container.scrollTop = container.scrollHeight;
+}
+
+// ── Message limit helpers ──────────────────────────────────────
+function getUserMsgLimit() {
+    if (!currentUser) return { limit: 0, tier: null };
+    const tier = currentUser.verificationBadge;
+    const expiry = currentUser.verificationExpiry;
+    // Check if badge is still valid (within 30 days of purchase)
+    if (expiry && Date.now() > expiry) return { limit: 0, tier: null }; // expired
+    if (tier === 'diamond') return { limit: Infinity, tier: 'diamond' };
+    if (tier === 'gold')    return { limit: 100, tier: 'gold' };
+    if (tier === 'silver')  return { limit: 70, tier: 'silver' };
+    return { limit: 0, tier: null };
+}
+
+function checkGroupMsgLimit() {
+    const { limit, tier } = getUserMsgLimit();
+    if (limit === Infinity) return { allowed: true }; // diamond unlimited
+
+    if (limit === 0) {
+        return { allowed: false, reason: 'group_locked', msg: '🔒 Community groups require a verification badge. Get Silver, Gold or Diamond in your profile settings.' };
+    }
+
+    // Count messages sent today
+    const today = new Date().toDateString();
+    const storageKey = `group_msg_count_${currentUser.username}_${today}`;
+    const count = parseInt(localStorage.getItem(storageKey) || '0');
+
+    if (count >= limit) {
+        return { allowed: false, reason: 'limit_reached', msg: `⚠️ Daily limit reached! ${tier.charAt(0).toUpperCase()+tier.slice(1)} Verified allows ${limit} messages per day. Upgrade for more.` };
+    }
+    return { allowed: true, count, storageKey };
+}
+
+function recordGroupMsg() {
+    const today = new Date().toDateString();
+    const storageKey = `group_msg_count_${currentUser.username}_${today}`;
+    const count = parseInt(localStorage.getItem(storageKey) || '0');
+    localStorage.setItem(storageKey, count + 1);
 }
 
 function sendGroupMessage() {
@@ -1748,6 +1891,17 @@ function sendGroupMessage() {
     const text = input.value.trim();
     
     if (!text || !currentGroupRoom) return;
+
+    // ── Verification check ──
+    const check = checkGroupMsgLimit();
+    if (!check.allowed) {
+        showToast(check.msg);
+        // If group is fully locked, show upgrade prompt
+        if (check.reason === 'group_locked') {
+            showGroupVerifPrompt();
+        }
+        return;
+    }
     
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const key = `${currentGroupRoom.country}-${currentGroupRoom.room}`;
@@ -1760,11 +1914,37 @@ function sendGroupMessage() {
         text: text,
         sent: true,
         time: time,
-        user: 'You'
+        user: currentUser ? currentUser.profile.name : 'You',
+        status: 'sent'
     });
     
+    recordGroupMsg();
     input.value = '';
     renderGroupMessages(currentGroupRoom.country, currentGroupRoom.room);
+    updateGroupChatLimitUI(); // refresh counter
+
+    // Show message count warning if near limit
+    const { limit } = getUserMsgLimit();
+    if (limit !== Infinity) {
+        const today = new Date().toDateString();
+        const storageKey = `group_msg_count_${currentUser.username}_${today}`;
+        const used = parseInt(localStorage.getItem(storageKey) || '0');
+        const remaining = limit - used;
+        if (remaining <= 5 && remaining > 0) {
+            showToast(`⚠️ ${remaining} group messages remaining today`);
+        }
+    }
+}
+
+function showGroupVerifPrompt() {
+    // Navigate to profile/verification section
+    setTimeout(() => {
+        showSection('profile', false);
+        setTimeout(() => {
+            const card = document.getElementById('verificationShopCard');
+            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    }, 1500);
 }
 
 function handleGroupChatKeypress(e) {
@@ -2456,12 +2636,24 @@ function renderMessages(userName) {
     const container = document.getElementById('chatMessages');
     const messages = chatHistories[userName] || [];
     
-    container.innerHTML = messages.map(msg => `
+    container.innerHTML = messages.map((msg, idx) => {
+        let statusIcon = '';
+        if (msg.sent) {
+            // Last sent message = read (double blue tick), others = delivered (double grey)
+            const isLast = idx === messages.length - 1 || !messages.slice(idx + 1).some(m => m.sent);
+            statusIcon = isLast
+                ? `<span class="msg-status msg-read" title="Read">✓✓</span>`
+                : `<span class="msg-status msg-delivered" title="Delivered">✓✓</span>`;
+        }
+        return `
         <div class="message ${msg.sent ? 'sent' : 'received'}">
-            <div>${msg.text}</div>
-            <div class="message-time">${msg.time}</div>
-        </div>
-    `).join('');
+            <div class="msg-text">${msg.text}</div>
+            <div class="msg-meta">
+                <span class="message-time">${msg.time}</span>
+                ${statusIcon}
+            </div>
+        </div>`;
+    }).join('');
     
     container.scrollTop = container.scrollHeight;
 }

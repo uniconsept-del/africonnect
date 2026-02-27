@@ -2951,3 +2951,179 @@ select {
 }
 
 .verif-btn-cancel:hover { color: #aaa; }
+
+/* ═══════════════════════════════════════════════
+   MESSAGE STATUS TICKS (Sent / Read indicators)
+═══════════════════════════════════════════════ */
+
+.msg-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.message-time {
+    font-size: 10px;
+    color: rgba(255,255,255,0.45);
+    white-space: nowrap;
+}
+
+.msg-text {
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.msg-sender-name {
+    font-size: 10px;
+    color: #fbbf24;
+    margin-bottom: 2px;
+    font-weight: 600;
+}
+
+/* Single tick = sent, Double grey = delivered, Double blue = read */
+.msg-status {
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -1px;
+    flex-shrink: 0;
+}
+
+.msg-delivered {
+    color: rgba(255,255,255,0.4);
+}
+
+.msg-read {
+    color: #3b82f6; /* blue ticks */
+}
+
+/* Make received messages have lighter time */
+.message.received .message-time {
+    color: rgba(0,0,0,0.4);
+}
+
+/* ═══════════════════════════════════════════════
+   PAYMENT DETAILS BOX
+═══════════════════════════════════════════════ */
+
+.verif-payment-box {
+    background: rgba(251,191,36,0.07);
+    border: 1px solid rgba(251,191,36,0.25);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    text-align: left;
+}
+
+.verif-payment-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #fbbf24;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.verif-payment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.verif-payment-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.verif-payment-field {
+    font-size: 11px;
+    color: #777;
+}
+
+.verif-payment-value {
+    font-size: 12px;
+    color: #ddd;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+.verif-payment-amount-row {
+    margin-top: 4px;
+    padding-top: 8px !important;
+    border-top: 1px solid rgba(251,191,36,0.2) !important;
+    border-bottom: none !important;
+}
+
+.verif-payment-amount {
+    font-size: 18px !important;
+    color: #fbbf24 !important;
+    font-weight: 800 !important;
+}
+
+/* WhatsApp button */
+.verif-whatsapp-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    background: #25D366;
+    color: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    margin-bottom: 10px;
+    transition: opacity 0.2s;
+}
+
+.verif-whatsapp-btn:hover {
+    opacity: 0.9;
+}
+
+.verif-whatsapp-btn i {
+    font-size: 18px;
+}
+
+.verif-payment-note {
+    font-size: 11px;
+    color: #555;
+    text-align: center;
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+/* Group locked message */
+.group-locked-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 20px;
+    background: rgba(251,191,36,0.06);
+    border-top: 1px solid rgba(251,191,36,0.15);
+    text-align: center;
+}
+
+.group-locked-banner p {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.5;
+}
+
+.group-locked-banner button {
+    background: #fbbf24;
+    color: #000;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
