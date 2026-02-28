@@ -1,50 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Maintenance</title>
-    <style>
-        body {
-            background-color: #000;
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-        }
-        .message {
-            max-width: 600px;
-            padding: 20px;
-        }
-        .message h1 {
-            font-size: 2.5rem;
-            margin: 10px 0;
-            font-weight: 700;
-        }
-        .message h2 {
-            font-size: 1.8rem;
-            margin: 15px 0;
-            font-weight: 600;
-        }
-        .dots {
-            display: inline-block;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Coming Soon</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255,255,255,0.015) 2px,
+        rgba(255,255,255,0.015) 4px
+      );
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .container {
+      text-align: center;
+      position: relative;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #0a0a0a;
+      border: 1px solid #222;
+      border-radius: 4px;
+      padding: 8px 18px;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 48px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ff4444;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 6px #ff4444; }
+      50%       { opacity: 0.3; box-shadow: none; }
+    }
+
+    .main-text {
+      font-size: clamp(28px, 5vw, 52px);
+      font-weight: 700;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .main-text .highlight {
+      color: #ff4444;
+      animation: flicker 3s infinite;
+    }
+
+    @keyframes flicker {
+      0%, 95%, 100% { opacity: 1; }
+      96%           { opacity: 0.4; }
+      97%           { opacity: 1; }
+      98%           { opacity: 0.2; }
+      99%           { opacity: 1; }
+    }
+
+    .dots-anim {
+      display: inline-block;
+      width: 40px;
+      text-align: left;
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+      100% { content: ''; }
+    }
+
+    /* CSS trick for animated dots */
+    .dots-anim::after {
+      content: '';
+      animation: dotsContent 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dotsContent {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '......'; }
+    }
+
+    .divider {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #333, transparent);
+      margin: 36px auto;
+    }
+
+    .coming-soon {
+      font-size: clamp(11px, 2vw, 14px);
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      color: #444;
+    }
+
+    .coming-soon span {
+      color: #666;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      margin-top: 52px;
+      width: 260px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 2px;
+      background: #111;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #ff4444;
+      width: 0%;
+      animation: load 4s ease-in-out infinite;
+      box-shadow: 0 0 8px #ff4444;
+    }
+
+    @keyframes load {
+      0%   { width: 0%; opacity: 1; }
+      70%  { width: 85%; opacity: 1; }
+      90%  { width: 85%; opacity: 0.5; }
+      95%  { width: 88%; opacity: 1; }
+      100% { width: 88%; opacity: 0; }
+    }
+  </style>
 </head>
 <body>
-    <div class="message">
-        <h1>FIXING BUG<span class="dots">......</span></h1>
-        <h2>COMING SOON</h2>
+
+  <div class="container">
+
+    <div class="status-badge">
+      <div class="dot"></div>
+      System Status
     </div>
+
+    <div class="main-text">
+      <span class="highlight">FIXING BUG</span><span class="dots-anim"></span>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="coming-soon">
+      <span>COMING</span> &nbsp;SOON
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>PROGRESS</span>
+        <span>STAND BY</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+    </div>
+
+  </div>
+
 </body>
 </html>
