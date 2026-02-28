@@ -549,31 +549,31 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        /* GRID DISCOVERY STYLES - SMALLER PROFILES */
+        /* GRID DISCOVERY STYLES - 2x SMALLER PROFILES */
         .discovery-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            padding: 15px;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+            padding: 10px;
             overflow-y: auto;
             max-height: calc(100vh - 200px);
         }
 
         @media (max-width: 1200px) {
-            .discovery-grid { grid-template-columns: repeat(4, 1fr); }
+            .discovery-grid { grid-template-columns: repeat(6, 1fr); }
         }
 
         @media (max-width: 768px) {
-            .discovery-grid { grid-template-columns: repeat(3, 1fr); }
+            .discovery-grid { grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 8px; }
         }
 
         @media (max-width: 480px) {
-            .discovery-grid { grid-template-columns: repeat(2, 1fr); }
+            .discovery-grid { grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 6px; }
         }
 
         .grid-profile-card {
             background: #2a2a2a;
-            border-radius: 10px;
+            border-radius: 6px;
             overflow: hidden;
             cursor: pointer;
             transition: all 0.3s;
@@ -581,8 +581,8 @@
         }
 
         .grid-profile-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(251, 191, 36, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(251, 191, 36, 0.2);
         }
 
         .grid-profile-image {
@@ -592,25 +592,25 @@
         }
 
         .grid-profile-info {
-            padding: 8px;
+            padding: 4px;
             background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
         }
 
         .grid-profile-actions {
             display: flex;
-            gap: 5px;
-            padding: 5px 8px;
+            gap: 2px;
+            padding: 2px 4px;
             background: rgba(0,0,0,0.8);
         }
 
         .grid-action-btn {
             flex: 1;
-            padding: 5px;
-            border-radius: 5px;
+            padding: 3px;
+            border-radius: 3px;
             border: none;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 12px;
+            font-size: 9px;
         }
 
         .grid-action-btn:hover {
@@ -2388,18 +2388,69 @@
         .action-btn.like { background: #22c55e; }
         .action-btn.boost { background: #a855f7; }
 
-        /* Verification Badge - ONLY FOR SPECIFIC USERS */
+        /* Verification Badge - BLUE TICK */
         .verification-badge {
             display: inline-flex;
             align-items: center;
-            gap: 3px;
+            gap: 2px;
             background: #3b82f6;
             color: white;
-            padding: 2px 6px;
+            padding: 1px 5px;
             border-radius: 10px;
             font-size: 9px;
             font-weight: bold;
-            margin-left: 6px;
+            margin-left: 4px;
+        }
+        .verification-badge.verified { background: #3b82f6; }
+        
+        /* Membership Tier Badges */
+        .tier-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-left: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .tier-silver {
+            background: linear-gradient(135deg, #94a3b8, #64748b);
+            color: white;
+            box-shadow: 0 0 6px rgba(148,163,184,0.5);
+        }
+        .tier-gold {
+            background: linear-gradient(135deg, #fbbf24, #d4af37);
+            color: #000;
+            box-shadow: 0 0 8px rgba(251,191,36,0.6);
+        }
+        .tier-diamond {
+            background: linear-gradient(135deg, #67e8f9, #a5f3fc, #818cf8);
+            color: #000;
+            box-shadow: 0 0 10px rgba(103,232,249,0.7);
+            animation: diamondShimmer 2s linear infinite;
+        }
+        @keyframes diamondShimmer {
+            0%,100% { box-shadow: 0 0 8px rgba(103,232,249,0.7); }
+            50% { box-shadow: 0 0 14px rgba(165,243,252,1); }
+        }
+        
+        /* Unique User Code Badge */
+        .user-code-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(251,191,36,0.1);
+            border: 1px solid rgba(251,191,36,0.3);
+            color: #fbbf24;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 1px;
         }
 
         /* My Adverts Section */
@@ -3504,6 +3555,13 @@
                         </button>
                     </div>
                     
+                    <!-- User Code + Badges Row -->
+                    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 0 12px;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:10px;">
+                        <span class="user-code-badge" id="profileUserCode" style="display:none;"></span>
+                        <span id="profileVerifiedBadge"></span>
+                        <span id="profileTierBadge"></span>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="text-xs text-gray-500 uppercase tracking-wider">Name</label>
                         <input type="text" id="profileName" class="editable-field" placeholder="Your name">
@@ -3628,6 +3686,13 @@
                     <div class="setting-item">
                         <span class="text-sm">Push Notifications</span>
                         <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                    <div class="setting-item">
+                        <span class="text-sm">Enable Browser Push</span>
+                        <button onclick="requestPushPermission().then(ok=>showToast(ok?'Push enabled 🔔':'Push denied'))" 
+                            style="background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;padding:5px 12px;border-radius:8px;cursor:pointer;font-size:12px;">
+                            <i class="fas fa-bell"></i> Allow
+                        </button>
                     </div>
                 </div>
 
@@ -4213,6 +4278,16 @@
             enterApp();
         }
 
+        // Generate unique 10-char alphanumeric code for users
+        function generateUserCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = '';
+            for (let i = 0; i < 10; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
         // Handle Signup - FIXED
         function handleSignup(e) {
             e.preventDefault();
@@ -4249,10 +4324,19 @@
                 return;
             }
             
+            // Generate unique user code - ensure it's truly unique
+            let userCode;
+            do {
+                userCode = generateUserCode();
+            } while (Object.values(users).some(u => u.userCode === userCode));
+
             // Create new user - FIXED: Ensure all fields are properly initialized
             const newUser = {
                 username: username,
                 password: password,
+                userCode: userCode,
+                verified: false,
+                membershipTier: null, // null, 'silver', 'gold', 'diamond'
                 profile: {
                     name: username.charAt(0).toUpperCase() + username.slice(1),
                     age: 24,
@@ -4272,7 +4356,8 @@
                 chats: [],
                 adverts: [],
                 notifications: [],
-                friends: [] // NEW: Friends list
+                friends: [],
+                joinedAt: Date.now()
             };
             
             // Save user
@@ -4283,7 +4368,7 @@
             currentUser = newUser;
             localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
             
-            successDiv.textContent = 'Account created successfully! Redirecting...';
+            successDiv.textContent = `Account created! Your ID: ${userCode}`;
             successDiv.style.display = 'block';
             
             setTimeout(() => {
@@ -4307,6 +4392,7 @@
             initChats();
             initMarket();
             updateNotificationBadge();
+            maybeRequestPush();
             
             // Show ENIOLA welcome after 3 seconds (delayed and subtle)
             setTimeout(() => {
@@ -4343,6 +4429,23 @@
             toggleMainMenu();
         }
 
+        // Get tier badge HTML
+        function getTierBadgeHtml(tier) {
+            if (!tier) return '';
+            const tiers = {
+                silver: '<span class="tier-badge tier-silver">⬡ Silver</span>',
+                gold: '<span class="tier-badge tier-gold">★ Gold</span>',
+                diamond: '<span class="tier-badge tier-diamond">◆ Diamond</span>'
+            };
+            return tiers[tier] || '';
+        }
+
+        // Get verified badge HTML
+        function getVerifiedBadgeHtml(verified) {
+            if (!verified) return '';
+            return '<span class="verification-badge verified"><i class="fas fa-check"></i> Verified</span>';
+        }
+
         // Load user profile data
         function loadUserProfile() {
             if (!currentUser) return;
@@ -4368,6 +4471,21 @@
             document.getElementById('ageMax').value = profile.ageMax || 30;
             document.getElementById('ageValue').textContent = (profile.ageMin || 22) + ' - ' + (profile.ageMax || 30);
             document.getElementById('lookingFor').value = profile.lookingFor || 'everyone';
+            
+            // Show user code and badges
+            const userCodeEl = document.getElementById('profileUserCode');
+            if (userCodeEl && currentUser.userCode) {
+                userCodeEl.innerHTML = `<i class="fas fa-id-badge"></i> ${currentUser.userCode}`;
+                userCodeEl.style.display = 'inline-flex';
+            }
+            const verifiedBadgeEl = document.getElementById('profileVerifiedBadge');
+            if (verifiedBadgeEl) {
+                verifiedBadgeEl.innerHTML = currentUser.verified ? getVerifiedBadgeHtml(true) : '';
+            }
+            const tierBadgeEl = document.getElementById('profileTierBadge');
+            if (tierBadgeEl) {
+                tierBadgeEl.innerHTML = getTierBadgeHtml(currentUser.membershipTier);
+            }
             
             renderPhotoGrid();
         }
@@ -4496,6 +4614,111 @@
                 resultsContainer.classList.remove('active');
             }
         });
+
+        // ==========================================
+        // NOTIFICATION SOUNDS & PUSH NOTIFICATIONS
+        // ==========================================
+
+        // Create audio context for sounds
+        let _audioCtx = null;
+        function getAudioCtx() {
+            if (!_audioCtx) {
+                try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+            }
+            return _audioCtx;
+        }
+
+        function playSound(type) {
+            try {
+                const ctx = getAudioCtx();
+                if (!ctx) return;
+                
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+                
+                if (type === 'message') {
+                    // Short clean ping for messages
+                    oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.3);
+                } else if (type === 'like') {
+                    // Happy double-blip for likes
+                    oscillator.frequency.setValueAtTime(523, ctx.currentTime);
+                    oscillator.frequency.setValueAtTime(784, ctx.currentTime + 0.12);
+                    gainNode.gain.setValueAtTime(0.25, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.35);
+                } else if (type === 'match') {
+                    // Triumphant chord for matches
+                    [523, 659, 784].forEach((freq, i) => {
+                        const osc2 = ctx.createOscillator();
+                        const g2 = ctx.createGain();
+                        osc2.connect(g2);
+                        g2.connect(ctx.destination);
+                        osc2.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.07);
+                        g2.gain.setValueAtTime(0.2, ctx.currentTime + i * 0.07);
+                        g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+                        osc2.start(ctx.currentTime + i * 0.07);
+                        osc2.stop(ctx.currentTime + 0.6);
+                    });
+                    return;
+                } else if (type === 'notification') {
+                    oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+                    gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + 0.2);
+                }
+            } catch(e) {}
+        }
+
+        // Push notification support
+        let _pushSubscription = null;
+
+        async function requestPushPermission() {
+            if (!('Notification' in window)) {
+                showToast('Push notifications not supported in this browser');
+                return false;
+            }
+            
+            if (Notification.permission === 'granted') return true;
+            
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                showToast('Push notifications enabled! 🔔');
+                return true;
+            }
+            return false;
+        }
+
+        function sendPushNotification(title, body, icon) {
+            if (Notification.permission === 'granted' && document.hidden) {
+                const notif = new Notification(title, {
+                    body: body,
+                    icon: icon || 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg',
+                    badge: 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg',
+                    tag: 'africonnect-' + Date.now(),
+                    vibrate: [200, 100, 200]
+                });
+                notif.onclick = () => { window.focus(); notif.close(); };
+                setTimeout(() => notif.close(), 8000);
+            }
+        }
+
+        // Initialize push notification request on first chat open
+        let _pushRequested = false;
+        function maybeRequestPush() {
+            if (!_pushRequested) {
+                _pushRequested = true;
+                setTimeout(requestPushPermission, 2000);
+            }
+        }
 
         // ==========================================
         // LAMP LOGIC
@@ -5277,11 +5500,13 @@
                         company: user.profile.company || 'AfriConnect',
                         school: user.profile.school || '',
                         phone: user.profile.phone || '',
-                        country: 'Africa',
+                        country: user.profile.country || 'Africa',
                         gender: user.profile.gender === 'man' ? 'male' : (user.profile.gender === 'woman' ? 'female' : 'other'),
                         img: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos[0] : AFRICA_MAP_URL,
                         photos: user.profile.photos && user.profile.photos.length > 0 ? user.profile.photos : [AFRICA_MAP_URL],
-                        verified: false,
+                        verified: user.verified || false,
+                        membershipTier: user.membershipTier || null,
+                        userCode: user.userCode || null,
                         isRegisteredUser: true,
                         username: user.username,
                         isBot: false
@@ -5302,18 +5527,20 @@
             const grid = document.getElementById('discoveryGrid');
             grid.innerHTML = profileList.map(profile => {
                 const verifiedBadge = profile.verified ? 
-                    `<span class="verification-badge"><i class="fas fa-check-circle"></i></span>` : '';
+                    `<i class="fas fa-check-circle" style="color:#3b82f6;font-size:8px;" title="Verified"></i>` : '';
+                const tierIcon = profile.membershipTier === 'diamond' ? `<i class="fas fa-gem" style="color:#67e8f9;font-size:8px;" title="Diamond"></i>` :
+                    profile.membershipTier === 'gold' ? `<i class="fas fa-star" style="color:#fbbf24;font-size:8px;" title="Gold"></i>` :
+                    profile.membershipTier === 'silver' ? `<i class="fas fa-circle" style="color:#94a3b8;font-size:8px;" title="Silver"></i>` : '';
                 
                 return `
                 <div class="grid-profile-card" onclick="viewProfileDetails('${profile.name}', 'discover')">
                     <img src="${profile.img}" class="grid-profile-image" alt="${profile.name}">
-                    <div class="grid-profile-info">
-                        <div class="flex items-center mb-1">
-                            <h3 class="text-sm font-bold text-white">${profile.name}, ${profile.age}</h3>
-                            ${verifiedBadge}
+                    <div class="grid-profile-info" style="position:absolute;bottom:22px;left:0;right:0;padding:3px 4px;">
+                        <div style="display:flex;align-items:center;gap:2px;">
+                            <span style="color:white;font-size:9px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${profile.name.split(' ')[0]}</span>
+                            ${verifiedBadge}${tierIcon}
                         </div>
-                        <p class="text-yellow-500 text-xs mb-1"><i class="fas fa-map-marker-alt mr-1"></i>${profile.distance}</p>
-                        <p class="text-gray-400 text-xs">${profile.country}</p>
+                        <div style="color:#fbbf24;font-size:8px;">${profile.age}</div>
                     </div>
                     <div class="grid-profile-actions">
                         <button class="grid-action-btn pass" onclick="event.stopPropagation(); passProfile('${profile.name}')">
@@ -5353,6 +5580,7 @@
 
         function likeProfile(name) {
             showToast(`Liked ${name}! 💛`);
+            playSound('like');
             const card = event.target.closest('.grid-profile-card');
             card.style.border = '2px solid #22c55e';
             
@@ -5462,6 +5690,8 @@
             });
             
             showToast(`It's a Match with ${profile.name}! 🎉`);
+            playSound('match');
+            sendPushNotification(`🎉 New Match!`, `You matched with ${profile.name}!`);
         }
 
         // ==========================================
@@ -6180,8 +6410,13 @@
                 <div class="profile-hero">
                     <img src="${profile.img}" alt="${profile.name}">
                     <div class="profile-hero-info">
-                        <h2 class="text-3xl font-bold text-white mb-2">${profile.name}, ${profile.age}</h2>
+                        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
+                            <h2 class="text-3xl font-bold text-white">${profile.name}, ${profile.age}</h2>
+                            ${profile.verified ? '<span class="verification-badge verified" style="font-size:11px;padding:3px 8px;"><i class="fas fa-check"></i> Verified</span>' : ''}
+                            ${profile.membershipTier === 'diamond' ? '<span class="tier-badge tier-diamond" style="font-size:11px;padding:3px 8px;">◆ Diamond</span>' : profile.membershipTier === 'gold' ? '<span class="tier-badge tier-gold" style="font-size:11px;padding:3px 8px;">★ Gold</span>' : profile.membershipTier === 'silver' ? '<span class="tier-badge tier-silver" style="font-size:11px;padding:3px 8px;">⬡ Silver</span>' : ''}
+                        </div>
                         <p class="text-yellow-400 text-sm"><i class="fas fa-map-marker-alt mr-2"></i>${profile.distance || 'Nearby'} • ${profile.job}</p>
+                        ${profile.userCode ? `<div style="margin-top:4px;"><span class="user-code-badge" style="font-size:10px;"><i class="fas fa-id-badge"></i> ${profile.userCode}</span></div>` : ''}
                     </div>
                 </div>
                 
@@ -6772,6 +7007,7 @@
 
             input.value = '';
             renderMessages(currentChatUser.name);
+            playSound('message');
 
             // Send to Firebase if available
             if (window._firebase && window._firebase.ready) {
@@ -6832,6 +7068,8 @@
                         const exists = chatHistories[name].some(m => m.timestamp === msg.timestamp && m.text === msg.text);
                         if (!exists) {
                             chatHistories[name].push({ ...msg, sent: false });
+                            playSound('message');
+                            sendPushNotification(`New message from ${name}`, msg.text);
                             if (currentChatUser && currentChatUser.name === name) {
                                 renderMessages(name);
                             }
@@ -7013,33 +7251,91 @@
                     </div>
                     
                     <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:12px;margin-bottom:15px;">
-                        <input class="admin-input" placeholder="Search users..." oninput="filterAdminUsers(this.value)" id="adminUserSearch" style="margin-bottom:0;">
+                        <input class="admin-input" placeholder="Search users by name or @username..." oninput="filterAdminUsers(this.value)" id="adminUserSearch" style="margin-bottom:0;">
                     </div>
                     
                     <div id="adminUserList">
                         ${userList.length === 0 ? '<p style="text-align:center;color:#888;padding:40px;">No registered users yet</p>' : 
-                            userList.map(user => `
-                                <div class="admin-user-row" id="userRow_${user.username}">
-                                    <img src="${user.profile && user.profile.photos && user.profile.photos[0] ? user.profile.photos[0] : 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg'}" 
-                                        style="width:45px;height:45px;border-radius:50%;object-fit:cover;border:2px solid #fbbf24;">
-                                    <div style="flex:1">
-                                        <div style="color:white;font-weight:bold;font-size:14px;">${user.profile ? user.profile.name : user.username} <span class="admin-badge admin-badge-yellow" style="font-size:10px;">@${user.username}</span></div>
-                                        <div style="color:#888;font-size:12px;">${user.profile ? (user.profile.bio || 'No bio') : 'No profile'}</div>
-                                        <div style="color:#666;font-size:11px;margin-top:3px;">
-                                            <i class="fas fa-heart" style="color:#ef4444;"></i> ${user.matches ? user.matches.length : 0} matches &nbsp;
-                                            <i class="fas fa-comment" style="color:#3b82f6;"></i> ${user.chats ? user.chats.length : 0} chats &nbsp;
-                                            <i class="fas fa-store" style="color:#a855f7;"></i> ${user.adverts ? user.adverts.length : 0} adverts
+                            userList.map(user => {
+                                const tierBadge = user.membershipTier === 'diamond' ? '◆ Diamond' : user.membershipTier === 'gold' ? '★ Gold' : user.membershipTier === 'silver' ? '⬡ Silver' : 'None';
+                                const tierColor = user.membershipTier === 'diamond' ? '#67e8f9' : user.membershipTier === 'gold' ? '#fbbf24' : user.membershipTier === 'silver' ? '#94a3b8' : '#666';
+                                return `
+                                <div class="admin-user-row" id="userRow_${user.username}" style="flex-direction:column;align-items:stretch;gap:12px;">
+                                    <div style="display:flex;gap:12px;align-items:flex-start;">
+                                        <img src="${user.profile && user.profile.photos && user.profile.photos[0] ? user.profile.photos[0] : 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg'}" 
+                                            style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid ${user.verified ? '#3b82f6' : '#fbbf24'};flex-shrink:0;">
+                                        <div style="flex:1;min-width:0;">
+                                            <div style="color:white;font-weight:bold;font-size:14px;">
+                                                ${user.profile ? user.profile.name : user.username}
+                                                ${user.verified ? '<i class="fas fa-check-circle" style="color:#3b82f6;margin-left:4px;" title="Verified"></i>' : ''}
+                                                <span class="admin-badge admin-badge-yellow" style="font-size:10px;">@${user.username}</span>
+                                            </div>
+                                            <div style="color:#888;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${user.profile ? (user.profile.bio || 'No bio') : 'No profile'}</div>
+                                            <div style="color:#666;font-size:11px;margin-top:3px;">
+                                                <i class="fas fa-id-badge" style="color:#fbbf24;"></i> Code: <strong style="color:#fbbf24;font-family:monospace;">${user.userCode || 'N/A'}</strong> &nbsp;
+                                                <span style="color:${tierColor};">Tier: ${tierBadge}</span>
+                                            </div>
+                                            <div style="color:#555;font-size:11px;margin-top:2px;">
+                                                <i class="fas fa-heart" style="color:#ef4444;"></i> ${user.matches ? user.matches.length : 0} &nbsp;
+                                                <i class="fas fa-comment" style="color:#3b82f6;"></i> ${user.chats ? user.chats.length : 0} &nbsp;
+                                                <i class="fas fa-store" style="color:#a855f7;"></i> ${user.adverts ? user.adverts.length : 0}
+                                                ${user.joinedAt ? ' &nbsp; <i class="fas fa-calendar"></i> ' + new Date(user.joinedAt).toLocaleDateString() : ''}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end;">
-                                        <span class="admin-badge admin-badge-green">Active</span>
-                                        <button onclick="adminDeleteUser('${user.username}')" class="admin-action-btn" 
-                                            style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.2);">
+                                    
+                                    <!-- Admin Controls Row -->
+                                    <div style="display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.05);padding-top:10px;">
+                                        <!-- Verification toggle -->
+                                        <button onclick="adminToggleVerified('${user.username}', ${!user.verified})" style="
+                                            background:${user.verified ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)'};
+                                            color:${user.verified ? '#ef4444' : '#3b82f6'};
+                                            border:1px solid ${user.verified ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'};
+                                            border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;">
+                                            <i class="fas fa-${user.verified ? 'times' : 'check-circle'}"></i> ${user.verified ? 'Remove Verify' : 'Blue Tick ✓'}
+                                        </button>
+                                        
+                                        <!-- Tier buttons -->
+                                        <button onclick="adminSetTier('${user.username}', 'silver')" style="
+                                            background:${user.membershipTier==='silver' ? 'rgba(148,163,184,0.3)' : 'rgba(148,163,184,0.08)'};
+                                            color:#94a3b8;border:1px solid rgba(148,163,184,0.3);
+                                            border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;">
+                                            ⬡ Silver
+                                        </button>
+                                        <button onclick="adminSetTier('${user.username}', 'gold')" style="
+                                            background:${user.membershipTier==='gold' ? 'rgba(251,191,36,0.3)' : 'rgba(251,191,36,0.08)'};
+                                            color:#fbbf24;border:1px solid rgba(251,191,36,0.3);
+                                            border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;">
+                                            ★ Gold
+                                        </button>
+                                        <button onclick="adminSetTier('${user.username}', 'diamond')" style="
+                                            background:${user.membershipTier==='diamond' ? 'rgba(103,232,249,0.3)' : 'rgba(103,232,249,0.08)'};
+                                            color:#67e8f9;border:1px solid rgba(103,232,249,0.3);
+                                            border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;">
+                                            ◆ Diamond
+                                        </button>
+                                        ${user.membershipTier ? `<button onclick="adminSetTier('${user.username}', null)" style="
+                                            background:rgba(255,255,255,0.05);color:#666;border:1px solid rgba(255,255,255,0.1);
+                                            border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;">
+                                            ✕ Remove Tier
+                                        </button>` : ''}
+                                        
+                                        <!-- Edit profile button -->
+                                        <button onclick="adminEditUser('${user.username}')" style="
+                                            background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.2);
+                                            border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        
+                                        <!-- Delete -->
+                                        <button onclick="adminDeleteUser('${user.username}')" style="
+                                            background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);
+                                            border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;margin-left:auto;">
                                             <i class="fas fa-trash"></i> Delete
                                         </button>
                                     </div>
                                 </div>
-                            `).join('')
+                            `}).join('')
                         }
                     </div>
                 `;
@@ -7229,6 +7525,107 @@
         window.refreshAdminUsers = function() {
             switchAdminTab('users');
         };
+
+        // ==========================================
+        // ADMIN VERIFICATION & TIER MANAGEMENT
+        // ==========================================
+        
+        window.adminToggleVerified = function(username, newState) {
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            if (!users[username]) { showToast('User not found'); return; }
+            users[username].verified = newState;
+            localStorage.setItem('afriConnect_users', JSON.stringify(users));
+            
+            // If current user is being updated, update session too
+            if (currentUser && currentUser.username === username) {
+                currentUser.verified = newState;
+                localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+                loadUserProfile();
+            }
+            
+            showToast(newState ? `✓ @${username} is now Verified!` : `Verification removed from @${username}`);
+            setTimeout(() => switchAdminTab('users'), 600);
+        };
+
+        window.adminSetTier = function(username, tier) {
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            if (!users[username]) { showToast('User not found'); return; }
+            users[username].membershipTier = tier;
+            localStorage.setItem('afriConnect_users', JSON.stringify(users));
+            
+            // If current user is being updated, update session too
+            if (currentUser && currentUser.username === username) {
+                currentUser.membershipTier = tier;
+                localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+                loadUserProfile();
+            }
+            
+            const tierMsg = tier === 'diamond' ? '◆ Diamond' : tier === 'gold' ? '★ Gold' : tier === 'silver' ? '⬡ Silver' : 'No tier';
+            showToast(tier ? `@${username} → ${tierMsg} Tier` : `Tier removed from @${username}`);
+            setTimeout(() => switchAdminTab('users'), 600);
+        };
+
+        window.adminEditUser = function(username) {
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            const user = users[username];
+            if (!user) return;
+            
+            const content = document.getElementById('adminContent');
+            const p = user.profile || {};
+            content.innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+                    <button onclick="switchAdminTab('users')" style="background:rgba(255,255,255,0.1);border:none;color:white;padding:8px 14px;border-radius:8px;cursor:pointer;">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <h2 style="color:#fbbf24;font-size:18px;font-family:'Playfair Display',serif;">Edit @${username}</h2>
+                </div>
+                <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:20px;">
+                    <div style="margin-bottom:12px;"><label style="color:#888;font-size:12px;display:block;margin-bottom:5px;">Display Name</label>
+                        <input class="admin-input" id="editName" value="${p.name || ''}" style="margin-bottom:0;"></div>
+                    <div style="margin-bottom:12px;"><label style="color:#888;font-size:12px;display:block;margin-bottom:5px;">Bio</label>
+                        <textarea class="admin-input" id="editBio" style="min-height:70px;margin-bottom:0;">${p.bio || ''}</textarea></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                        <div><label style="color:#888;font-size:12px;display:block;margin-bottom:5px;">Age</label>
+                            <input class="admin-input" id="editAge" type="number" value="${p.age || 24}" style="margin-bottom:0;"></div>
+                        <div><label style="color:#888;font-size:12px;display:block;margin-bottom:5px;">Country</label>
+                            <input class="admin-input" id="editCountry" value="${p.country || ''}" style="margin-bottom:0;"></div>
+                    </div>
+                    <div style="margin-bottom:12px;"><label style="color:#888;font-size:12px;display:block;margin-bottom:5px;">Job Title</label>
+                        <input class="admin-input" id="editJob" value="${p.job || ''}" style="margin-bottom:0;"></div>
+                    <div style="margin-bottom:12px;"><label style="color:#888;font-size:12px;display:block;margin-bottom:5px;">User Code (read-only)</label>
+                        <input class="admin-input" value="${user.userCode || 'N/A'}" readonly style="margin-bottom:0;opacity:0.6;font-family:monospace;"></div>
+                    <div style="margin-bottom:20px;"><label style="color:#888;font-size:12px;display:block;margin-bottom:5px;">New Password (leave blank to keep)</label>
+                        <input class="admin-input" id="editPassword" type="password" placeholder="New password..." style="margin-bottom:0;"></div>
+                    <button onclick="adminSaveUserEdit('${username}')" style="
+                        width:100%;background:linear-gradient(135deg,#fbbf24,#d4af37);color:black;
+                        border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:bold;cursor:pointer;">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            `;
+        };
+
+        window.adminSaveUserEdit = function(username) {
+            const users = JSON.parse(localStorage.getItem('afriConnect_users')) || {};
+            if (!users[username]) return;
+            users[username].profile = users[username].profile || {};
+            users[username].profile.name = document.getElementById('editName').value.trim() || users[username].profile.name;
+            users[username].profile.bio = document.getElementById('editBio').value.trim();
+            users[username].profile.age = parseInt(document.getElementById('editAge').value) || users[username].profile.age;
+            users[username].profile.country = document.getElementById('editCountry').value.trim();
+            users[username].profile.job = document.getElementById('editJob').value.trim();
+            const newPass = document.getElementById('editPassword').value;
+            if (newPass) users[username].password = newPass;
+            localStorage.setItem('afriConnect_users', JSON.stringify(users));
+            
+            if (currentUser && currentUser.username === username) {
+                currentUser = users[username];
+                localStorage.setItem('afriConnect_session', JSON.stringify(currentUser));
+                loadUserProfile();
+            }
+            showToast(`@${username} updated! ✓`);
+            setTimeout(() => switchAdminTab('users'), 600);
+        };
         
         window.filterAdminUsers = function(query) {
             const users = window._currentAdminUsers || [];
@@ -7245,23 +7642,32 @@
                 return;
             }
             
-            list.innerHTML = filtered.map(user => `
-                <div class="admin-user-row">
-                    <img src="${user.profile && user.profile.photos && user.profile.photos[0] ? user.profile.photos[0] : 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg'}" 
-                        style="width:45px;height:45px;border-radius:50%;object-fit:cover;border:2px solid #fbbf24;">
-                    <div style="flex:1">
-                        <div style="color:white;font-weight:bold;font-size:14px;">${user.profile ? user.profile.name : user.username} <span class="admin-badge admin-badge-yellow" style="font-size:10px;">@${user.username}</span></div>
-                        <div style="color:#888;font-size:12px;">${user.profile ? (user.profile.bio || 'No bio') : 'No profile'}</div>
-                    </div>
-                    <div style="display:flex;gap:8px;flex-direction:column;align-items:flex-end;">
-                        <span class="admin-badge admin-badge-green">Active</span>
-                        <button onclick="adminDeleteUser('${user.username}')" class="admin-action-btn" 
-                            style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.2);">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
+            list.innerHTML = filtered.map(user => {
+                const tierColor = user.membershipTier === 'diamond' ? '#67e8f9' : user.membershipTier === 'gold' ? '#fbbf24' : user.membershipTier === 'silver' ? '#94a3b8' : '#666';
+                const tierLabel = user.membershipTier ? user.membershipTier.charAt(0).toUpperCase() + user.membershipTier.slice(1) : 'None';
+                return `
+                <div class="admin-user-row" id="userRow_${user.username}" style="flex-direction:column;gap:8px;">
+                    <div style="display:flex;gap:12px;align-items:center;">
+                        <img src="${user.profile && user.profile.photos && user.profile.photos[0] ? user.profile.photos[0] : 'https://static.vecteezy.com/system/resources/previews/006/580/686/non_2x/map-of-africa-on-black-background-vector.jpg'}" 
+                            style="width:45px;height:45px;border-radius:50%;object-fit:cover;border:2px solid ${user.verified ? '#3b82f6' : '#fbbf24'};flex-shrink:0;">
+                        <div style="flex:1">
+                            <div style="color:white;font-weight:bold;font-size:14px;">
+                                ${user.profile ? user.profile.name : user.username}
+                                ${user.verified ? '<i class="fas fa-check-circle" style="color:#3b82f6;margin-left:4px;"></i>' : ''}
+                                <span class="admin-badge admin-badge-yellow" style="font-size:10px;">@${user.username}</span>
+                            </div>
+                            <div style="color:#666;font-size:11px;">
+                                Code: <strong style="color:#fbbf24;font-family:monospace;">${user.userCode || 'N/A'}</strong> · 
+                                Tier: <span style="color:${tierColor}">${tierLabel}</span>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:5px;">
+                            <button onclick="adminToggleVerified('${user.username}', ${!user.verified})" style="background:${user.verified ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)'};color:${user.verified ? '#ef4444' : '#3b82f6'};border:1px solid ${user.verified ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'};border-radius:6px;padding:4px 8px;cursor:pointer;font-size:10px;">${user.verified ? 'Unverify' : '✓ Verify'}</button>
+                            <button onclick="adminDeleteUser('${user.username}')" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:10px;"><i class="fas fa-trash"></i></button>
+                        </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         };
 
         window.adminDeleteUser = async function(username) {
