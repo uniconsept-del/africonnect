@@ -717,7 +717,7 @@
     </div>
 
     <!-- Auth Full-Screen Landing Page -->
-    <div id="authOverlay" class="auth-overlay active">
+    <div id="authOverlay" class="auth-overlay">
         <!-- Left: Africonnect Image (desktop only) -->
         <div class="auth-image-side">
             <div style="position:absolute;bottom:40px;left:40px;z-index:2;">
@@ -2135,6 +2135,47 @@
 
     <script>
         // ══════════════════════════════════════════════════════
+        //  SESSION GUARD — runs FIRST, before anything else
+        //  Triple storage: localStorage + cookie + window var
+        //  Guarantees session survives refresh in all browsers
+        // ══════════════════════════════════════════════════════
+        const _SESSION_KEY = 'africonnect_session';
+
+        // Cookie helpers (works even when localStorage is blocked)
+        const _cookie = {
+            set(key, val, days = 30) {
+                try {
+                    const exp = new Date(Date.now() + days * 864e5).toUTCString();
+                    document.cookie = `${key}=${encodeURIComponent(val)};expires=${exp};path=/;SameSite=Lax`;
+                } catch(e) {}
+            },
+            get(key) {
+                try {
+                    const m = document.cookie.match('(?:^|;)\\s*' + key + '=([^;]*)');
+                    return m ? decodeURIComponent(m[1]) : null;
+                } catch(e) { return null; }
+            },
+            del(key) {
+                try { document.cookie = `${key}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`; } catch(e) {}
+            }
+        };
+
+        // Pre-load session into a global window variable immediately (before DB is defined)
+        window._preloadedSession = (function() {
+            // Try localStorage first
+            try {
+                const v = localStorage.getItem(_SESSION_KEY);
+                if (v) return JSON.parse(v);
+            } catch(e) {}
+            // Try cookie fallback
+            try {
+                const v = _cookie.get(_SESSION_KEY);
+                if (v) return JSON.parse(v);
+            } catch(e) {}
+            return null;
+        })();
+
+        // ══════════════════════════════════════════════════════
         //  SOUND ENGINE  (Web Audio API — no external files)
         // ══════════════════════════════════════════════════════
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -2278,29 +2319,33 @@
 
         // ── Unified DB object (Firebase-first, localStorage fallback) ──
         const DB = {
-            // ── Session (sessionStorage only — clears on refresh/tab close) ──
-            // Session: stored in localStorage for reliability, but guarded by a
-            // sessionStorage "alive token" that only exists while the tab is alive.
-            // On a true page refresh/new load, sessionStorage is empty → session is cleared.
+            // ── Session — triple redundant: localStorage + cookie + window var ──
+            // Survives refresh in all browsers including private mode & file:// URLs
             getSession() {
+                // 1. Try window preloaded var (set before DOMContentLoaded, fastest)
+                if (window._preloadedSession) return window._preloadedSession;
+                // 2. Try localStorage
                 try {
-                    const alive = sessionStorage.getItem('africonnect_tab_alive');
-                    if (!alive) return null; // fresh load → force logout
-                    const v = localStorage.getItem('africonnect_session');
-                    return v ? JSON.parse(v) : null;
-                } catch { return null; }
+                    const v = localStorage.getItem(_SESSION_KEY);
+                    if (v) { const s = JSON.parse(v); window._preloadedSession = s; return s; }
+                } catch(e) {}
+                // 3. Try cookie fallback
+                try {
+                    const v = _cookie.get(_SESSION_KEY);
+                    if (v) { const s = JSON.parse(v); window._preloadedSession = s; return s; }
+                } catch(e) {}
+                return null;
             },
             saveSession(user) {
-                try {
-                    localStorage.setItem('africonnect_session', JSON.stringify(user));
-                    sessionStorage.setItem('africonnect_tab_alive', '1');
-                } catch(e) {}
+                const json = JSON.stringify(user);
+                window._preloadedSession = user; // always keep in memory
+                try { localStorage.setItem(_SESSION_KEY, json); } catch(e) {}
+                try { _cookie.set(_SESSION_KEY, json, 30); } catch(e) {}
             },
             clearSession() {
-                try {
-                    localStorage.removeItem('africonnect_session');
-                    sessionStorage.removeItem('africonnect_tab_alive');
-                } catch(e) {}
+                window._preloadedSession = null;
+                try { localStorage.removeItem(_SESSION_KEY); } catch(e) {}
+                try { _cookie.del(_SESSION_KEY); } catch(e) {}
             },
 
             // ── Accounts ──
@@ -2658,6 +2703,24 @@
             // Restore screen mode
             if (window.innerWidth < 768) setDeviceMode('mobile');
 
+            // ── Restore session first (before Firebase, so UI isn't blocked) ──
+            const session = DB.getSession();
+            if (session) {
+                currentUser = session;
+                isLoggedIn = true;
+                // Hide auth overlay immediately — session is valid
+                document.getElementById('authOverlay').classList.remove('active');
+                document.body.style.overflow = '';
+                loadUserState();
+                updateProfileDisplay();
+                renderAll();
+                updateSoundToggleUI();
+                startLocalDMPolling();
+            } else {
+                renderAll();
+                openAuthPanel();
+            }
+
             // ── Init Firebase (non-blocking — app works even if it fails) ──
             initFirebase().then(async (ok) => {
                 if (ok) {
@@ -2666,6 +2729,18 @@
                     await DB.getPostsAsync();
                     // If user is logged in, sync their data from Firebase too
                     if (isLoggedIn && currentUser) {
+                        // Re-fetch the current user's account from Firebase to get latest data
+                        try {
+                            const freshAccount = await DB.findAccountAsync(currentUser.handle);
+                            if (freshAccount) {
+                                // Merge: keep password and local-only fields, update everything else
+                                currentUser = Object.assign({}, freshAccount, {
+                                    password: currentUser.password // preserve local password
+                                });
+                                DB.saveSession(currentUser);
+                            }
+                        } catch(e) { /* keep existing session if Firebase fails */ }
+
                         notifications = await DB.getNotificationsAsync(currentUser.handle);
                         messages      = await DB.getContactsAsync(currentUser.handle);
                         dmMessages    = await DB.getDMsAsync(currentUser.handle);
@@ -2677,24 +2752,10 @@
                             updateMsgBadge();
                         });
                         renderAll();
+                        updateProfileDisplay();
                     }
                 }
             });
-
-            // ── Restore session (alive-token guard ensures logout on refresh) ──
-            const session = DB.getSession();
-            if (session) {
-                currentUser = session;
-                isLoggedIn = true;
-                loadUserState();
-                updateProfileDisplay();
-                renderAll();
-                updateSoundToggleUI();
-                startLocalDMPolling();
-            } else {
-                renderAll();
-                openAuthPanel();
-            }
 
             setupEventListeners();
             setupPostImageUpload();
