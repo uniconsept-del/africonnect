@@ -2296,10 +2296,10 @@
 
         // ── Unified DB object (Firebase-first, localStorage fallback) ──
         const DB = {
-            // ── Session (localStorage only — fast) ──
-            getSession()        { return _cache.get('africonnect_session', null); },
-            saveSession(user)   { _cache.set('africonnect_session', user); },
-            clearSession()      { _cache.del('africonnect_session'); },
+            // ── Session (sessionStorage only — clears on refresh/tab close) ──
+            getSession()        { try { const v = sessionStorage.getItem('africonnect_session'); return v ? JSON.parse(v) : null; } catch { return null; } },
+            saveSession(user)   { try { sessionStorage.setItem('africonnect_session', JSON.stringify(user)); } catch(e) {} },
+            clearSession()      { try { sessionStorage.removeItem('africonnect_session'); } catch(e) {} },
 
             // ── Accounts ──
             getAccounts() { return _cache.get('africonnect_accounts', []); },
