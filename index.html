@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>AFRICONNECT - Connect & Trade</title>
     <!-- PWA Meta Tags -->
     <meta name="application-name" content="AFRICONNECT">
@@ -490,6 +490,211 @@
                 background: rgba(0,0,0,0.1);
             }
         }
+
+        /* ═══════════════════════════════════════════════════
+           RESPONSIVE SCALING — no overflow, no over-scale
+        ═══════════════════════════════════════════════════ */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        html {
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        body {
+            overflow-x: hidden;
+            min-height: 100dvh;
+            min-height: 100vh;
+            width: 100%;
+            max-width: 100vw;
+        }
+        img, video, iframe, embed, object {
+            max-width: 100%;
+            height: auto;
+        }
+        /* Prevent inputs from causing zoom on iOS */
+        input, textarea, select {
+            font-size: 16px !important;
+        }
+        /* Responsive main layout */
+        @media (max-width: 767px) {
+            main#contentArea {
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                width: 100% !important;
+            }
+        }
+        @media (min-width: 768px) and (max-width: 1279px) {
+            main#contentArea {
+                margin-left: 256px !important;
+                margin-right: 0 !important;
+            }
+        }
+        @media (min-width: 1280px) {
+            main#contentArea {
+                margin-left: 288px !important;
+                margin-right: 320px !important;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════
+           DARK MODE — comprehensive text & background fixes
+        ═══════════════════════════════════════════════════ */
+
+        /* Base surfaces */
+        .dark body                           { background-color: #0f172a; color: #f1f5f9; }
+        .dark main#contentArea               { background-color: #0f172a; }
+
+        /* Cards & panels */
+        .dark .bg-white                      { background-color: #1e293b !important; }
+        .dark .bg-gray-50                    { background-color: #1e293b !important; }
+        .dark .bg-gray-100                   { background-color: #334155 !important; }
+        .dark .bg-gray-200                   { background-color: #475569 !important; }
+
+        /* Text contrast in dark mode */
+        .dark .text-gray-900                 { color: #f1f5f9 !important; }
+        .dark .text-gray-800                 { color: #e2e8f0 !important; }
+        .dark .text-gray-700                 { color: #cbd5e1 !important; }
+        .dark .text-gray-600                 { color: #94a3b8 !important; }
+        .dark .text-gray-500                 { color: #64748b !important; }
+
+        /* Inputs in dark mode */
+        .dark input:not([type="range"]),
+        .dark textarea,
+        .dark select {
+            background-color: #1e293b !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+        .dark input::placeholder,
+        .dark textarea::placeholder {
+            color: #64748b !important;
+        }
+
+        /* Borders */
+        .dark .border-gray-200               { border-color: #334155 !important; }
+        .dark .border-gray-300               { border-color: #475569 !important; }
+        .dark hr, .dark .divide-gray-200 > * { border-color: #334155 !important; }
+
+        /* Post cards */
+        .dark .post-card                     { background-color: #1e293b; border-color: #334155; }
+
+        /* Sidebar nav items */
+        .dark .nav-item:hover                { background-color: #334155 !important; }
+        .dark .nav-item.active               { color: #f87171; }
+
+        /* Bottom nav bar */
+        .dark nav.fixed.bottom-0             { background-color: #1e293b !important; border-color: #334155 !important; }
+        .dark nav.fixed.bottom-0 button      { color: #94a3b8; }
+        .dark nav.fixed.bottom-0 button.active-nav { color: #f87171; }
+
+        /* Header bars */
+        .dark header                         { background-color: #1e293b !important; border-color: #334155 !important; }
+
+        /* Modals & overlays */
+        .dark .modal-content,
+        .dark [class*="rounded-2xl"].bg-white,
+        .dark [class*="rounded-3xl"].bg-white { background-color: #1e293b !important; color: #f1f5f9 !important; }
+
+        /* Auth panel in dark mode */
+        .dark .auth-panel                    { background-color: #1e293b !important; }
+        .dark .auth-panel label              { color: #cbd5e1 !important; }
+        .dark .auth-panel p                  { color: #94a3b8 !important; }
+
+        /* Admin panel in dark mode */
+        .dark #adminPanelOverlay [style*="background:white"],
+        .dark #adminPanelOverlay [style*="background: white"] {
+            background-color: #1e293b !important;
+            color: #f1f5f9 !important;
+        }
+        .dark #adminPanelOverlay input,
+        .dark #adminPanelOverlay textarea {
+            background-color: #0f172a !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+
+        /* Inline style overrides for dynamic content in dark mode */
+        .dark [style*="color:#374151"]        { color: #cbd5e1 !important; }
+        .dark [style*="color:#6b7280"]        { color: #94a3b8 !important; }
+        .dark [style*="color:#1f2937"]        { color: #e2e8f0 !important; }
+        .dark [style*="background:white"]     { background-color: #1e293b !important; }
+        .dark [style*="background:#f3f4f6"]   { background-color: #334155 !important; }
+        .dark [style*="background:#f9fafb"]   { background-color: #1e293b !important; }
+        .dark [style*="border-color:#e5e7eb"] { border-color: #334155 !important; }
+
+        /* Right sidebar */
+        .dark aside                          { background-color: #1e293b !important; border-color: #334155 !important; }
+
+        /* Scrollbar styling */
+        .dark ::-webkit-scrollbar            { width: 6px; height: 6px; }
+        .dark ::-webkit-scrollbar-track      { background: #1e293b; }
+        .dark ::-webkit-scrollbar-thumb      { background: #475569; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Marketplace cards in dark */
+        .dark .marketplace-card,
+        .dark [class*="product"] {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+        }
+
+        /* Chat bubbles in dark */
+        .dark .chat-bubble-sent              { background-color: #b91c1c !important; }
+        .dark .chat-bubble-received          { background-color: #334155 !important; color: #f1f5f9 !important; }
+
+        /* Notification badges stay vibrant */
+        .dark .bg-red-500                    { background-color: #ef4444 !important; }
+        .dark .text-white                    { color: #ffffff !important; }
+
+        /* Smooth theme transition */
+        body, header, aside, main, nav, div, section, article, button, input, textarea {
+            transition: background-color 0.25s ease, color 0.15s ease, border-color 0.25s ease;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           LIGHT MODE — ensure clean whites and readable text
+        ═══════════════════════════════════════════════════ */
+        body:not(.dark) .text-white { color: #ffffff; }
+        body:not(.dark) input,
+        body:not(.dark) textarea,
+        body:not(.dark) select {
+            background-color: #ffffff;
+            color: #111827;
+        }
+
+        /* ═══════════════════════════════════════════════════
+           HAMBURGER & MOBILE MENU — STRICTLY MOBILE ONLY
+        ═══════════════════════════════════════════════════ */
+        /* Mobile header (hamburger bar) — only on mobile */
+        @media (min-width: 768px) {
+            header.md\:hidden { display: none !important; }
+            #mobileMenu { display: none !important; visibility: hidden !important; pointer-events: none !important; }
+        }
+        /* Bottom nav bar — only on mobile */
+        @media (min-width: 768px) {
+            nav.fixed.bottom-0 { display: none !important; }
+        }
+
+        /* ═══════════════════════════════════════════════════
+           ADMIN PANEL BUTTON IN DESKTOP SIDEBAR
+        ═══════════════════════════════════════════════════ */
+        #desktopAdminBtn { display: flex; }
+
+        /* ═══════════════════════════════════════════════════
+           DESKTOP SIDEBAR — always visible on md+
+        ═══════════════════════════════════════════════════ */
+        @media (min-width: 768px) {
+            aside.hidden.md\:flex { display: flex !important; }
+        }
+        @media (max-width: 767px) {
+            aside.hidden.md\:flex { display: none !important; }
+            /* Right aside — hide on mobile & tablet */
+            aside.hidden.xl\:block { display: none !important; }
+        }
+        @media (min-width: 768px) and (max-width: 1279px) {
+            aside.hidden.xl\:block { display: none !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
@@ -878,8 +1083,14 @@
                     <span class="font-medium hidden dark:block">Light Mode</span>
                 </button>
                 
+                <!-- Desktop A-P Admin Panel Button -->
+                <button id="desktopAdminBtn" onclick="openAdminLogin()" class="flex items-center gap-3 w-full p-3 rounded-xl transition-all mt-1" style="color:#7c3aed;" onmouseover="this.style.background='#f5f3ff'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-shield-alt text-xl w-6"></i>
+                    <span class="font-medium">A-P</span>
+                    <span class="ml-auto text-xs px-2 py-0.5 rounded-full font-bold" style="background:#ede9fe;color:#7c3aed;">Admin</span>
+                </button>
                 <!-- Desktop Sign Out Button -->
-                <button onclick="handleSignOut()" class="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-all mt-2">
+                <button onclick="handleSignOut()" class="flex items-center gap-3 w-full p-3 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-all mt-1">
                     <i class="fas fa-sign-out-alt text-xl w-6"></i>
                     <span class="font-medium">Sign Out</span>
                 </button>
@@ -1294,7 +1505,10 @@
                             <div class="flex-1 mt-2 md:mt-16">
                                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                     <div>
-                                        <h1 id="profileDisplayName" class="text-2xl font-bold">Kwame Asante</h1>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <h1 id="profileDisplayName" class="text-2xl font-bold">Kwame Asante</h1>
+                                            <span id="profileMembershipBadge" class="hidden items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"></span>
+                                        </div>
                                         <p id="profileUsername" class="text-gray-500">@kwame_a</p>
                                         <p id="profileUniqueCode" class="text-xs text-red-500 font-mono mt-1">ID: A7B9C2D4</p>
                                     </div>
@@ -2366,9 +2580,8 @@
         // ══════════════════════════════════════════════════════
         document.addEventListener('DOMContentLoaded', async () => {
             // Restore dark mode preference
-            if (_cache.get('africonnect_dark', false)) {
-                document.documentElement.classList.add('dark');
-            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            const savedDark = _cache.get('africonnect_dark', null);
+            if (savedDark === true || (savedDark === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             }
 
@@ -2738,6 +2951,26 @@
             document.getElementById('profileDisplayName').textContent = currentUser.name;
             document.getElementById('profileUsername').textContent = currentUser.handle;
             document.getElementById('profileUniqueCode').textContent = 'ID: ' + currentUser.uniqueCode;
+
+            // Membership badge
+            const badgeEl = document.getElementById('profileMembershipBadge');
+            if (badgeEl) {
+                const tier = (currentUser.membership || 'free').toLowerCase();
+                const tierMap = {
+                    silver:  { icon:'🥈', label:'Silver Member',  bg:'linear-gradient(135deg,#c0c0c0,#e8e8e8)', color:'#374151',  border:'#a0a0a0' },
+                    gold:    { icon:'👑', label:'Gold Member',    bg:'linear-gradient(135deg,#D4AF37,#f5d769)', color:'#78350f',  border:'#B8860B' },
+                    diamond: { icon:'💎', label:'Diamond Member', bg:'linear-gradient(135deg,#a78bfa,#60a5fa)', color:'#1e1b4b', border:'#818cf8' },
+                };
+                if (tierMap[tier]) {
+                    const t = tierMap[tier];
+                    badgeEl.style.cssText = `background:${t.bg};color:${t.color};border:1.5px solid ${t.border};display:inline-flex;box-shadow:0 2px 8px rgba(0,0,0,0.12);`;
+                    badgeEl.innerHTML = `${t.icon} <span>${t.label}</span>`;
+                    badgeEl.classList.remove('hidden');
+                } else {
+                    badgeEl.classList.add('hidden');
+                    badgeEl.style.display = '';
+                }
+            }
 
             const followingEl = document.getElementById('profileFollowingCount');
             const followersEl = document.getElementById('profileFollowersCount');
@@ -3226,17 +3459,29 @@
         // Theme Toggle
         function toggleTheme() {
             const isDark = document.documentElement.classList.toggle('dark');
-            DB.set('africonnect_dark', isDark);
+            _cache.set('africonnect_dark', isDark);
+            // Update theme toggle button icons
+            document.querySelectorAll('[id*="themeIcon"], [id*="ThemeIcon"]').forEach(el => {
+                el.className = isDark ? 'fas fa-sun text-yellow-400' : 'fas fa-moon text-gray-600';
+            });
+            // Update theme button text
+            document.querySelectorAll('[id*="themeText"]').forEach(el => {
+                el.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            });
             Sounds.click();
+            showToast(isDark ? '🌙 Dark mode on' : '☀️ Light mode on');
         }
 
         // Mobile Menu
         function toggleMobileMenu() {
+            // Only works on mobile — desktop has sidebar navigation
+            if (window.innerWidth >= 768) return;
             const menu = document.getElementById('mobileMenu');
             const content = document.getElementById('mobileMenuContent');
             
             if (menu.classList.contains('hidden')) {
                 menu.classList.remove('hidden');
+                menu.style.display = 'block';
                 setTimeout(() => {
                     content.classList.remove('translate-x-full');
                 }, 10);
@@ -3244,6 +3489,7 @@
                 content.classList.add('translate-x-full');
                 setTimeout(() => {
                     menu.classList.add('hidden');
+                    menu.style.display = '';
                 }, 300);
             }
         }
@@ -5105,7 +5351,7 @@
         const _origHandleLogin = handleLogin;
 
         // ══════════════════════════════════════════════════════
-        //  PWA INSTALL
+        //  PWA INSTALL — works on ALL browsers & platforms
         // ══════════════════════════════════════════════════════
         let deferredInstallPrompt = null;
 
@@ -5115,7 +5361,6 @@
                 if (btn) { btn.classList.remove('hidden'); btn.style.display = 'flex'; }
             });
         }
-
         function _hideAllInstallBtns() {
             ['installBtn','installBtnDesktop','installBtnMobile'].forEach(id => {
                 const btn = document.getElementById(id);
@@ -5123,6 +5368,7 @@
             });
         }
 
+        // Chrome/Edge/Samsung desktop+Android — native prompt
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredInstallPrompt = e;
@@ -5132,10 +5378,92 @@
         window.addEventListener('appinstalled', () => {
             _hideAllInstallBtns();
             deferredInstallPrompt = null;
-            showToast('✅ Africonnect installed successfully!');
+            showToast('🎉 Africonnect installed successfully!');
         });
 
+        // Detect browser/OS for tailored instructions
+        function _detectBrowserOS() {
+            const ua = navigator.userAgent;
+            const isIOS      = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+            const isAndroid  = /Android/.test(ua);
+            const isSafari   = /^((?!chrome|android).)*safari/i.test(ua);
+            const isChrome   = /CriOS|Chrome/.test(ua) && !/Edg|OPR|Brave/.test(ua);
+            const isFirefox  = /Firefox|FxiOS/.test(ua);
+            const isEdge     = /Edg\//.test(ua);
+            const isBrave    = navigator.brave !== undefined;
+            const isOpera    = /OPR|Opera/.test(ua);
+            const isSamsung  = /SamsungBrowser/.test(ua);
+            const isDesktop  = !isIOS && !isAndroid;
+            return { isIOS, isAndroid, isSafari, isChrome, isFirefox, isEdge, isBrave, isOpera, isSamsung, isDesktop };
+        }
+
+        function _getInstallSteps(d) {
+            if (d.isIOS && d.isSafari) return {
+                icon:'📱', title:'Safari on iPhone / iPad',
+                bg:'#f0f9ff', borderColor:'#bae6fd',
+                steps:['Tap the <strong>Share</strong> button <span style="font-size:18px">📤</span> at the bottom bar','Scroll down and tap <strong>"Add to Home Screen"</strong> 📲','Tap <strong>"Add"</strong> in the top right — done!']
+            };
+            if (d.isIOS && d.isChrome) return {
+                icon:'📱', title:'Chrome on iPhone / iPad',
+                bg:'#fef9c3', borderColor:'#fde047',
+                steps:['Chrome on iOS does not support direct install','Open this page in <strong>Safari</strong> instead','Then use Safari&#39;s Share → Add to Home Screen']
+            };
+            if (d.isIOS && d.isFirefox) return {
+                icon:'📱', title:'Firefox on iPhone / iPad',
+                bg:'#fef9c3', borderColor:'#fde047',
+                steps:['Firefox on iOS does not support direct install','Open this page in <strong>Safari</strong> instead','Then use Safari&#39;s Share → Add to Home Screen']
+            };
+            if (d.isAndroid && d.isSamsung) return {
+                icon:'📱', title:'Samsung Internet on Android',
+                bg:'#f0fdf4', borderColor:'#86efac',
+                steps:['Tap the <strong>☰ menu</strong> (bottom right)','Tap <strong>"Add page to"</strong>','Tap <strong>"Home screen"</strong> — done!']
+            };
+            if (d.isAndroid && d.isFirefox) return {
+                icon:'📱', title:'Firefox on Android',
+                bg:'#f0fdf4', borderColor:'#86efac',
+                steps:['Tap the <strong>⋮ three-dot menu</strong> (top right)','Tap <strong>"Install"</strong> or <strong>"Add to Home Screen"</strong>','Tap <strong>"Add"</strong> to confirm']
+            };
+            if (d.isAndroid && d.isOpera) return {
+                icon:'📱', title:'Opera on Android',
+                bg:'#f0fdf4', borderColor:'#86efac',
+                steps:['Tap the <strong>☰ menu</strong> at the bottom','Tap <strong>"Home screen"</strong>','Tap <strong>"Add"</strong> to confirm']
+            };
+            if (d.isAndroid) return {   // Chrome/Brave/default Android
+                icon:'📱', title:'Chrome / Brave on Android',
+                bg:'#f0fdf4', borderColor:'#86efac',
+                steps:['Tap the <strong>⋮ three-dot menu</strong> at the top right','Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>','Tap <strong>"Install"</strong> to confirm']
+            };
+            // Desktop browsers
+            if (d.isEdge) return {
+                icon:'💻', title:'Microsoft Edge (Desktop)',
+                bg:'#f0f9ff', borderColor:'#7dd3fc',
+                steps:['Look for the <strong>app install icon</strong> <span style="font-size:15px">⊕</span> in the address bar','Or click the <strong>⋯ menu → Apps → Install this site as an app</strong>','Click <strong>"Install"</strong> in the popup']
+            };
+            if (d.isFirefox) return {
+                icon:'💻', title:'Firefox (Desktop)',
+                bg:'#fef9c3', borderColor:'#fde047',
+                steps:['Firefox does not support PWA install on desktop','Try <strong>Chrome</strong> or <strong>Edge</strong> for desktop install','Or bookmark the page for quick access: <strong>Ctrl+D</strong>']
+            };
+            if (d.isOpera) return {
+                icon:'💻', title:'Opera (Desktop)',
+                bg:'#f0f9ff', borderColor:'#7dd3fc',
+                steps:['Click the <strong>install icon</strong> in the address bar','Or go to <strong>Opera menu → Install Africonnect</strong>','Click <strong>"Install"</strong> to confirm']
+            };
+            if (d.isBrave) return {
+                icon:'💻', title:'Brave Browser (Desktop)',
+                bg:'#f0fdf4', borderColor:'#86efac',
+                steps:['Click the <strong>⊕ install icon</strong> in the address bar','Or go to <strong>Brave menu → Install Africonnect</strong>','Click <strong>"Install"</strong> to confirm']
+            };
+            // Default desktop Chrome
+            return {
+                icon:'💻', title:'Chrome (Desktop)',
+                bg:'#f0f9ff', borderColor:'#7dd3fc',
+                steps:['Click the <strong>install icon ⊕</strong> in the address bar on the right','Or click <strong>⋮ menu → Install Africonnect</strong>','Click <strong>"Install"</strong> in the dialog']
+            };
+        }
+
         function installApp() {
+            // If native prompt available (Chrome/Edge/Samsung Android) — use it directly
             if (deferredInstallPrompt) {
                 deferredInstallPrompt.prompt();
                 deferredInstallPrompt.userChoice.then((result) => {
@@ -5145,53 +5473,69 @@
                     }
                     deferredInstallPrompt = null;
                 });
-            } else {
-                // Show a styled install instructions modal
-                const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-                const isAndroid = /Android/.test(navigator.userAgent);
-                const modalId = 'installModal_' + Date.now();
-                const m = document.createElement('div');
-                m.id = modalId;
-                m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0;';
-                m.innerHTML = `
-                    <div style="background:white;border-radius:24px 24px 0 0;padding:28px;width:100%;max-width:480px;box-shadow:0 -20px 60px rgba(0,0,0,0.3);">
-                        <div style="text-align:center;margin-bottom:20px;">
-                            <div style="width:60px;height:60px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                                <i class="fas fa-download" style="color:white;font-size:24px;"></i>
-                            </div>
-                            <h3 style="font-size:20px;font-weight:800;margin:0 0 6px;">Install Africonnect</h3>
-                            <p style="color:#6b7280;font-size:13px;margin:0;">Add to your home screen for the best experience</p>
-                        </div>
-                        ${isIOS ? `
-                        <div style="background:#f0f9ff;border-radius:14px;padding:16px;margin-bottom:16px;">
-                            <p style="font-weight:700;margin:0 0 10px;font-size:14px;">📱 iPhone / iPad (Safari):</p>
-                            <p style="margin:0 0 6px;font-size:13px;color:#374151;">1. Tap the <strong>Share button</strong> <span style="font-size:16px;">📤</span> at the bottom</p>
-                            <p style="margin:0 0 6px;font-size:13px;color:#374151;">2. Scroll and tap <strong>"Add to Home Screen"</strong></p>
-                            <p style="margin:0;font-size:13px;color:#374151;">3. Tap <strong>"Add"</strong> to confirm</p>
-                        </div>` : isAndroid ? `
-                        <div style="background:#f0fdf4;border-radius:14px;padding:16px;margin-bottom:16px;">
-                            <p style="font-weight:700;margin:0 0 10px;font-size:14px;">📱 Android (Chrome):</p>
-                            <p style="margin:0 0 6px;font-size:13px;color:#374151;">1. Tap the <strong>3 dots menu</strong> ⋮ at the top right</p>
-                            <p style="margin:0 0 6px;font-size:13px;color:#374151;">2. Tap <strong>"Add to Home screen"</strong></p>
-                            <p style="margin:0;font-size:13px;color:#374151;">3. Tap <strong>"Add"</strong> to confirm</p>
-                        </div>` : `
-                        <div style="background:#f5f3ff;border-radius:14px;padding:16px;margin-bottom:16px;">
-                            <p style="font-weight:700;margin:0 0 10px;font-size:14px;">💻 Desktop (Chrome / Edge):</p>
-                            <p style="margin:0 0 6px;font-size:13px;color:#374151;">1. Look for the <strong>install icon ⊕</strong> in the address bar</p>
-                            <p style="margin:0;font-size:13px;color:#374151;">2. Or go to browser menu → <strong>"Install Africonnect"</strong></p>
-                        </div>`}
-                        <button onclick="document.getElementById('${modalId}').remove()"
-                            style="width:100%;padding:14px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;">
-                            Got it!
-                        </button>
-                    </div>`;
-                m.addEventListener('click', e => { if(e.target===m) m.remove(); });
-                document.body.appendChild(m);
+                return;
             }
+
+            // Otherwise show tailored step-by-step instructions
+            const d = _detectBrowserOS();
+            const info = _getInstallSteps(d);
+            const isDark = document.documentElement.classList.contains('dark');
+            const panelBg = isDark ? '#1e293b' : 'white';
+            const textColor = isDark ? '#f1f5f9' : '#111827';
+            const subColor = isDark ? '#94a3b8' : '#6b7280';
+            const stepColor = isDark ? '#cbd5e1' : '#374151';
+            const modalId = 'installModal_' + Date.now();
+            const m = document.createElement('div');
+            m.id = modalId;
+            m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(4px);';
+
+            const stepsHtml = info.steps.map((s,i) => `
+                <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;">
+                    <div style="min-width:26px;height:26px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">${i+1}</div>
+                    <p style="margin:3px 0 0;font-size:13.5px;color:${stepColor};line-height:1.5;">${s}</p>
+                </div>`).join('');
+
+            m.innerHTML = `
+                <div style="background:${panelBg};border-radius:28px 28px 0 0;padding:28px 24px 32px;width:100%;max-width:520px;box-shadow:0 -20px 60px rgba(0,0,0,0.4);">
+                    <!-- Handle bar -->
+                    <div style="width:40px;height:4px;background:#cbd5e1;border-radius:2px;margin:0 auto 20px;"></div>
+                    <!-- Header -->
+                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+                        <div style="width:56px;height:56px;background:linear-gradient(135deg,#E53E3E,#b91c1c);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(229,62,62,0.4);">
+                            <i class="fas fa-mobile-alt" style="color:white;font-size:22px;"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-size:18px;font-weight:800;margin:0 0 3px;color:${textColor};">Install Africonnect</h3>
+                            <p style="color:${subColor};font-size:12px;margin:0;">Add to your home screen or desktop</p>
+                        </div>
+                    </div>
+                    <!-- Browser-specific steps -->
+                    <div style="background:${info.bg};border:1.5px solid ${info.borderColor};border-radius:16px;padding:16px 16px 8px;margin-bottom:18px;">
+                        <p style="font-weight:700;font-size:13px;margin:0 0 12px;color:${textColor};">${info.icon} ${info.title}</p>
+                        ${stepsHtml}
+                    </div>
+                    <!-- Buttons -->
+                    <button onclick="document.getElementById('${modalId}').remove()"
+                        style="width:100%;padding:14px;background:linear-gradient(135deg,#E53E3E,#b91c1c);color:white;border:none;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;letter-spacing:0.02em;box-shadow:0 4px 14px rgba(229,62,62,0.3);">
+                        Got it! ✓
+                    </button>
+                </div>`;
+            m.addEventListener('click', e => { if(e.target===m) m.remove(); });
+            document.body.appendChild(m);
+
+            // Animate in
+            const panel = m.firstElementChild;
+            panel.style.transform = 'translateY(100%)';
+            panel.style.transition = 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+            requestAnimationFrame(() => requestAnimationFrame(() => { panel.style.transform = 'translateY(0)'; }));
         }
 
-        // Check if already installed as PWA
-        if (window.matchMedia('(display-mode: standalone)').matches) {
+        // Always show install buttons — every browser can install (or at least get instructions)
+        // Hide only if already running as installed PWA
+        if (!window.matchMedia('(display-mode: standalone)').matches &&
+            !window.navigator.standalone) {
+            _showAllInstallBtns();
+        } else {
             _hideAllInstallBtns();
         }
     </script>
