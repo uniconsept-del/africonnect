@@ -1236,16 +1236,13 @@
                     
                     <!-- Location Status Banner -->
                     <div id="locationStatus" style="display:flex;" class="items-start gap-3 p-4 rounded-xl mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                        <i class="fas fa-map-marker-alt text-blue-500 mt-0.5 text-lg"></i>
+                        <i id="locationStatusIcon" class="fas fa-map-marker-alt text-blue-500 mt-0.5 text-lg"></i>
                         <div class="flex-1">
-                            <span class="text-sm font-medium" id="detectedLocation">Click "Verify My Location" to get started.</span>
-                            <div id="locationSpinner" style="display:none;" class="mt-1 flex items-center gap-2 text-xs text-blue-400">
-                                <i class="fas fa-spinner fa-spin"></i> Detecting location...
+                            <span class="text-sm font-medium" id="detectedLocation">Detecting your location automatically…</span>
+                            <div id="locationSpinner" style="display:flex;" class="mt-1 items-center gap-2 text-xs text-blue-400">
+                                <i class="fas fa-spinner fa-spin"></i> Please allow location access when your browser prompts you.
                             </div>
                         </div>
-                        <button onclick="detectLocation()" class="shrink-0 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-full transition-colors">
-                            <i class="fas fa-map-marker-alt mr-1"></i> Verify My Location
-                        </button>
                     </div>
 
                     <!-- Location Denied Warning -->
@@ -1253,9 +1250,9 @@
                         <i class="fas fa-lock text-red-500 mt-0.5 text-lg"></i>
                         <div class="flex-1">
                             <p class="text-sm font-bold text-red-600 dark:text-red-400">Location Access Denied</p>
-                            <p class="text-xs text-red-500 dark:text-red-400 mt-1">You denied browser location access. You can still select your country manually below, or click "Try Again" to re-request location permission.</p>
+                            <p class="text-xs text-red-500 dark:text-red-400 mt-1">To join a community room, please allow location access. Click the lock icon in your browser address bar, enable Location, then tap Try Again.</p>
                             <button onclick="detectLocation()" class="mt-3 px-4 py-2 bg-red-500 text-white text-xs font-bold rounded-full hover:bg-red-600 transition-colors">
-                                <i class="fas fa-map-marker-alt mr-1"></i> Try Again
+                                <i class="fas fa-redo mr-1"></i> Try Again
                             </button>
                         </div>
                     </div>
@@ -3643,8 +3640,8 @@
             userLocation = roomId || 'global';
             statusBanner.style.display = 'flex';
             statusBanner.className = 'flex items-start gap-3 p-4 rounded-xl mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800';
-            const icon = statusBanner.querySelector('i');
-            if (icon) icon.className = 'fas fa-map-marker-alt text-green-600 mt-0.5 text-lg';
+            const icon = document.getElementById('locationStatusIcon') || statusBanner.querySelector('i');
+            if (icon) icon.className = 'fas fa-check-circle text-green-600 mt-0.5 text-lg';
             if (spinnerEl) spinnerEl.style.display = 'none';
             if (roomId) {
                 statusEl.innerHTML = `<span class="text-green-700 dark:text-green-300 font-semibold">✅ Location verified: You're in <strong>${countryName}</strong>.</span> Only the <strong>${countryName}</strong> room is accessible to you.`;
@@ -3708,18 +3705,22 @@
             // Reset UI
             statusBanner.style.display = 'flex';
             statusBanner.className = 'flex items-start gap-3 p-4 rounded-xl mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800';
-            statusEl.textContent = 'Requesting location access from your device...';
-            if (spinnerEl) spinnerEl.style.display = 'flex';
+            statusEl.textContent = 'Detecting your location automatically…';
+            const iconEl = document.getElementById('locationStatusIcon') || statusBanner.querySelector('i');
+            if (iconEl) iconEl.className = 'fas fa-map-marker-alt text-blue-500 mt-0.5 text-lg';
+            if (spinnerEl) { spinnerEl.style.display = 'flex'; spinnerEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Please allow location access when your browser prompts you.'; }
             deniedWarning.style.display = 'none';
             
             // Re-render rooms to show locked state
             renderChatRooms();
             
             if (!navigator.geolocation) {
-                statusEl.textContent = 'Geolocation not supported by this browser.';
+                statusEl.textContent = 'Geolocation is not supported by this browser.';
                 if (spinnerEl) spinnerEl.style.display = 'none';
+                const iconEl2 = document.getElementById('locationStatusIcon');
+                if (iconEl2) iconEl2.className = 'fas fa-exclamation-circle text-red-500 mt-0.5 text-lg';
+                statusBanner.className = 'flex items-start gap-3 p-4 rounded-xl mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800';
                 userLocation = null;
-                showManualLocationPicker(null, null);
                 renderChatRooms();
                 return;
             }
@@ -3771,14 +3772,21 @@
                     }
 
                     if (countryCode && countryName) {
-                        // Full success — auto-confirm
+                        // Full success
                         applyCountryRoom(countryCode, countryName);
                     } else if (countryCode) {
-                        // Partial — let user confirm
-                        showManualLocationPicker(countryCode, countryCode.toUpperCase());
+                        // Got code but no name — still auto-confirm
+                        const fallbackNames = {ng:'Nigeria',gh:'Ghana',ke:'Kenya',za:'South Africa',et:'Ethiopia',us:'USA',ca:'Canada',gb:'UK'};
+                        applyCountryRoom(countryCode, fallbackNames[countryCode] || countryCode.toUpperCase());
                     } else {
-                        // All geocoding failed — show manual picker
-                        showManualLocationPicker(null, null);
+                        // All geocoding failed — grant global room access
+                        if (spinnerEl) spinnerEl.style.display = 'none';
+                        statusBanner.className = 'flex items-start gap-3 p-4 rounded-xl mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800';
+                        const iconEl3 = document.getElementById('locationStatusIcon');
+                        if (iconEl3) iconEl3.className = 'fas fa-globe text-yellow-600 mt-0.5 text-lg';
+                        userLocation = 'global';
+                        statusEl.innerHTML = '📍 Location detected but country could not be determined. You have been placed in the Global room.';
+                        renderChatRooms();
                     }
                 },
                 (error) => {
@@ -3787,36 +3795,18 @@
                     if (spinnerEl) spinnerEl.style.display = 'none';
                     
                     if (error.code === 1) {
-                        // Permission denied — show denied warning + manual fallback
+                        // Permission denied — show denied warning with browser instructions
                         statusBanner.style.display = 'none';
                         deniedWarning.style.display = 'flex';
-                        // Also inject manual picker inside denied warning
-                        const deniedBody = deniedWarning.querySelector('div:last-child') || deniedWarning;
-                        if (!document.getElementById('manualFallbackInDenied')) {
-                            const fallbackDiv = document.createElement('div');
-                            fallbackDiv.id = 'manualFallbackInDenied';
-                            fallbackDiv.style.marginTop = '10px';
-                            const options = [
-                                ['ng','Nigeria'],['gh','Ghana'],['ke','Kenya'],['za','South Africa'],
-                                ['et','Ethiopia'],['us','USA'],['ca','Canada'],['gb','UK'],['other','Other / Global']
-                            ];
-                            fallbackDiv.innerHTML = `
-                                <p class="text-xs font-semibold text-red-600 dark:text-red-400 mb-2">Or select your country manually to continue:</p>
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <select id="manualCountrySelect" class="px-3 py-1.5 rounded-lg border border-red-300 bg-white dark:bg-gray-800 text-sm font-medium focus:outline-none">
-                                        <option value="">— Select country —</option>
-                                        ${options.map(([c,l])=>`<option value="${c}">${l}</option>`).join('')}
-                                    </select>
-                                    <button onclick="confirmManualLocation()" 
-                                        class="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors">
-                                        Confirm &amp; Enter
-                                    </button>
-                                </div>`;
-                            deniedBody.appendChild(fallbackDiv);
-                        }
                     } else {
-                        // Other errors — show manual picker in status banner
-                        showManualLocationPicker(null, null);
+                        // Timeout or unavailable — show retry in banner
+                        statusBanner.style.display = 'flex';
+                        statusBanner.className = 'flex items-start gap-3 p-4 rounded-xl mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800';
+                        const iconEl4 = document.getElementById('locationStatusIcon');
+                        if (iconEl4) iconEl4.className = 'fas fa-exclamation-triangle text-yellow-600 mt-0.5 text-lg';
+                        if (spinnerEl) spinnerEl.style.display = 'none';
+                        const msg = error.code === 3 ? 'Location request timed out.' : 'Location unavailable on this device.';
+                        statusEl.innerHTML = msg + ' <button onclick="detectLocation()" style="margin-left:8px;padding:4px 12px;background:#eab308;color:white;border:none;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;"><i class="fas fa-redo" style="margin-right:4px;"></i>Retry</button>';
                     }
                     renderChatRooms();
                 },
