@@ -1235,22 +1235,25 @@
                     <p class="text-gray-500 mb-4">Join location-based chat rooms. Your location is verified via Google Maps to determine which country room you can access.</p>
                     
                     <!-- Location Status Banner -->
-                    <div id="locationStatus" class="flex items-start gap-3 p-4 rounded-xl mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <div id="locationStatus" style="display:flex;" class="items-start gap-3 p-4 rounded-xl mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                         <i class="fas fa-map-marker-alt text-blue-500 mt-0.5 text-lg"></i>
                         <div class="flex-1">
-                            <span class="text-sm font-medium" id="detectedLocation">Verifying your location with Google Maps...</span>
-                            <div id="locationSpinner" class="mt-1 flex items-center gap-2 text-xs text-blue-400">
-                                <i class="fas fa-spinner fa-spin"></i> Requesting location access...
+                            <span class="text-sm font-medium" id="detectedLocation">Click "Verify My Location" to get started.</span>
+                            <div id="locationSpinner" style="display:none;" class="mt-1 flex items-center gap-2 text-xs text-blue-400">
+                                <i class="fas fa-spinner fa-spin"></i> Detecting location...
                             </div>
                         </div>
+                        <button onclick="detectLocation()" class="shrink-0 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-full transition-colors">
+                            <i class="fas fa-map-marker-alt mr-1"></i> Verify My Location
+                        </button>
                     </div>
 
                     <!-- Location Denied Warning -->
-                    <div id="locationDeniedWarning" class="hidden items-start gap-3 p-4 rounded-xl mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                    <div id="locationDeniedWarning" style="display:none;" class="items-start gap-3 p-4 rounded-xl mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
                         <i class="fas fa-lock text-red-500 mt-0.5 text-lg"></i>
                         <div class="flex-1">
-                            <p class="text-sm font-bold text-red-600 dark:text-red-400">Location Access Required</p>
-                            <p class="text-xs text-red-500 dark:text-red-400 mt-1">You must allow location access to enter any community room. AFRICONNECT uses Google Maps to verify your country and place you in the correct room.</p>
+                            <p class="text-sm font-bold text-red-600 dark:text-red-400">Location Access Denied</p>
+                            <p class="text-xs text-red-500 dark:text-red-400 mt-1">You denied browser location access. You can still select your country manually below, or click "Try Again" to re-request location permission.</p>
                             <button onclick="detectLocation()" class="mt-3 px-4 py-2 bg-red-500 text-white text-xs font-bold rounded-full hover:bg-red-600 transition-colors">
                                 <i class="fas fa-map-marker-alt mr-1"></i> Try Again
                             </button>
@@ -1505,10 +1508,7 @@
                             <div class="flex-1 mt-2 md:mt-16">
                                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                     <div>
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <h1 id="profileDisplayName" class="text-2xl font-bold">Kwame Asante</h1>
-                                            <span id="profileMembershipBadge" class="hidden items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"></span>
-                                        </div>
+                                        <h1 id="profileDisplayName" class="text-2xl font-bold">Kwame Asante</h1>
                                         <p id="profileUsername" class="text-gray-500">@kwame_a</p>
                                         <p id="profileUniqueCode" class="text-xs text-red-500 font-mono mt-1">ID: A7B9C2D4</p>
                                     </div>
@@ -2952,26 +2952,6 @@
             document.getElementById('profileUsername').textContent = currentUser.handle;
             document.getElementById('profileUniqueCode').textContent = 'ID: ' + currentUser.uniqueCode;
 
-            // Membership badge
-            const badgeEl = document.getElementById('profileMembershipBadge');
-            if (badgeEl) {
-                const tier = (currentUser.membership || 'free').toLowerCase();
-                const tierMap = {
-                    silver:  { icon:'🥈', label:'Silver Member',  bg:'linear-gradient(135deg,#c0c0c0,#e8e8e8)', color:'#374151',  border:'#a0a0a0' },
-                    gold:    { icon:'👑', label:'Gold Member',    bg:'linear-gradient(135deg,#D4AF37,#f5d769)', color:'#78350f',  border:'#B8860B' },
-                    diamond: { icon:'💎', label:'Diamond Member', bg:'linear-gradient(135deg,#a78bfa,#60a5fa)', color:'#1e1b4b', border:'#818cf8' },
-                };
-                if (tierMap[tier]) {
-                    const t = tierMap[tier];
-                    badgeEl.style.cssText = `background:${t.bg};color:${t.color};border:1.5px solid ${t.border};display:inline-flex;box-shadow:0 2px 8px rgba(0,0,0,0.12);`;
-                    badgeEl.innerHTML = `${t.icon} <span>${t.label}</span>`;
-                    badgeEl.classList.remove('hidden');
-                } else {
-                    badgeEl.classList.add('hidden');
-                    badgeEl.style.display = '';
-                }
-            }
-
             const followingEl = document.getElementById('profileFollowingCount');
             const followersEl = document.getElementById('profileFollowersCount');
             if (followingEl) followingEl.textContent = (currentUser.following || 0).toLocaleString();
@@ -3642,7 +3622,83 @@
             renderSwipeCards();
         }
 
-        // Location Detection — uses real reverse geocoding via Nominatim (OSM)
+        // Country code → room ID map (shared)
+        const COUNTRY_CODE_MAP = {
+            'ng': 'nigeria',
+            'gh': 'ghana',
+            'ke': 'kenya',
+            'za': 'southafrica',
+            'et': 'ethiopia',
+            'us': 'usa',
+            'ca': 'canada',
+            'gb': 'uk'
+        };
+
+        // Apply a confirmed country selection
+        function applyCountryRoom(countryCode, countryName) {
+            const statusBanner = document.getElementById('locationStatus');
+            const statusEl = document.getElementById('detectedLocation');
+            const spinnerEl = document.getElementById('locationSpinner');
+            const roomId = COUNTRY_CODE_MAP[countryCode] || null;
+            userLocation = roomId || 'global';
+            statusBanner.style.display = 'flex';
+            statusBanner.className = 'flex items-start gap-3 p-4 rounded-xl mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800';
+            const icon = statusBanner.querySelector('i');
+            if (icon) icon.className = 'fas fa-map-marker-alt text-green-600 mt-0.5 text-lg';
+            if (spinnerEl) spinnerEl.style.display = 'none';
+            if (roomId) {
+                statusEl.innerHTML = `<span class="text-green-700 dark:text-green-300 font-semibold">✅ Location verified: You're in <strong>${countryName}</strong>.</span> Only the <strong>${countryName}</strong> room is accessible to you.`;
+                highlightUserRoom(roomId);
+            } else {
+                statusEl.innerHTML = `<span class="text-green-700 dark:text-green-300">📍 Location verified: <strong>${countryName}</strong>.</span> Your country doesn't have a dedicated room yet — only the Global room is accessible.`;
+            }
+            renderChatRooms();
+        }
+
+        // Show manual country picker as fallback
+        function showManualLocationPicker(prefillCode, prefillName) {
+            const statusBanner = document.getElementById('locationStatus');
+            const statusEl = document.getElementById('detectedLocation');
+            const spinnerEl = document.getElementById('locationSpinner');
+            if (spinnerEl) spinnerEl.style.display = 'none';
+            statusBanner.style.display = 'flex';
+            statusBanner.className = 'flex items-start gap-3 p-4 rounded-xl mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800';
+            const icon = statusBanner.querySelector('i');
+            if (icon) icon.className = 'fas fa-map-marker-alt text-yellow-600 mt-0.5 text-lg';
+
+            const options = [
+                ['ng','Nigeria'],['gh','Ghana'],['ke','Kenya'],['za','South Africa'],
+                ['et','Ethiopia'],['us','USA'],['ca','Canada'],['gb','UK'],['other','Other / Global']
+            ];
+            const opts = options.map(([code, label]) =>
+                `<option value="${code}" ${code === prefillCode ? 'selected' : ''}>${label}</option>`
+            ).join('');
+
+            statusEl.innerHTML = `
+                <span class="font-semibold text-yellow-700 dark:text-yellow-300">
+                    ${prefillCode ? `📍 GPS detected near <strong>${prefillName}</strong> — confirm your country:` : '⚠️ Automatic detection failed. Please select your country manually:'}
+                </span>
+                <div class="flex items-center gap-2 mt-2 flex-wrap">
+                    <select id="manualCountrySelect" class="px-3 py-1.5 rounded-lg border border-yellow-300 dark:border-yellow-700 bg-white dark:bg-gray-800 text-sm font-medium focus:outline-none">
+                        <option value="">— Select country —</option>
+                        ${opts}
+                    </select>
+                    <button onclick="confirmManualLocation()" 
+                        class="px-4 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-bold rounded-lg transition-colors">
+                        Confirm Location
+                    </button>
+                </div>`;
+        }
+
+        function confirmManualLocation() {
+            const sel = document.getElementById('manualCountrySelect');
+            if (!sel || !sel.value) { alert('Please select your country first.'); return; }
+            const labels = {ng:'Nigeria',gh:'Ghana',ke:'Kenya',za:'South Africa',et:'Ethiopia',us:'USA',ca:'Canada',gb:'UK',other:'Global'};
+            const code = sel.value === 'other' ? null : sel.value;
+            applyCountryRoom(code, labels[sel.value] || sel.value);
+        }
+
+        // Location Detection — GPS + Nominatim reverse geocoding, with manual fallback
         function detectLocation() {
             const statusEl = document.getElementById('detectedLocation');
             const spinnerEl = document.getElementById('locationSpinner');
@@ -3650,19 +3706,20 @@
             const deniedWarning = document.getElementById('locationDeniedWarning');
             
             // Reset UI
-            statusBanner.classList.remove('hidden');
+            statusBanner.style.display = 'flex';
             statusBanner.className = 'flex items-start gap-3 p-4 rounded-xl mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800';
             statusEl.textContent = 'Requesting location access from your device...';
-            if (spinnerEl) spinnerEl.classList.remove('hidden');
-            deniedWarning.classList.add('hidden');
+            if (spinnerEl) spinnerEl.style.display = 'flex';
+            deniedWarning.style.display = 'none';
             
             // Re-render rooms to show locked state
             renderChatRooms();
             
             if (!navigator.geolocation) {
                 statusEl.textContent = 'Geolocation not supported by this browser.';
-                if (spinnerEl) spinnerEl.classList.add('hidden');
+                if (spinnerEl) spinnerEl.style.display = 'none';
                 userLocation = null;
+                showManualLocationPicker(null, null);
                 renderChatRooms();
                 return;
             }
@@ -3670,79 +3727,100 @@
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
                     const { latitude, longitude } = position.coords;
-                    statusEl.textContent = `GPS found (${latitude.toFixed(3)}, ${longitude.toFixed(3)}). Contacting Google Maps to verify country...`;
+                    statusEl.textContent = `GPS found. Verifying country...`;
                     
+                    // Try multiple geocoding services in sequence
+                    let countryCode = null;
+                    let countryName = null;
+
+                    // --- Attempt 1: Nominatim (OpenStreetMap) ---
                     try {
-                        // Use Nominatim (OpenStreetMap) for reverse geocoding — free, no API key needed
-                        const response = await fetch(
-                            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=3`,
-                            { headers: { 'Accept-Language': 'en' } }
+                        const res = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=3&addressdetails=1`,
+                            {
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Accept-Language': 'en'
+                                },
+                                signal: AbortSignal.timeout(8000)
+                            }
                         );
-                        
-                        if (!response.ok) throw new Error('Geocoding request failed');
-                        
-                        const data = await response.json();
-                        const countryCode = (data.address?.country_code || '').toLowerCase();
-                        const countryName = data.address?.country || 'Unknown country';
-                        
-                        // Map ISO country codes to our room IDs
-                        const countryCodeMap = {
-                            'ng': 'nigeria',
-                            'gh': 'ghana',
-                            'ke': 'kenya',
-                            'za': 'southafrica',
-                            'et': 'ethiopia',
-                            'us': 'usa',
-                            'ca': 'canada',
-                            'gb': 'uk'
-                        };
-                        
-                        const roomId = countryCodeMap[countryCode] || null;
-                        userLocation = roomId;
-                        
-                        // Update status banner to green success
-                        statusBanner.className = 'flex items-start gap-3 p-4 rounded-xl mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800';
-                        statusBanner.querySelector('i').className = 'fas fa-map-marker-alt text-green-600 mt-0.5 text-lg';
-                        if (spinnerEl) spinnerEl.classList.add('hidden');
-                        
-                        if (roomId) {
-                            statusEl.innerHTML = `<span class="text-green-700 dark:text-green-300 font-semibold">✅ Google Maps verified: You're in <strong>${countryName}</strong>.</span> Only the <strong>${countryName}</strong> room is accessible to you.`;
-                            highlightUserRoom(roomId);
-                        } else {
-                            statusEl.innerHTML = `<span class="text-green-700 dark:text-green-300">📍 Location verified: <strong>${countryName}</strong>.</span> Your country doesn't have a dedicated room yet — only the Global room is accessible.`;
-                            userLocation = 'global';
+                        if (res.ok) {
+                            const data = await res.json();
+                            countryCode = (data.address?.country_code || '').toLowerCase();
+                            countryName = data.address?.country || null;
                         }
-                        
-                        renderChatRooms();
-                        
-                    } catch (err) {
-                        // Geocoding failed — still have GPS coords, use a fallback message
-                        console.warn('Reverse geocoding failed:', err);
-                        if (spinnerEl) spinnerEl.classList.add('hidden');
-                        statusBanner.className = 'flex items-start gap-3 p-4 rounded-xl mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800';
-                        statusEl.innerHTML = '⚠️ Location detected but country verification failed. Please try again.';
-                        userLocation = null;
-                        renderChatRooms();
+                    } catch (e) {
+                        console.warn('Nominatim failed:', e.message);
+                    }
+
+                    // --- Attempt 2: ip-api as fallback (no CORS issues) ---
+                    if (!countryCode) {
+                        try {
+                            const res = await fetch('https://ip-api.com/json/?fields=countryCode,country', {
+                                signal: AbortSignal.timeout(6000)
+                            });
+                            if (res.ok) {
+                                const data = await res.json();
+                                countryCode = (data.countryCode || '').toLowerCase();
+                                countryName = data.country || null;
+                            }
+                        } catch (e) {
+                            console.warn('ip-api fallback failed:', e.message);
+                        }
+                    }
+
+                    if (countryCode && countryName) {
+                        // Full success — auto-confirm
+                        applyCountryRoom(countryCode, countryName);
+                    } else if (countryCode) {
+                        // Partial — let user confirm
+                        showManualLocationPicker(countryCode, countryCode.toUpperCase());
+                    } else {
+                        // All geocoding failed — show manual picker
+                        showManualLocationPicker(null, null);
                     }
                 },
                 (error) => {
-                    // User denied or error
+                    // User denied or device error
                     userLocation = null;
-                    if (spinnerEl) spinnerEl.classList.add('hidden');
+                    if (spinnerEl) spinnerEl.style.display = 'none';
                     
-                    const messages = {
-                        1: 'Location access was denied.',
-                        2: 'Location unavailable. Check your device settings.',
-                        3: 'Location request timed out.'
-                    };
-                    
-                    statusBanner.classList.add('hidden');
-                    deniedWarning.classList.remove('hidden');
-                    deniedWarning.style.display = 'flex';
-                    statusEl.textContent = messages[error.code] || 'Location error.';
+                    if (error.code === 1) {
+                        // Permission denied — show denied warning + manual fallback
+                        statusBanner.style.display = 'none';
+                        deniedWarning.style.display = 'flex';
+                        // Also inject manual picker inside denied warning
+                        const deniedBody = deniedWarning.querySelector('div:last-child') || deniedWarning;
+                        if (!document.getElementById('manualFallbackInDenied')) {
+                            const fallbackDiv = document.createElement('div');
+                            fallbackDiv.id = 'manualFallbackInDenied';
+                            fallbackDiv.style.marginTop = '10px';
+                            const options = [
+                                ['ng','Nigeria'],['gh','Ghana'],['ke','Kenya'],['za','South Africa'],
+                                ['et','Ethiopia'],['us','USA'],['ca','Canada'],['gb','UK'],['other','Other / Global']
+                            ];
+                            fallbackDiv.innerHTML = `
+                                <p class="text-xs font-semibold text-red-600 dark:text-red-400 mb-2">Or select your country manually to continue:</p>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <select id="manualCountrySelect" class="px-3 py-1.5 rounded-lg border border-red-300 bg-white dark:bg-gray-800 text-sm font-medium focus:outline-none">
+                                        <option value="">— Select country —</option>
+                                        ${options.map(([c,l])=>`<option value="${c}">${l}</option>`).join('')}
+                                    </select>
+                                    <button onclick="confirmManualLocation()" 
+                                        class="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors">
+                                        Confirm &amp; Enter
+                                    </button>
+                                </div>`;
+                            deniedBody.appendChild(fallbackDiv);
+                        }
+                    } else {
+                        // Other errors — show manual picker in status banner
+                        showManualLocationPicker(null, null);
+                    }
                     renderChatRooms();
                 },
-                { timeout: 10000, enableHighAccuracy: false }
+                { timeout: 12000, enableHighAccuracy: false, maximumAge: 60000 }
             );
         }
 
@@ -5351,7 +5429,7 @@
         const _origHandleLogin = handleLogin;
 
         // ══════════════════════════════════════════════════════
-        //  PWA INSTALL — works on ALL browsers & platforms
+        //  PWA INSTALL
         // ══════════════════════════════════════════════════════
         let deferredInstallPrompt = null;
 
@@ -5361,6 +5439,7 @@
                 if (btn) { btn.classList.remove('hidden'); btn.style.display = 'flex'; }
             });
         }
+
         function _hideAllInstallBtns() {
             ['installBtn','installBtnDesktop','installBtnMobile'].forEach(id => {
                 const btn = document.getElementById(id);
@@ -5368,7 +5447,6 @@
             });
         }
 
-        // Chrome/Edge/Samsung desktop+Android — native prompt
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredInstallPrompt = e;
@@ -5378,92 +5456,10 @@
         window.addEventListener('appinstalled', () => {
             _hideAllInstallBtns();
             deferredInstallPrompt = null;
-            showToast('🎉 Africonnect installed successfully!');
+            showToast('✅ Africonnect installed successfully!');
         });
 
-        // Detect browser/OS for tailored instructions
-        function _detectBrowserOS() {
-            const ua = navigator.userAgent;
-            const isIOS      = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-            const isAndroid  = /Android/.test(ua);
-            const isSafari   = /^((?!chrome|android).)*safari/i.test(ua);
-            const isChrome   = /CriOS|Chrome/.test(ua) && !/Edg|OPR|Brave/.test(ua);
-            const isFirefox  = /Firefox|FxiOS/.test(ua);
-            const isEdge     = /Edg\//.test(ua);
-            const isBrave    = navigator.brave !== undefined;
-            const isOpera    = /OPR|Opera/.test(ua);
-            const isSamsung  = /SamsungBrowser/.test(ua);
-            const isDesktop  = !isIOS && !isAndroid;
-            return { isIOS, isAndroid, isSafari, isChrome, isFirefox, isEdge, isBrave, isOpera, isSamsung, isDesktop };
-        }
-
-        function _getInstallSteps(d) {
-            if (d.isIOS && d.isSafari) return {
-                icon:'📱', title:'Safari on iPhone / iPad',
-                bg:'#f0f9ff', borderColor:'#bae6fd',
-                steps:['Tap the <strong>Share</strong> button <span style="font-size:18px">📤</span> at the bottom bar','Scroll down and tap <strong>"Add to Home Screen"</strong> 📲','Tap <strong>"Add"</strong> in the top right — done!']
-            };
-            if (d.isIOS && d.isChrome) return {
-                icon:'📱', title:'Chrome on iPhone / iPad',
-                bg:'#fef9c3', borderColor:'#fde047',
-                steps:['Chrome on iOS does not support direct install','Open this page in <strong>Safari</strong> instead','Then use Safari&#39;s Share → Add to Home Screen']
-            };
-            if (d.isIOS && d.isFirefox) return {
-                icon:'📱', title:'Firefox on iPhone / iPad',
-                bg:'#fef9c3', borderColor:'#fde047',
-                steps:['Firefox on iOS does not support direct install','Open this page in <strong>Safari</strong> instead','Then use Safari&#39;s Share → Add to Home Screen']
-            };
-            if (d.isAndroid && d.isSamsung) return {
-                icon:'📱', title:'Samsung Internet on Android',
-                bg:'#f0fdf4', borderColor:'#86efac',
-                steps:['Tap the <strong>☰ menu</strong> (bottom right)','Tap <strong>"Add page to"</strong>','Tap <strong>"Home screen"</strong> — done!']
-            };
-            if (d.isAndroid && d.isFirefox) return {
-                icon:'📱', title:'Firefox on Android',
-                bg:'#f0fdf4', borderColor:'#86efac',
-                steps:['Tap the <strong>⋮ three-dot menu</strong> (top right)','Tap <strong>"Install"</strong> or <strong>"Add to Home Screen"</strong>','Tap <strong>"Add"</strong> to confirm']
-            };
-            if (d.isAndroid && d.isOpera) return {
-                icon:'📱', title:'Opera on Android',
-                bg:'#f0fdf4', borderColor:'#86efac',
-                steps:['Tap the <strong>☰ menu</strong> at the bottom','Tap <strong>"Home screen"</strong>','Tap <strong>"Add"</strong> to confirm']
-            };
-            if (d.isAndroid) return {   // Chrome/Brave/default Android
-                icon:'📱', title:'Chrome / Brave on Android',
-                bg:'#f0fdf4', borderColor:'#86efac',
-                steps:['Tap the <strong>⋮ three-dot menu</strong> at the top right','Tap <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>','Tap <strong>"Install"</strong> to confirm']
-            };
-            // Desktop browsers
-            if (d.isEdge) return {
-                icon:'💻', title:'Microsoft Edge (Desktop)',
-                bg:'#f0f9ff', borderColor:'#7dd3fc',
-                steps:['Look for the <strong>app install icon</strong> <span style="font-size:15px">⊕</span> in the address bar','Or click the <strong>⋯ menu → Apps → Install this site as an app</strong>','Click <strong>"Install"</strong> in the popup']
-            };
-            if (d.isFirefox) return {
-                icon:'💻', title:'Firefox (Desktop)',
-                bg:'#fef9c3', borderColor:'#fde047',
-                steps:['Firefox does not support PWA install on desktop','Try <strong>Chrome</strong> or <strong>Edge</strong> for desktop install','Or bookmark the page for quick access: <strong>Ctrl+D</strong>']
-            };
-            if (d.isOpera) return {
-                icon:'💻', title:'Opera (Desktop)',
-                bg:'#f0f9ff', borderColor:'#7dd3fc',
-                steps:['Click the <strong>install icon</strong> in the address bar','Or go to <strong>Opera menu → Install Africonnect</strong>','Click <strong>"Install"</strong> to confirm']
-            };
-            if (d.isBrave) return {
-                icon:'💻', title:'Brave Browser (Desktop)',
-                bg:'#f0fdf4', borderColor:'#86efac',
-                steps:['Click the <strong>⊕ install icon</strong> in the address bar','Or go to <strong>Brave menu → Install Africonnect</strong>','Click <strong>"Install"</strong> to confirm']
-            };
-            // Default desktop Chrome
-            return {
-                icon:'💻', title:'Chrome (Desktop)',
-                bg:'#f0f9ff', borderColor:'#7dd3fc',
-                steps:['Click the <strong>install icon ⊕</strong> in the address bar on the right','Or click <strong>⋮ menu → Install Africonnect</strong>','Click <strong>"Install"</strong> in the dialog']
-            };
-        }
-
         function installApp() {
-            // If native prompt available (Chrome/Edge/Samsung Android) — use it directly
             if (deferredInstallPrompt) {
                 deferredInstallPrompt.prompt();
                 deferredInstallPrompt.userChoice.then((result) => {
@@ -5473,69 +5469,53 @@
                     }
                     deferredInstallPrompt = null;
                 });
-                return;
+            } else {
+                // Show a styled install instructions modal
+                const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+                const isAndroid = /Android/.test(navigator.userAgent);
+                const modalId = 'installModal_' + Date.now();
+                const m = document.createElement('div');
+                m.id = modalId;
+                m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0;';
+                m.innerHTML = `
+                    <div style="background:white;border-radius:24px 24px 0 0;padding:28px;width:100%;max-width:480px;box-shadow:0 -20px 60px rgba(0,0,0,0.3);">
+                        <div style="text-align:center;margin-bottom:20px;">
+                            <div style="width:60px;height:60px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                                <i class="fas fa-download" style="color:white;font-size:24px;"></i>
+                            </div>
+                            <h3 style="font-size:20px;font-weight:800;margin:0 0 6px;">Install Africonnect</h3>
+                            <p style="color:#6b7280;font-size:13px;margin:0;">Add to your home screen for the best experience</p>
+                        </div>
+                        ${isIOS ? `
+                        <div style="background:#f0f9ff;border-radius:14px;padding:16px;margin-bottom:16px;">
+                            <p style="font-weight:700;margin:0 0 10px;font-size:14px;">📱 iPhone / iPad (Safari):</p>
+                            <p style="margin:0 0 6px;font-size:13px;color:#374151;">1. Tap the <strong>Share button</strong> <span style="font-size:16px;">📤</span> at the bottom</p>
+                            <p style="margin:0 0 6px;font-size:13px;color:#374151;">2. Scroll and tap <strong>"Add to Home Screen"</strong></p>
+                            <p style="margin:0;font-size:13px;color:#374151;">3. Tap <strong>"Add"</strong> to confirm</p>
+                        </div>` : isAndroid ? `
+                        <div style="background:#f0fdf4;border-radius:14px;padding:16px;margin-bottom:16px;">
+                            <p style="font-weight:700;margin:0 0 10px;font-size:14px;">📱 Android (Chrome):</p>
+                            <p style="margin:0 0 6px;font-size:13px;color:#374151;">1. Tap the <strong>3 dots menu</strong> ⋮ at the top right</p>
+                            <p style="margin:0 0 6px;font-size:13px;color:#374151;">2. Tap <strong>"Add to Home screen"</strong></p>
+                            <p style="margin:0;font-size:13px;color:#374151;">3. Tap <strong>"Add"</strong> to confirm</p>
+                        </div>` : `
+                        <div style="background:#f5f3ff;border-radius:14px;padding:16px;margin-bottom:16px;">
+                            <p style="font-weight:700;margin:0 0 10px;font-size:14px;">💻 Desktop (Chrome / Edge):</p>
+                            <p style="margin:0 0 6px;font-size:13px;color:#374151;">1. Look for the <strong>install icon ⊕</strong> in the address bar</p>
+                            <p style="margin:0;font-size:13px;color:#374151;">2. Or go to browser menu → <strong>"Install Africonnect"</strong></p>
+                        </div>`}
+                        <button onclick="document.getElementById('${modalId}').remove()"
+                            style="width:100%;padding:14px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;">
+                            Got it!
+                        </button>
+                    </div>`;
+                m.addEventListener('click', e => { if(e.target===m) m.remove(); });
+                document.body.appendChild(m);
             }
-
-            // Otherwise show tailored step-by-step instructions
-            const d = _detectBrowserOS();
-            const info = _getInstallSteps(d);
-            const isDark = document.documentElement.classList.contains('dark');
-            const panelBg = isDark ? '#1e293b' : 'white';
-            const textColor = isDark ? '#f1f5f9' : '#111827';
-            const subColor = isDark ? '#94a3b8' : '#6b7280';
-            const stepColor = isDark ? '#cbd5e1' : '#374151';
-            const modalId = 'installModal_' + Date.now();
-            const m = document.createElement('div');
-            m.id = modalId;
-            m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(4px);';
-
-            const stepsHtml = info.steps.map((s,i) => `
-                <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;">
-                    <div style="min-width:26px;height:26px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;">${i+1}</div>
-                    <p style="margin:3px 0 0;font-size:13.5px;color:${stepColor};line-height:1.5;">${s}</p>
-                </div>`).join('');
-
-            m.innerHTML = `
-                <div style="background:${panelBg};border-radius:28px 28px 0 0;padding:28px 24px 32px;width:100%;max-width:520px;box-shadow:0 -20px 60px rgba(0,0,0,0.4);">
-                    <!-- Handle bar -->
-                    <div style="width:40px;height:4px;background:#cbd5e1;border-radius:2px;margin:0 auto 20px;"></div>
-                    <!-- Header -->
-                    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
-                        <div style="width:56px;height:56px;background:linear-gradient(135deg,#E53E3E,#b91c1c);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(229,62,62,0.4);">
-                            <i class="fas fa-mobile-alt" style="color:white;font-size:22px;"></i>
-                        </div>
-                        <div>
-                            <h3 style="font-size:18px;font-weight:800;margin:0 0 3px;color:${textColor};">Install Africonnect</h3>
-                            <p style="color:${subColor};font-size:12px;margin:0;">Add to your home screen or desktop</p>
-                        </div>
-                    </div>
-                    <!-- Browser-specific steps -->
-                    <div style="background:${info.bg};border:1.5px solid ${info.borderColor};border-radius:16px;padding:16px 16px 8px;margin-bottom:18px;">
-                        <p style="font-weight:700;font-size:13px;margin:0 0 12px;color:${textColor};">${info.icon} ${info.title}</p>
-                        ${stepsHtml}
-                    </div>
-                    <!-- Buttons -->
-                    <button onclick="document.getElementById('${modalId}').remove()"
-                        style="width:100%;padding:14px;background:linear-gradient(135deg,#E53E3E,#b91c1c);color:white;border:none;border-radius:14px;font-weight:800;font-size:15px;cursor:pointer;letter-spacing:0.02em;box-shadow:0 4px 14px rgba(229,62,62,0.3);">
-                        Got it! ✓
-                    </button>
-                </div>`;
-            m.addEventListener('click', e => { if(e.target===m) m.remove(); });
-            document.body.appendChild(m);
-
-            // Animate in
-            const panel = m.firstElementChild;
-            panel.style.transform = 'translateY(100%)';
-            panel.style.transition = 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
-            requestAnimationFrame(() => requestAnimationFrame(() => { panel.style.transform = 'translateY(0)'; }));
         }
 
-        // Always show install buttons — every browser can install (or at least get instructions)
-        // Hide only if already running as installed PWA
-        if (!window.matchMedia('(display-mode: standalone)').matches &&
-            !window.navigator.standalone) {
-            _showAllInstallBtns();
-        } else {
+        // Check if already installed as PWA
+        if (window.matchMedia('(display-mode: standalone)').matches) {
             _hideAllInstallBtns();
         }
     </script>
