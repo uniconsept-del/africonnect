@@ -770,6 +770,7 @@
                                 style="width:100%;padding:12px 14px 12px 40px;border-radius:12px;border:1.5px solid #e5e7eb;font-size:14px;outline:none;transition:border-color 0.2s;box-sizing:border-box;"
                                 class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 placeholder="Enter your password"
+                                onkeydown="if(event.key==='Enter') handleLogin();"
                                 onfocus="this.style.borderColor='#D4AF37'" onblur="this.style.borderColor=''">
                         </div>
                     </div>
@@ -837,6 +838,7 @@
                                 style="width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid #e5e7eb;font-size:13px;outline:none;box-sizing:border-box;"
                                 class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 placeholder="Create password"
+                                onkeydown="if(event.key==='Enter') handleSignup();"
                                 onfocus="this.style.borderColor='#D4AF37'" onblur="this.style.borderColor=''">
                         </div>
                     </div>
@@ -915,6 +917,10 @@
                     <i class="fas fa-compass text-xl w-6 text-red-500"></i>
                     <span class="font-medium">Discover</span>
                     <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">New</span>
+                </button>
+                <button onclick="navigateTo('matches'); toggleMobileMenu()" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-heart text-xl w-6 text-pink-500"></i>
+                    <span class="font-medium">Matches</span>
                 </button>
                 <button onclick="navigateTo('explore'); toggleMobileMenu()" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
                     <i class="fas fa-hashtag text-xl w-6"></i>
@@ -1015,6 +1021,11 @@
                         <span class="font-medium">Discover</span>
                         <span class="ml-auto bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs px-2 py-1 rounded-full">New</span>
                     </button>
+                    <button onclick="navigateTo('matches')" id="nav-matches" class="nav-item relative w-full flex items-center gap-4 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-left">
+                        <i class="fas fa-heart text-xl w-6 text-pink-500"></i>
+                        <span class="font-medium">Matches</span>
+                        <span id="matchesBadge" class="ml-auto bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 text-xs px-2 py-1 rounded-full hidden">0</span>
+                    </button>
                     <button onclick="navigateTo('explore')" id="nav-explore" class="nav-item relative w-full flex items-center gap-4 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-left">
                         <i class="fas fa-hashtag text-xl w-6"></i>
                         <span class="font-medium">Explore</span>
@@ -1042,8 +1053,8 @@
                         <span class="font-medium">Messages</span>
                     </button>
                     <button onclick="navigateTo('bookmarks')" id="nav-bookmarks" class="nav-item relative w-full flex items-center gap-4 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-left">
-                        <i class="fas fa-bookmark text-xl w-6"></i>
-                        <span class="font-medium">Bookmarks</span>
+                        <i class="fas fa-user-friends text-xl w-6 text-blue-500"></i>
+                        <span class="font-medium">Friends</span>
                     </button>
                     <button onclick="navigateTo('profile')" id="nav-profile" class="nav-item relative w-full flex items-center gap-4 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-left">
                         <i class="fas fa-user text-xl w-6"></i>
@@ -1129,40 +1140,16 @@
             <div id="page-home" class="page-content max-w-2xl mx-auto">
                 <!-- Stories -->
                 <div class="bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-4 sticky top-0 md:top-14 z-20 overflow-x-auto hide-scrollbar">
-                    <div class="flex gap-4 min-w-max">
-                        <div class="flex flex-col items-center gap-1 cursor-pointer">
-                            <div class="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-dashed border-gray-400 relative">
-                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" class="w-full h-full rounded-full object-cover opacity-50">
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <i class="fas fa-plus text-2xl text-gray-600 dark:text-gray-300"></i>
-                                </div>
+                    <input type="file" id="storyFileInput" accept="image/*,video/*" class="hidden" onchange="uploadStory(event)">
+                    <div class="flex gap-4 min-w-max" id="storiesRow">
+                        <!-- Add Story button always first -->
+                        <div class="flex flex-col items-center gap-1 cursor-pointer" onclick="triggerStoryUpload()">
+                            <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center border-2 border-dashed border-red-400 relative overflow-hidden" id="addStoryAvatar">
+                                <i class="fas fa-plus text-2xl text-red-500"></i>
                             </div>
-                            <span class="text-xs font-medium">Add Story</span>
+                            <span class="text-xs font-medium">Your Story</span>
                         </div>
-                        <div class="flex flex-col items-center gap-1 cursor-pointer">
-                            <div class="story-ring">
-                                <img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=100&h=100&fit=crop" class="w-14 h-14 rounded-full border-2 border-white dark:border-gray-800 object-cover">
-                            </div>
-                            <span class="text-xs font-medium">Amina</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-1 cursor-pointer">
-                            <div class="story-ring">
-                                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop" class="w-14 h-14 rounded-full border-2 border-white dark:border-gray-800 object-cover">
-                            </div>
-                            <span class="text-xs font-medium">Olu</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-1 cursor-pointer">
-                            <div class="story-ring">
-                                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" class="w-14 h-14 rounded-full border-2 border-white dark:border-gray-800 object-cover">
-                            </div>
-                            <span class="text-xs font-medium">Zara</span>
-                        </div>
-                        <div class="flex flex-col items-center gap-1 cursor-pointer">
-                            <div class="story-ring">
-                                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop" class="w-14 h-14 rounded-full border-2 border-white dark:border-gray-800 object-cover">
-                            </div>
-                            <span class="text-xs font-medium">Tunde</span>
-                        </div>
+                        <!-- Dynamic real-user stories injected here -->
                     </div>
                 </div>
 
@@ -1228,32 +1215,27 @@
                 </p>
             </div>
 
+            <!-- Matches Page -->
+            <div id="page-matches" class="page-content hidden max-w-2xl mx-auto p-4">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold mb-1">💞 Matches</h1>
+                    <p class="text-gray-500 text-sm">People you and they both liked each other on Discover.</p>
+                </div>
+                <div id="matchesList" class="flex flex-col gap-4">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+
             <!-- Community Page -->
             <div id="page-community" class="page-content hidden max-w-6xl mx-auto p-4">
                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 mb-6">
                     <h1 class="text-2xl font-bold mb-2">Community Rooms</h1>
-                    <p class="text-gray-500 mb-4">Join location-based chat rooms. Your location is verified via Google Maps to determine which country room you can access.</p>
-                    
-                    <!-- Location Status Banner -->
-                    <div id="locationStatus" style="display:flex;" class="items-start gap-3 p-4 rounded-xl mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                        <i id="locationStatusIcon" class="fas fa-map-marker-alt text-blue-500 mt-0.5 text-lg"></i>
-                        <div class="flex-1">
-                            <span class="text-sm font-medium" id="detectedLocation">Detecting your location automatically…</span>
-                            <div id="locationSpinner" style="display:flex;" class="mt-1 items-center gap-2 text-xs text-blue-400">
-                                <i class="fas fa-spinner fa-spin"></i> Please allow location access when your browser prompts you.
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Location Denied Warning -->
-                    <div id="locationDeniedWarning" style="display:none;" class="items-start gap-3 p-4 rounded-xl mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                        <i class="fas fa-lock text-red-500 mt-0.5 text-lg"></i>
-                        <div class="flex-1">
-                            <p class="text-sm font-bold text-red-600 dark:text-red-400">Location Access Denied</p>
-                            <p class="text-xs text-red-500 dark:text-red-400 mt-1">To join a community room, please allow location access. Click the lock icon in your browser address bar, enable Location, then tap Try Again.</p>
-                            <button onclick="detectLocation()" class="mt-3 px-4 py-2 bg-red-500 text-white text-xs font-bold rounded-full hover:bg-red-600 transition-colors">
-                                <i class="fas fa-redo mr-1"></i> Try Again
-                            </button>
+                    <p class="text-gray-500 mb-4">Open rooms for everyone — pick your country and start chatting!</p>
+                    <!-- Chat limits banner -->
+                    <div id="chatLimitBanner" class="flex items-center gap-3 p-4 rounded-xl mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                        <i class="fas fa-comments text-green-500 text-lg flex-shrink-0"></i>
+                        <div class="flex-1 text-sm text-green-700 dark:text-green-300" id="chatLimitInfo">
+                            Free: 5 messages per 2 hours
                         </div>
                     </div>
 
@@ -1497,6 +1479,10 @@
                         <div class="flex flex-col md:flex-row gap-4 -mt-16 mb-4">
                             <div class="relative">
                                 <img id="profileAvatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop" class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-800 object-cover shadow-lg">
+                                <!-- Blue verified badge — admin-granted only -->
+                                <span id="profileVerifiedBadge" style="display:none;position:absolute;top:2px;right:40px;background:#1d9bf0;color:white;border-radius:50%;width:26px;height:26px;align-items:center;justify-content:center;font-size:13px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.2);" title="Verified account">
+                                    <i class="fas fa-check"></i>
+                                </span>
                                 <label for="profileAvatarDirect" class="absolute bottom-2 right-2 cursor-pointer" style="background:linear-gradient(135deg,#D4AF37,#B8860B);color:#1a1a1a;padding:8px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);" title="Change profile photo">
                                     <i class="fas fa-camera text-sm"></i>
                                 </label>
@@ -1812,11 +1798,16 @@
             </div>
 
             <div id="page-bookmarks" class="page-content hidden max-w-2xl mx-auto">
-                <div class="bg-white dark:bg-gray-800 px-4 py-3 border-b dark:border-gray-700 flex items-center justify-between sticky top-0 z-10">
-                    <h2 class="text-xl font-bold">Bookmarks</h2>
-                    <button onclick="clearAllBookmarks()" class="text-xs text-red-500 hover:underline font-medium">Clear all</button>
+                <div class="bg-white dark:bg-gray-800 px-4 py-3 border-b dark:border-gray-700 sticky top-0 z-10">
+                    <h2 class="text-xl font-bold">Friends</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">People you both follow each other</p>
                 </div>
-                <div id="bookmarksContainer"></div>
+                <div class="bg-white dark:bg-gray-800 border-b dark:border-gray-700 flex">
+                    <button onclick="switchFriendsTab('mutual')" id="friendsTab-mutual" class="flex-1 py-3 text-sm font-bold border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 transition-colors">Mutual</button>
+                    <button onclick="switchFriendsTab('liked')" id="friendsTab-liked" class="flex-1 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors">I Follow</button>
+                    <button onclick="switchFriendsTab('followers')" id="friendsTab-followers" class="flex-1 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors">Follows Me</button>
+                </div>
+                <div id="bookmarksContainer" class="p-4 flex flex-col gap-3"></div>
             </div>
         </main>
 
@@ -1901,26 +1892,25 @@
     <div id="createAdvertModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 slide-in max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold text-xl">Create Advert</h3>
+                <h3 class="font-bold text-xl">📦 List an Item for Sale</h3>
                 <button onclick="closeCreateAdvertModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            
-            <form onsubmit="submitAdvert(event)" class="space-y-4">
+            <input type="file" id="advertImageInput" accept="image/*" class="hidden" onchange="previewAdvertImage(event)">
+            <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium mb-2">Product Name</label>
-                    <input type="text" required class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white" placeholder="Enter product name">
+                    <label class="block text-sm font-medium mb-2">Product Name *</label>
+                    <input type="text" id="advertName" class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white" placeholder="e.g. Handwoven Kente Scarf">
                 </div>
-                
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium mb-2">Price</label>
-                        <input type="number" required class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white" placeholder="0.00">
+                        <label class="block text-sm font-medium mb-2">Price *</label>
+                        <input type="number" id="advertPrice" min="0" step="0.01" class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white" placeholder="0.00">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-2">Currency</label>
-                        <select class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white">
+                        <select id="advertCurrency" class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white">
                             <option value="USD">USD ($)</option>
                             <option value="NGN">NGN (₦)</option>
                             <option value="GHS">GHS (₵)</option>
@@ -1930,10 +1920,9 @@
                         </select>
                     </div>
                 </div>
-                
                 <div>
                     <label class="block text-sm font-medium mb-2">Location</label>
-                    <select class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white">
+                    <select id="advertLocation" class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white">
                         <option value="nigeria">Nigeria</option>
                         <option value="ghana">Ghana</option>
                         <option value="kenya">Kenya</option>
@@ -1941,35 +1930,25 @@
                         <option value="ethiopia">Ethiopia</option>
                         <option value="usa">USA</option>
                         <option value="canada">Canada</option>
+                        <option value="uk">UK</option>
                     </select>
                 </div>
-                
-                <div>
-                    <label class="block text-sm font-medium mb-2">Category</label>
-                    <select class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white">
-                        <option>Fashion</option>
-                        <option>Art</option>
-                        <option>Tech</option>
-                        <option>Home</option>
-                        <option>Beauty</option>
-                        <option>Other</option>
-                    </select>
-                </div>
-                
                 <div>
                     <label class="block text-sm font-medium mb-2">Description</label>
-                    <textarea rows="3" class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white" placeholder="Describe your product..."></textarea>
+                    <textarea id="advertDesc" rows="3" class="w-full px-4 py-2 rounded-lg border dark:border-gray-600 dark:bg-gray-700 focus:outline-none focus:border-red-500 dark:text-white" placeholder="Describe your item, condition, delivery options..."></textarea>
                 </div>
-                
-                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-red-500 transition-colors cursor-pointer">
-                    <i class="fas fa-camera text-3xl text-gray-400 mb-2"></i>
-                    <p class="text-sm text-gray-500">Click to upload photos</p>
+                <div id="advertImagePreviewWrap" class="hidden mb-2 relative">
+                    <img id="advertImagePreview" src="" class="w-full max-h-48 rounded-xl object-cover border dark:border-gray-600">
+                    <button onclick="clearAdvertImage()" class="absolute top-2 right-2 bg-black/60 text-white w-7 h-7 rounded-full text-xs flex items-center justify-center">✕</button>
                 </div>
-                
-                <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-full transition-colors">
-                    Create Advert
+                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-red-500 transition-colors cursor-pointer" onclick="document.getElementById('advertImageInput').click()">
+                    <i class="fas fa-camera text-3xl text-gray-400 mb-2 block"></i>
+                    <p class="text-sm text-gray-500">Click to upload a photo</p>
+                </div>
+                <button onclick="submitAdvert()" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-full transition-colors">
+                    <i class="fas fa-plus mr-2"></i>List Item for Sale
                 </button>
-            </form>
+            </div>
         </div>
     </div>
 
@@ -2129,6 +2108,11 @@
         <button onclick="navigateTo('discover')" id="mob-nav-discover" class="flex flex-col items-center gap-0.5 p-1.5 text-gray-500 hover:text-red-500 transition-colors min-w-0">
             <i class="fas fa-compass text-lg"></i>
             <span class="text-[10px]">Discover</span>
+        </button>
+        <button onclick="navigateTo('matches')" id="mob-nav-matches" class="flex flex-col items-center gap-0.5 p-1.5 text-gray-500 hover:text-red-500 transition-colors min-w-0 relative">
+            <i class="fas fa-heart text-lg"></i>
+            <span id="mobMatchesBadge" class="absolute -top-0.5 right-0 bg-pink-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full hidden">0</span>
+            <span class="text-[10px]">Matches</span>
         </button>
         <button onclick="openPostModal()" class="p-2 -mt-6 bg-red-500 text-white rounded-full shadow-lg w-12 h-12 flex items-center justify-center flex-shrink-0">
             <i class="fas fa-plus text-lg"></i>
@@ -2297,9 +2281,29 @@
         // ── Unified DB object (Firebase-first, localStorage fallback) ──
         const DB = {
             // ── Session (sessionStorage only — clears on refresh/tab close) ──
-            getSession()        { try { const v = sessionStorage.getItem('africonnect_session'); return v ? JSON.parse(v) : null; } catch { return null; } },
-            saveSession(user)   { try { sessionStorage.setItem('africonnect_session', JSON.stringify(user)); } catch(e) {} },
-            clearSession()      { try { sessionStorage.removeItem('africonnect_session'); } catch(e) {} },
+            // Session: stored in localStorage for reliability, but guarded by a
+            // sessionStorage "alive token" that only exists while the tab is alive.
+            // On a true page refresh/new load, sessionStorage is empty → session is cleared.
+            getSession() {
+                try {
+                    const alive = sessionStorage.getItem('africonnect_tab_alive');
+                    if (!alive) return null; // fresh load → force logout
+                    const v = localStorage.getItem('africonnect_session');
+                    return v ? JSON.parse(v) : null;
+                } catch { return null; }
+            },
+            saveSession(user) {
+                try {
+                    localStorage.setItem('africonnect_session', JSON.stringify(user));
+                    sessionStorage.setItem('africonnect_tab_alive', '1');
+                } catch(e) {}
+            },
+            clearSession() {
+                try {
+                    localStorage.removeItem('africonnect_session');
+                    sessionStorage.removeItem('africonnect_tab_alive');
+                } catch(e) {}
+            },
 
             // ── Accounts ──
             getAccounts() { return _cache.get('africonnect_accounts', []); },
@@ -2497,69 +2501,14 @@
         const exchangeRates = { 'USD':1,'NGN':460,'GHS':12.5,'KES':145,'ZAR':19.2,'GBP':0.79,'EUR':0.92,'CAD':1.36 };
         const currencySymbols  = { 'USD':'$','NGN':'₦','GHS':'₵','KES':'KSh','ZAR':'R','GBP':'£','EUR':'€','CAD':'C$' };
 
-        // ── Marketplace products (real listings, no bot sellers) ──
-        const products = [
-            {
-                id: 1,
-                name: 'Handwoven Kente Scarf',
-                price: 45.00,
-                currency: 'USD',
-                image: 'https://images.unsplash.com/photo-1605648916319-cf082f7524a1?w=400&h=400&fit=crop',
-                seller: 'Amina Crafts',
-                location: 'ghana',
-                rating: 4.8
-            },
-            {
-                id: 2,
-                name: 'African Print Laptop Sleeve',
-                price: 28.00,
-                currency: 'USD',
-                image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&h=400&fit=crop',
-                seller: 'TechAfrica',
-                location: 'nigeria',
-                rating: 4.5
-            },
-            {
-                id: 3,
-                name: 'Organic Shea Butter Set',
-                price: 22.00,
-                currency: 'USD',
-                image: 'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=400&h=400&fit=crop',
-                seller: 'NatureGlow',
-                location: 'ghana',
-                rating: 4.9
-            },
-            {
-                id: 4,
-                name: 'Beaded Maasai Necklace',
-                price: 65.00,
-                currency: 'USD',
-                image: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&h=400&fit=crop',
-                seller: 'Maasai Treasures',
-                location: 'kenya',
-                rating: 4.7
-            },
-            {
-                id: 5,
-                name: 'Handcrafted Leather Wallet',
-                price: 35.00,
-                currency: 'USD',
-                image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&h=400&fit=crop',
-                seller: 'LeatherCraft GH',
-                location: 'southafrica',
-                rating: 4.6
-            },
-            {
-                id: 6,
-                name: 'Ankara Face Mask (3 Pack)',
-                price: 15.00,
-                currency: 'USD',
-                image: 'https://images.unsplash.com/photo-1588854337221-4cf9fa96059c?w=400&h=400&fit=crop',
-                seller: 'StyleMask',
-                location: 'nigeria',
-                rating: 4.4
-            }
-        ];
+        // ── Marketplace products (user-posted listings only — no bot sellers) ──
+        // Loaded from localStorage; users post their own listings via "+ List Item"
+        function getMarketProducts() {
+            return _cache.get('africonnect_market_products', []);
+        }
+        function saveMarketProducts(arr) {
+            _cache.set('africonnect_market_products', arr);
+        }
 
         // Chat rooms (location-verified, no bots)
         const chatRoomsData = [
@@ -2607,7 +2556,7 @@
                 }
             });
 
-            // ── Restore session from localStorage immediately (fast, no wait) ──
+            // ── Restore session (alive-token guard ensures logout on refresh) ──
             const session = DB.getSession();
             if (session) {
                 currentUser = session;
@@ -2641,7 +2590,8 @@
             renderChatRooms();
             renderBookmarks();
             renderWhoToFollow();
-            if (isLoggedIn) updateNotifBadge();
+            if (isLoggedIn) { updateNotifBadge(); updateMatchesBadge(getMatches().length); }
+            renderStories();
         }
 
         function loadUserState() {
@@ -2838,52 +2788,73 @@
 
         async function handleSignup() {
             const name     = document.getElementById('signupName').value.trim();
-            const username = document.getElementById('signupUsername').value.trim().replace(/\s/g,'');
+            const username = document.getElementById('signupUsername').value.trim().replace(/\s/g,'').replace(/^@/,'');
             const country  = document.getElementById('signupCountry').value;
             const dob      = document.getElementById('signupDOB').value;
             const password = document.getElementById('signupPassword').value;
 
+            // Validate
             if (!name || !username || !country || !dob || !password) {
                 Sounds.error(); showToast('⚠️ Please fill in all fields'); return;
             }
             if (username.length < 3) { Sounds.error(); showToast('⚠️ Username must be at least 3 characters'); return; }
             if (password.length < 6) { Sounds.error(); showToast('⚠️ Password must be at least 6 characters'); return; }
 
-            // Check username availability (Firebase-first)
-            const existing = await DB.findAccountAsync(username);
-            if (existing) { Sounds.error(); showToast('⚠️ Username already taken — choose another'); return; }
+            // Disable button to prevent double-submit
+            const btn = document.querySelector('#signupForm button[onclick="handleSignup()"]');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Creating account...'; }
 
-            showToast('⏳ Creating your account...');
+            try {
+                // Check username availability — use local cache if Firebase not ready
+                let existing = null;
+                try { existing = await DB.findAccountAsync(username); } catch(e) { existing = DB.findAccount(username); }
+                if (existing) {
+                    Sounds.error(); showToast('⚠️ Username already taken — choose another');
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus" style="margin-right:8px;"></i>Create Account'; }
+                    return;
+                }
 
-            const uniqueCode = generateUniqueCode();
-            const newUser = {
-                name, password,
-                handle: '@' + username,
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=E53E3E&color=fff&size=200`,
-                uniqueCode, country, dob,
-                bio: '', location: country.charAt(0).toUpperCase() + country.slice(1),
-                website: '', photos: [], membership: 'free',
-                followers: 0, following: 0, totalLikes: 0, totalPosts: 0, profileViews: 0,
-                joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-            };
+                const uniqueCode = generateUniqueCode();
+                const newUser = {
+                    name, password,
+                    handle: '@' + username,
+                    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=E53E3E&color=fff&size=200`,
+                    uniqueCode, country, dob,
+                    bio: '', location: country.charAt(0).toUpperCase() + country.slice(1),
+                    website: '', photos: [], membership: 'free',
+                    followers: 0, following: 0, totalLikes: 0, totalPosts: 0, profileViews: 0,
+                    swipedRight: [],
+                    joinDate: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                };
 
-            // Save to Firebase + cache
-            await DB.saveAccount(newUser);
+                // Save to local cache immediately (don't wait for Firebase)
+                const accounts = DB.getAccounts();
+                accounts.push(newUser);
+                _cache.set('africonnect_accounts', accounts);
 
-            currentUser = { ...newUser };
-            isLoggedIn  = true;
-            loadUserState();
-            DB.saveSession(currentUser);
+                // Save to Firebase in background (non-blocking)
+                if (_fbReady) DB.saveAccount(newUser).catch(() => {});
 
-            // Start realtime DM listener
-            if (_fbReady) DB.listenDMs(currentUser.handle, () => { renderMessages(); if (activeDMContact) renderDMMessages(); });
+                currentUser = { ...newUser };
+                isLoggedIn  = true;
+                loadUserState();
+                DB.saveSession(currentUser);
 
-            document.body.style.overflow = '';
-            closeAuthPanel();
-            updateProfileDisplay();
-            renderAll();
-            Sounds.welcome();
-            showToast(`🎉 Welcome to Africonnect, ${name}! Your ID: ${uniqueCode}`);
+                if (_fbReady) DB.listenDMs(currentUser.handle, () => { renderMessages(); if (activeDMContact) renderDMMessages(); });
+
+                document.body.style.overflow = '';
+                closeAuthPanel();
+                updateProfileDisplay();
+                renderAll();
+                Sounds.welcome();
+                showToast(`🎉 Welcome to Africonnect, ${name}! Your ID: ${uniqueCode}`);
+
+            } catch(err) {
+                console.error('Signup error:', err);
+                Sounds.error();
+                showToast('❌ Sign up failed. Please try again.');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus" style="margin-right:8px;"></i>Create Account'; }
+            }
         }
 
         async function handleLogin() {
@@ -2892,36 +2863,63 @@
 
             if (!username || !password) { Sounds.error(); showToast('⚠️ Enter username and password'); return; }
 
-            showToast('⏳ Logging in...');
+            // Disable button to prevent double-submit
+            const btn = document.querySelector('#loginForm button[onclick="handleLogin()"]');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Logging in...'; }
 
-            // Try Firebase first, fallback to cache
-            const account = await DB.findAccountAsync(username);
-            if (!account) { Sounds.error(); showToast('❌ Account not found. Please sign up first.'); return; }
-            if (account.blocked) { Sounds.error(); showToast('🚫 This account has been blocked. Contact support.'); return; }
-            if (account.password !== password) { Sounds.error(); showToast('❌ Incorrect password'); return; }
+            try {
+                // Try local cache first (fast, works offline), then Firebase
+                let account = DB.findAccount(username);
+                if (!account && _fbReady) {
+                    try { account = await DB.findAccountAsync(username); } catch(e) { /* Firebase failed, use cache result */ }
+                }
 
-            currentUser = { ...account };
-            isLoggedIn  = true;
+                if (!account) {
+                    Sounds.error(); showToast('❌ Account not found. Please sign up first.');
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt" style="margin-right:8px;"></i>Login to Africonnect'; }
+                    return;
+                }
+                if (account.blocked) {
+                    Sounds.error(); showToast('🚫 This account has been blocked. Contact support.');
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt" style="margin-right:8px;"></i>Login to Africonnect'; }
+                    return;
+                }
+                if (account.password !== password) {
+                    Sounds.error(); showToast('❌ Incorrect password. Please try again.');
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt" style="margin-right:8px;"></i>Login to Africonnect'; }
+                    return;
+                }
 
-            // Load user data from Firebase
-            if (_fbReady) {
-                notifications = await DB.getNotificationsAsync(currentUser.handle);
-                messages      = await DB.getContactsAsync(currentUser.handle);
-                dmMessages    = await DB.getDMsAsync(currentUser.handle);
-                bookmarks     = await DB.getBookmarksAsync(currentUser.handle);
-                // Start realtime DM listener
-                DB.listenDMs(currentUser.handle, () => { renderMessages(); if (activeDMContact) renderDMMessages(); });
-            } else {
-                loadUserState();
+                currentUser = { ...account };
+                isLoggedIn  = true;
+
+                // Load user data — try Firebase but fall back to cache instantly
+                if (_fbReady) {
+                    try {
+                        notifications = await DB.getNotificationsAsync(currentUser.handle);
+                        messages      = await DB.getContactsAsync(currentUser.handle);
+                        dmMessages    = await DB.getDMsAsync(currentUser.handle);
+                        bookmarks     = await DB.getBookmarksAsync(currentUser.handle);
+                        DB.listenDMs(currentUser.handle, () => { renderMessages(); if (activeDMContact) renderDMMessages(); });
+                    } catch(e) { loadUserState(); }
+                } else {
+                    loadUserState();
+                }
+
+                DB.saveSession(currentUser);
+                document.body.style.overflow = '';
+                closeAuthPanel();
+                updateProfileDisplay();
+                renderAll();
+                Sounds.welcome();
+                showToast(`👋 Welcome back, ${currentUser.name}!`);
+
+            } catch(err) {
+                console.error('Login error:', err);
+                Sounds.error();
+                showToast('❌ Login failed. Please try again.');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt" style="margin-right:8px;"></i>Login to Africonnect'; }
             }
-
-            DB.saveSession(currentUser);
-            document.body.style.overflow = '';
-            closeAuthPanel();
-            updateProfileDisplay();
-            renderAll();
-            Sounds.welcome();
-            showToast(`👋 Welcome back, ${currentUser.name}!`);
         }
 
         function handleSignOut() {
@@ -2946,6 +2944,9 @@
         function updateProfileDisplay() {
             if (!currentUser) return;
             document.getElementById('profileDisplayName').textContent = currentUser.name;
+            // Show/hide verified badge
+            const badge = document.getElementById('profileVerifiedBadge');
+            if (badge) badge.style.display = currentUser.verified ? 'flex' : 'none';
             document.getElementById('profileUsername').textContent = currentUser.handle;
             document.getElementById('profileUniqueCode').textContent = 'ID: ' + currentUser.uniqueCode;
 
@@ -3422,14 +3423,16 @@
             } else if (page === 'discover') {
                 renderSwipeCards();
             } else if (page === 'community') {
-                detectLocation();
+                renderChatRooms();
             } else if (page === 'profile') {
                 if (isLoggedIn) { currentUser.profileViews = (currentUser.profileViews || 0) + 1; saveUserState(); }
                 renderProfilePosts();
             } else if (page === 'bookmarks') {
-                renderBookmarks();
+                _friendsTab = 'mutual'; switchFriendsTab('mutual');
             } else if (page === 'notifications') {
                 markAllNotifsRead();
+            } else if (page === 'matches') {
+                renderMatches();
             }
         }
 
@@ -3587,12 +3590,36 @@
 
             if (direction === 'right') {
                 Sounds.like();
-                // Auto-follow on swipe right
                 if (isLoggedIn && discoverUsers.length) {
                     const target = discoverUsers[0];
+                    // Track swipe right (like)
+                    if (!currentUser.swipedRight) currentUser.swipedRight = [];
+                    if (!currentUser.swipedRight.includes(target.handle)) {
+                        currentUser.swipedRight.push(target.handle);
+                    }
+                    // Auto-follow
                     if (target && !(currentUser.followingList || []).includes(target.handle)) {
                         toggleFollow(target.handle, null);
                     }
+                    // Check if it's a mutual match
+                    const targetAccount = DB.findAccount(target.handle);
+                    if (targetAccount && (targetAccount.swipedRight || []).includes(currentUser.handle)) {
+                        // Send match notification to both users
+                        sendMatchNotification(target.handle);
+                        // Add match notification to current user's own notifs
+                        notifications.unshift({
+                            id: Date.now() + 1,
+                            type: 'match',
+                            user: target.name,
+                            text: 'You matched with ' + target.name + '! 💞',
+                            time: 'Just now',
+                            avatar: target.avatar,
+                            read: false
+                        });
+                        updateNotifBadge();
+                        setTimeout(() => showMatchPopup(target), 350);
+                    }
+                    saveUserState();
                 }
             } else {
                 Sounds.click();
@@ -3613,6 +3640,219 @@
                 }
             }, 300);
         }
+
+        // ── MATCHES ────────────────────────────────────────────
+        let _pendingMatchTarget = null;
+
+        function getMatches() {
+            if (!isLoggedIn || !currentUser) return [];
+            const myLikes = currentUser.swipedRight || [];
+            const allAccounts = DB.getAccounts();
+            return allAccounts.filter(acc => {
+                if (acc.handle === currentUser.handle) return false;
+                const theyLikedMe = (acc.swipedRight || []).includes(currentUser.handle);
+                const iLikedThem  = myLikes.includes(acc.handle);
+                return theyLikedMe && iLikedThem;
+            });
+        }
+
+        function renderMatches() {
+            const container = document.getElementById('matchesList');
+            if (!container) return;
+            if (!isLoggedIn) {
+                container.innerHTML = '<div class="p-10 text-center text-gray-400"><i class="fas fa-heart text-4xl mb-3 block text-pink-300"></i><p>Sign in to see your matches.</p></div>';
+                return;
+            }
+            const matches = getMatches();
+            updateMatchesBadge(matches.length);
+            if (matches.length === 0) {
+                container.innerHTML = '<div class="p-10 text-center text-gray-400"><div style="font-size:52px;margin-bottom:12px;">💞</div><p class="font-semibold text-lg text-gray-600 dark:text-gray-300 mb-2">No matches yet</p><p class="text-sm">Go to <button onclick=\'navigateTo(\"discover\")\' class=\'text-red-500 font-semibold underline\'>Discover</button> and swipe right on people you like!</p></div>';
+                return;
+            }
+            container.innerHTML = matches.map(function(u) {
+                var avatarUrl = u.avatar || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(u.name) + '&background=f87171&color=fff&size=80');
+                var bioHtml = u.bio ? '<p class="text-xs text-gray-400 truncate mt-0.5">' + u.bio + '</p>' : '';
+                var handle = u.handle.replace(/"/g, '&quot;');
+                return '<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex items-center gap-4">' +
+                    '<div class="relative">' +
+                    '<img src="' + avatarUrl + '" class="w-16 h-16 rounded-full object-cover">' +
+                    '<span style="position:absolute;bottom:-2px;right:-2px;background:#ec4899;color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid white;">\u2764\uFE0F</span>' +
+                    '</div>' +
+                    '<div class="flex-1 min-w-0">' +
+                    '<p class="font-bold text-base truncate">' + u.name + '</p>' +
+                    '<p class="text-sm text-gray-500 truncate">' + u.handle + '</p>' +
+                    bioHtml +
+                    '</div>' +
+                    '<button data-handle="' + handle + '" onclick="openDMFromMatch(this.dataset.handle)" style="padding:9px 16px;background:linear-gradient(135deg,#ef4444,#f97316);color:white;border:none;border-radius:20px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;">\uD83D\uDCAC Message</button>' +
+                    '</div>';
+            }).join('');
+        }
+        function updateMatchesBadge(count) {
+            const badge  = document.getElementById('matchesBadge');
+            const mbadge = document.getElementById('mobMatchesBadge');
+            if (count > 0) {
+                if (badge)  { badge.textContent  = count; badge.classList.remove('hidden'); }
+                if (mbadge) { mbadge.textContent = count; mbadge.classList.remove('hidden'); }
+            } else {
+                if (badge)  badge.classList.add('hidden');
+                if (mbadge) mbadge.classList.add('hidden');
+            }
+        }
+
+        function showMatchPopup(matchedUser) {
+            _pendingMatchTarget = matchedUser;
+            const popup = document.getElementById('matchPopup');
+            document.getElementById('matchName').textContent = matchedUser.name;
+            document.getElementById('matchYourAvatar').src = currentUser.avatar || 'https://ui-avatars.com/api/?name=You&background=ccc&color=fff&size=72';
+            document.getElementById('matchTheirAvatar').src = matchedUser.avatar || 'https://ui-avatars.com/api/?name='+encodeURIComponent(matchedUser.name)+'&background=f87171&color=fff&size=72';
+            popup.style.display = 'flex';
+            // update badge
+            updateMatchesBadge(getMatches().length);
+        }
+
+        function closeMatchPopup() {
+            document.getElementById('matchPopup').style.display = 'none';
+            _pendingMatchTarget = null;
+        }
+
+        function goToMatchMessages() {
+            closeMatchPopup();
+            if (_pendingMatchTarget) {
+                openDMFromMatch(_pendingMatchTarget.handle);
+            }
+        }
+
+        function openDMFromMatch(handle) {
+            navigateTo('messages');
+            setTimeout(() => startNewDM(handle), 200);
+        }
+        // ────────────────────────────────────────────────────────
+
+        // ── STORIES ────────────────────────────────────────────
+        function getStories() { return _cache.get('africonnect_stories', []); }
+        function saveStories(arr) { _cache.set('africonnect_stories', arr); }
+
+        function triggerStoryUpload() {
+            if (!isLoggedIn) { showToast('⚠️ Sign in to add a story'); return; }
+            document.getElementById('storyFileInput').click();
+        }
+
+        function uploadStory(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const stories = getStories();
+                // Remove any existing story from this user (one active story per user)
+                const filtered = stories.filter(s => s.handle !== currentUser.handle);
+                filtered.unshift({
+                    handle: currentUser.handle,
+                    name: currentUser.name,
+                    avatar: currentUser.avatar,
+                    media: ev.target.result,
+                    isVideo: file.type.startsWith('video/'),
+                    postedAt: Date.now(),
+                    expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24h
+                });
+                saveStories(filtered);
+                // Update add story button to show user's own avatar
+                const addBtn = document.getElementById('addStoryAvatar');
+                if (addBtn) {
+                    addBtn.innerHTML = '<img src="' + currentUser.avatar + '" class="w-full h-full rounded-full object-cover">' +
+                        '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);border-radius:50%;"><i class="fas fa-check text-white"></i></div>';
+                    addBtn.style.border = '2px solid #22c55e';
+                }
+                renderStories();
+                showToast('✅ Story posted! It will disappear in 24 hours.');
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        }
+
+        function renderStories() {
+            const row = document.getElementById('storiesRow');
+            if (!row) return;
+            // Keep "Add Story" (first child), replace rest
+            const addBtn = row.firstElementChild;
+            // Remove all except first
+            while (row.children.length > 1) row.removeChild(row.lastChild);
+
+            // If logged in, update the add story button avatar
+            if (isLoggedIn && currentUser) {
+                const myStory = getStories().find(s => s.handle === currentUser.handle && s.expiresAt > Date.now());
+                const addAvatar = document.getElementById('addStoryAvatar');
+                if (addAvatar) {
+                    if (myStory) {
+                        addAvatar.innerHTML = '<img src="' + currentUser.avatar + '" class="w-full h-full rounded-full object-cover"><div style="position:absolute;bottom:-2px;right:-2px;background:#22c55e;color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid white;"><i class="fas fa-check"></i></div>';
+                        addAvatar.style.border = '2px solid #22c55e';
+                    } else {
+                        addAvatar.innerHTML = '<i class="fas fa-plus text-2xl text-red-500"></i>';
+                        addAvatar.style.border = '2px dashed #f87171';
+                    }
+                }
+            }
+
+            // Render other users' active stories
+            const now = Date.now();
+            const activeStories = getStories().filter(s => s.expiresAt > now && (!isLoggedIn || s.handle !== currentUser.handle));
+            activeStories.forEach(story => {
+                const el = document.createElement('div');
+                el.className = 'flex flex-col items-center gap-1 cursor-pointer';
+                el.onclick = function() { viewStory(story); };
+                el.innerHTML = '<div class="story-ring">' +
+                    '<img src="' + (story.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(story.name) + '&size=100') + '" ' +
+                    'class="w-14 h-14 rounded-full border-2 border-white dark:border-gray-800 object-cover">' +
+                    '</div>' +
+                    '<span class="text-xs font-medium" style="max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + story.name.split(' ')[0] + '</span>';
+                row.appendChild(el);
+            });
+        }
+
+        function viewStory(story) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;';
+            overlay.onclick = function() { overlay.remove(); };
+            const timeLeft = Math.max(0, Math.round((story.expiresAt - Date.now()) / 3600000));
+            const mediaHtml = story.isVideo
+                ? '<video src="' + story.media + '" autoplay controls loop style="width:100%;border-radius:16px;max-height:70vh;object-fit:contain;"></video>'
+                : '<img src="' + story.media + '" style="width:100%;border-radius:16px;max-height:70vh;object-fit:contain;">';
+            overlay.innerHTML = '<div style="max-width:420px;width:100%;padding:16px;position:relative;">' +
+                '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+                '<img src="' + (story.avatar || '') + '" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid white;">' +
+                '<div><p style="color:white;font-weight:700;margin:0;">' + story.name + '</p>' +
+                '<p style="color:#9ca3af;font-size:12px;margin:0;">Expires in ~' + timeLeft + 'h</p></div>' +
+                '<button id="_storyClose" style="margin-left:auto;background:none;border:none;color:white;font-size:22px;cursor:pointer;line-height:1;">&#x2715;</button>' +
+                '</div>' + mediaHtml + '</div>';
+            document.body.appendChild(overlay);
+            document.getElementById('_storyClose').onclick = function(e) { e.stopPropagation(); overlay.remove(); };
+        }
+        // ────────────────────────────────────────────────────────
+
+        // ── MATCH NOTIFICATION ──────────────────────────────────
+        function sendMatchNotification(matchedUserHandle) {
+            // Notify the matched user that they have a new match
+            const allAccounts = DB.getAccounts();
+            const targetIdx = allAccounts.findIndex(a => a.handle === matchedUserHandle);
+            if (targetIdx === -1) return;
+            const notifKey = 'africonnect_notifs_' + matchedUserHandle;
+            let targetNotifs = _cache.get(notifKey, []);
+            targetNotifs.unshift({
+                id: Date.now(),
+                type: 'match',
+                user: currentUser.name,
+                text: 'You matched with ' + currentUser.name + '! 💞',
+                time: 'Just now',
+                avatar: currentUser.avatar,
+                read: false
+            });
+            _cache.set(notifKey, targetNotifs);
+            // If the target is the current logged-in user (self), update live
+            if (isLoggedIn && currentUser && currentUser.handle === matchedUserHandle) {
+                notifications = targetNotifs;
+                updateNotifBadge();
+            }
+        }
+        // ────────────────────────────────────────────────────────
 
         function filterDiscover(type) {
             discoverUsers = DB.getAccounts().filter(a => isLoggedIn ? a.handle !== currentUser.handle : true);
@@ -3816,33 +4056,31 @@
 
         function renderChatRooms() {
             const container = document.getElementById('chatRooms');
-            container.innerHTML = chatRoomsData.map(room => {
-                const isLocationVerified = userLocation !== null;
-                const isAccessible = isLocationVerified && (room.id === userLocation || room.id === 'global');
-                const isLocked = !isLocationVerified || (!isAccessible);
-                
-                return `
-                <div class="chat-room bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-transparent
-                            ${isAccessible ? 'cursor-pointer hover:border-green-400 dark:hover:border-green-600' : 'opacity-60 cursor-not-allowed'}" 
-                     onclick="${isAccessible ? `joinChatRoom('${room.id}')` : isLocationVerified ? `showRoomAccessDenied('${room.name}')` : 'showLocationRequired()'}" 
-                     id="room-${room.id}">
-                    <div class="flex items-center gap-4">
-                        <div class="relative">
-                            <img src="${room.flag}" class="w-12 h-12 rounded-full object-cover shadow-md">
-                            ${isLocked ? `<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800"><i class="fas fa-lock text-white text-[8px]"></i></div>` : `<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800"><i class="fas fa-unlock text-white text-[8px]"></i></div>`}
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="font-bold text-lg">${room.name}</h3>
-                            <p class="text-sm text-gray-500">${room.members.toLocaleString()} members online</p>
-                        </div>
-                        ${isAccessible ? '<div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>' : '<div class="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full"></div>'}
-                    </div>
-                    <div class="mt-3 flex gap-2 flex-wrap">
-                        <span class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">Public</span>
-                        ${isAccessible ? '<span class="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-medium">✓ Accessible</span>' : '<span class="text-xs px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full font-medium">🔒 Location Locked</span>'}
-                    </div>
-                </div>
-            `}).join('');
+            if (!container) return;
+            container.innerHTML = chatRoomsData.map(function(room) {
+                return '<div class="chat-room bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-transparent cursor-pointer hover:border-green-400 dark:hover:border-green-600 transition-all" data-rid="' + room.id + '" id="room-' + room.id + '">' +
+                    '<div class="flex items-center gap-4">' +
+                    '<div class="relative">' +
+                    '<img src="' + room.flag + '" class="w-12 h-12 rounded-full object-cover shadow-md">' +
+                    '<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800"><i class="fas fa-unlock text-white" style="font-size:8px;"></i></div>' +
+                    '</div>' +
+                    '<div class="flex-1">' +
+                    '<h3 class="font-bold text-lg">' + room.name + '</h3>' +
+                    '<p class="text-sm text-gray-500">Public room</p>' +
+                    '</div>' +
+                    '<div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>' +
+                    '</div>' +
+                    '<div class="mt-3 flex gap-2 flex-wrap">' +
+                    '<span class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">Public</span>' +
+                    '<span class="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full font-medium">Open to all</span>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+            // Attach click handlers after render
+            container.querySelectorAll('.chat-room').forEach(function(el) {
+                el.addEventListener('click', function() { joinChatRoom(this.dataset.rid); });
+            });
+            updateChatLimitBanner();
         }
 
         function showLocationRequired() {
@@ -3870,19 +4108,8 @@
         }
 
         function joinChatRoom(roomId) {
-            // BLOCK: Location not yet verified
-            if (userLocation === null) {
-                showLocationRequired();
-                return;
-            }
-
-            // BLOCK: User trying to join a room that doesn't match their country
-            if (roomId !== userLocation && roomId !== 'global') {
-                showRoomAccessDenied(chatRoomsData.find(r => r.id === roomId)?.name || roomId);
-                return;
-            }
-
-            activeChatRoom = chatRoomsData.find(r => r.id === roomId);
+            if (!isLoggedIn) { showToast('Sign in to join a chat room'); openAuthPanel(); return; }
+            activeChatRoom = chatRoomsData.find(function(r) { return r.id === roomId; });
             if (!activeChatRoom) return;
             
             document.getElementById('chatRooms').parentElement.classList.add('hidden');
@@ -3892,14 +4119,14 @@
             document.getElementById('chatRoomFlag').src = activeChatRoom.flag;
             document.getElementById('chatRoomUsers').textContent = activeChatRoom.members;
 
-            // Initialize room with only system message — real users will fill it
             if (!chatMessages[roomId]) {
                 chatMessages[roomId] = [
-                    { id: 1, user: 'System', text: `Welcome to the ${activeChatRoom.name} room! Be respectful. 🌍`, type: 'system', time: 'Now' }
+                    { id: 1, user: 'System', text: 'Welcome to the ' + activeChatRoom.name + ' room! Be respectful.', type: 'system', time: 'Now' }
                 ];
             }
 
             renderChatMessages();
+            updateChatLimitBanner();
         }
 
         function leaveChatRoom() {
@@ -3930,22 +4157,95 @@
             if (e.key === 'Enter') sendChatMessage();
         }
 
+        // Chat tier limits
+        function getChatTierInfo() {
+            if (!isLoggedIn) return { limit: 5, windowMs: 2*3600*1000, unlimited: false, label: 'Free: 5/2hrs' };
+            var tier = currentUser.membership || 'free';
+            var now = Date.now();
+            var start = currentUser.membershipStart || 0;
+            var ONE_MONTH = 30*24*3600*1000;
+            var TWO_MONTHS = 60*24*3600*1000;
+            if (tier === 'diamond' && (now - start) < TWO_MONTHS) return { limit: Infinity, windowMs: 24*3600*1000, unlimited: true, label: 'Diamond: Unlimited (2mo)' };
+            if (tier === 'gold' && (now - start) < ONE_MONTH) return { limit: 51, windowMs: 24*3600*1000, unlimited: false, label: 'Gold: 51/day (1mo)' };
+            if (tier === 'silver' && (now - start) < ONE_MONTH) return { limit: 31, windowMs: 24*3600*1000, unlimited: false, label: 'Silver: 31/day (1mo)' };
+            return { limit: 5, windowMs: 2*3600*1000, unlimited: false, label: 'Free: 5 per 2hrs' };
+        }
+
+        function getChatUsage() {
+            var key = 'achat_' + (isLoggedIn ? currentUser.handle : 'guest');
+            return _cache.get(key, { count: 0, windowStart: 0 });
+        }
+        function saveChatUsage(u) {
+            var key = 'achat_' + (isLoggedIn ? currentUser.handle : 'guest');
+            _cache.set(key, u);
+        }
+
+        function checkChatAllowed() {
+            var info = getChatTierInfo();
+            if (info.unlimited) return { ok: true, remaining: 999, resetMs: 0 };
+            var now = Date.now();
+            var u = getChatUsage();
+            if (now - u.windowStart > info.windowMs) { u = { count: 0, windowStart: now }; saveChatUsage(u); }
+            var rem = info.limit - u.count;
+            return { ok: rem > 0, remaining: Math.max(0, rem), resetMs: info.windowMs - (now - u.windowStart) };
+        }
+
+        function updateChatLimitBanner() {
+            var el = document.getElementById('chatLimitInfo');
+            if (!el) return;
+            var info = getChatTierInfo();
+            var chk = checkChatAllowed();
+            if (info.unlimited) {
+                el.innerHTML = info.label;
+                return;
+            }
+            var mins = Math.ceil(chk.resetMs / 60000);
+            var resetStr = mins > 60 ? Math.ceil(mins/60) + 'h' : mins + 'min';
+            el.innerHTML = info.label + ' &mdash; <strong>' + chk.remaining + '</strong> left' +
+                (chk.remaining === 0 ? ' (resets in ' + resetStr + ')' : '') +
+                ' &mdash; <a onclick="navigateTo(\"membership\")" style="font-weight:700;text-decoration:underline;cursor:pointer;">Upgrade</a>';
+        }
+
         function sendChatMessage() {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
+            var input = document.getElementById('chatInput');
+            var text = input.value.trim();
             if (!text || !activeChatRoom) return;
+            if (!isLoggedIn) { showToast('Sign in to chat'); return; }
+
+            var chk = checkChatAllowed();
+            if (!chk.ok) {
+                var info = getChatTierInfo();
+                var mins = Math.ceil(chk.resetMs / 60000);
+                var resetStr = mins > 60 ? Math.ceil(mins/60) + 'h' : mins + 'min';
+                showToast('Message limit reached! Resets in ' + resetStr + '. Upgrade for more.');
+                chatMessages[activeChatRoom.id].push({
+                    id: Date.now(), type: 'system',
+                    text: 'You reached your ' + info.limit + '-message limit. Resets in ' + resetStr + '. ' +
+                        '<a onclick="navigateTo(\"membership\")" style="color:#ef4444;font-weight:700;cursor:pointer;text-decoration:underline;">Upgrade plan</a>'
+                });
+                renderChatMessages();
+                return;
+            }
 
             chatMessages[activeChatRoom.id].push({
                 id: Date.now(),
                 user: currentUser.name,
                 handle: currentUser.handle,
-                text,
+                avatar: currentUser.avatar,
+                text: text,
                 type: 'sent',
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
 
+            var u = getChatUsage();
+            var now = Date.now();
+            var info = getChatTierInfo();
+            if (now - u.windowStart > info.windowMs) saveChatUsage({ count: 1, windowStart: now });
+            else saveChatUsage({ count: u.count + 1, windowStart: u.windowStart });
+
             input.value = '';
             renderChatMessages();
+            updateChatLimitBanner();
             Sounds.messageSent();
         }
 
@@ -4052,6 +4352,7 @@
                 id: Date.now(),
                 author: currentUser.name,
                 handle: currentUser.handle,
+                verified: currentUser.verified || false,
                 avatar: currentUser.avatar,
                 content,
                 image: image || null,
@@ -4126,6 +4427,7 @@
                             <div class="flex items-center justify-between mb-1">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <span class="font-bold text-sm">${post.author}</span>
+                                    ${post.verified ? '<span style="display:inline-flex;align-items:center;justify-content:center;background:#1d9bf0;color:white;border-radius:50%;width:16px;height:16px;font-size:9px;" title="Verified"><i class=\"fas fa-check\"></i></span>' : ''}
                                     <span class="text-gray-500 text-xs">${post.handle}</span>
                                     <span class="text-gray-400 text-xs">· ${post.time}</span>
                                 </div>
@@ -4239,12 +4541,76 @@
             if (currentPage === 'profile') renderProfilePosts();
         }
 
+        let _friendsTab = 'mutual';
+
+        function switchFriendsTab(tab) {
+            _friendsTab = tab;
+            ['mutual','liked','followers'].forEach(function(t) {
+                const btn = document.getElementById('friendsTab-' + t);
+                if (!btn) return;
+                if (t === tab) {
+                    btn.className = 'flex-1 py-3 text-sm font-bold border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 transition-colors';
+                } else {
+                    btn.className = 'flex-1 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition-colors';
+                }
+            });
+            renderBookmarks();
+        }
+
         function renderBookmarks() {
             const container = document.getElementById('bookmarksContainer');
             if (!container) return;
-            if (!isLoggedIn) { container.innerHTML = '<div class="p-10 text-center text-gray-400"><i class="fas fa-bookmark text-4xl mb-3 block"></i><p>Sign in to see your bookmarks</p></div>'; return; }
-            if (!bookmarks.length) { container.innerHTML = '<div class="p-10 text-center text-gray-400"><i class="fas fa-bookmark text-4xl mb-3 block"></i><p class="font-medium">No bookmarks yet</p><p class="text-sm mt-1">Tap the bookmark icon on any post to save it here.</p></div>'; return; }
-            container.innerHTML = bookmarks.map(post => createPostHTML(post)).join('');
+            if (!isLoggedIn) {
+                container.innerHTML = '<div class="p-10 text-center text-gray-400"><i class="fas fa-user-friends text-4xl mb-3 block"></i><p>Sign in to see your friends</p></div>';
+                return;
+            }
+            const allAccounts = DB.getAccounts();
+            const myFollowing = currentUser.followingList || [];
+            const myFollowerHandles = allAccounts
+                .filter(function(a) { return a.handle !== currentUser.handle && (a.followingList || []).includes(currentUser.handle); })
+                .map(function(a) { return a.handle; });
+
+            let list = [];
+            if (_friendsTab === 'mutual') {
+                list = allAccounts.filter(function(a) {
+                    return a.handle !== currentUser.handle && myFollowing.includes(a.handle) && myFollowerHandles.includes(a.handle);
+                });
+            } else if (_friendsTab === 'liked') {
+                list = allAccounts.filter(function(a) { return myFollowing.includes(a.handle); });
+            } else {
+                list = allAccounts.filter(function(a) { return a.handle !== currentUser.handle && myFollowerHandles.includes(a.handle); });
+            }
+
+            if (!list.length) {
+                var emptyMsgs = {
+                    mutual: 'No mutual friends yet. Follow people and wait for them to follow back!',
+                    liked: "You haven't followed anyone yet. Go to Discover and swipe right.",
+                    followers: 'No one is following you yet. Post more and engage!'
+                };
+                container.innerHTML = '<div class="p-10 text-center text-gray-400"><i class="fas fa-user-friends text-4xl mb-4 block"></i><p class="font-medium">' + (emptyMsgs[_friendsTab] || '') + '</p></div>';
+                return;
+            }
+
+            container.innerHTML = list.map(function(u) {
+                var isMutual = myFollowing.includes(u.handle) && myFollowerHandles.includes(u.handle);
+                var verBadge = u.verified ? '<span style="display:inline-flex;align-items:center;justify-content:center;background:#1d9bf0;color:white;border-radius:50%;width:14px;height:14px;font-size:8px;margin-left:3px;"><i class=\"fas fa-check\"></i></span>' : '';
+                var isFollowing = myFollowing.includes(u.handle);
+                return '<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex items-center gap-4 border dark:border-gray-700">' +
+                    '<div class="relative flex-shrink-0">' +
+                    '<img src="' + (u.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(u.name) + '&background=E53E3E&color=fff&size=80') + '" class="w-14 h-14 rounded-full object-cover">' +
+                    (isMutual ? '<span style="position:absolute;bottom:-2px;right:-2px;background:#3b82f6;color:white;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid white;">&#x1F49E;</span>' : '') +
+                    '</div>' +
+                    '<div class="flex-1 min-w-0">' +
+                    '<p class="font-bold text-sm">' + u.name + verBadge + '</p>' +
+                    '<p class="text-xs text-gray-500">' + u.handle + '</p>' +
+                    '<p class="text-xs text-gray-400 mt-0.5">' + (u.bio ? u.bio.slice(0, 50) : (u.country || '')) + '</p>' +
+                    '</div>' +
+                    '<div class="flex flex-col gap-2">' +
+                    '<button data-fh="' + u.handle + '" onclick="openDMFromMatch(this.dataset.fh)" style="padding:7px 14px;background:linear-gradient(135deg,#ef4444,#f97316);color:white;border:none;border-radius:20px;font-weight:700;font-size:12px;cursor:pointer;">Message</button>' +
+                    '<button data-fh="' + u.handle + '" onclick="toggleFollow(this.dataset.fh,this)" style="padding:5px 14px;background:#f3f4f6;color:#374151;border:none;border-radius:20px;font-weight:600;font-size:12px;cursor:pointer;">' + (isFollowing ? 'Following' : 'Follow') + '</button>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
         }
 
         function clearAllBookmarks() {
@@ -4325,14 +4691,14 @@
             
             // Category → keywords mapping for filtering by product name
             const categoryKeywords = {
-                'fashion': ['scarf','mask','kente','ankara','leather','wallet','necklace'],
-                'art': ['art','craft','handwoven','handcrafted','beaded','maasai'],
-                'tech': ['laptop','tech','sleeve'],
-                'home': ['home','decor','basket'],
-                'beauty': ['shea','butter','organic','glow','soap','oil']
+                'fashion': ['scarf','mask','kente','ankara','leather','wallet','necklace','dress','cloth'],
+                'art': ['art','craft','handwoven','handcrafted','beaded','maasai','painting'],
+                'tech': ['laptop','tech','sleeve','phone','cable','gadget'],
+                'home': ['home','decor','basket','furniture','kitchen'],
+                'beauty': ['shea','butter','organic','glow','soap','oil','cream','hair']
             };
 
-            let filteredProducts = products;
+            let filteredProducts = getMarketProducts();
             if (locationFilter !== 'all') {
                 filteredProducts = filteredProducts.filter(p => p.location === locationFilter);
             }
@@ -4343,6 +4709,14 @@
                 );
             }
             
+            if (filteredProducts.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1;padding:60px 20px;text-align:center;color:#9ca3af;">' +
+                    '<i class="fas fa-store" style="font-size:48px;margin-bottom:16px;display:block;color:#d1d5db;"></i>' +
+                    '<p style="font-size:18px;font-weight:700;color:#374151;margin-bottom:8px;">No listings yet</p>' +
+                    '<p style="font-size:14px;">Be the first to list something for sale! Click <strong>List Item</strong> above.</p>' +
+                    '</div>';
+                return;
+            }
             grid.innerHTML = filteredProducts.map(product => {
                 const convertedPrice = convertPrice(product.price, product.currency);
                 const symbol = currencySymbols[currentCurrency];
@@ -4390,10 +4764,18 @@
             }).join('');
         }
 
-        // Create Advert
+        // ── Marketplace Listing ──
+        let _advertImageData = null;
+
         function openCreateAdvertModal() {
+            if (!isLoggedIn) { showToast('⚠️ Sign in to list items'); return; }
             document.getElementById('createAdvertModal').classList.remove('hidden');
             document.getElementById('createAdvertModal').classList.add('flex');
+            document.getElementById('advertName').value = '';
+            document.getElementById('advertPrice').value = '';
+            document.getElementById('advertDesc').value = '';
+            document.getElementById('advertImagePreviewWrap').classList.add('hidden');
+            _advertImageData = null;
         }
 
         function closeCreateAdvertModal() {
@@ -4401,15 +4783,56 @@
             document.getElementById('createAdvertModal').classList.remove('flex');
         }
 
-        function submitAdvert(e) {
-            e.preventDefault();
-            alert('Advert created successfully!');
+        function previewAdvertImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                _advertImageData = ev.target.result;
+                document.getElementById('advertImagePreview').src = _advertImageData;
+                document.getElementById('advertImagePreviewWrap').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearAdvertImage() {
+            _advertImageData = null;
+            document.getElementById('advertImageInput').value = '';
+            document.getElementById('advertImagePreviewWrap').classList.add('hidden');
+        }
+
+        function submitAdvert() {
+            const name  = document.getElementById('advertName').value.trim();
+            const price = parseFloat(document.getElementById('advertPrice').value);
+            const curr  = document.getElementById('advertCurrency').value;
+            const loc   = document.getElementById('advertLocation').value;
+            const desc  = document.getElementById('advertDesc').value.trim();
+
+            if (!name)       { showToast('⚠️ Enter a product name'); return; }
+            if (!price || price <= 0) { showToast('⚠️ Enter a valid price'); return; }
+
+            const products = getMarketProducts();
+            const newProduct = {
+                id: Date.now(),
+                name, price, currency: curr, location: loc, description: desc,
+                image: _advertImageData || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(name) + '&background=E53E3E&color=fff&size=400&bold=true'),
+                seller: currentUser.name,
+                sellerHandle: currentUser.handle,
+                sellerAvatar: currentUser.avatar,
+                rating: 5.0,
+                postedAt: Date.now()
+            };
+            products.unshift(newProduct);
+            saveMarketProducts(products);
+            renderMarketplace();
             closeCreateAdvertModal();
+            showToast('🎉 Your item is now listed!');
+            Sounds.welcome();
         }
 
         // Cart Functions
         function addToCart(productId) {
-            const product = products.find(p => p.id === productId);
+            const product = getMarketProducts().find(p => p.id === productId);
             if (product) {
                 cart.push(product);
                 updateCartUI();
@@ -4493,8 +4916,8 @@
             const container = document.getElementById('notificationsList');
             if (!container) return;
             if (!isLoggedIn) { container.innerHTML = '<div class="p-8 text-center text-gray-500">Sign in to see your notifications</div>'; return; }
-            const iconMap = { like: 'fa-heart', follow: 'fa-user-plus', comment: 'fa-comment', message: 'fa-envelope', marketplace: 'fa-store' };
-            const colorMap = { like: 'bg-red-500', follow: 'bg-blue-500', comment: 'bg-green-500', message: 'bg-purple-500', marketplace: 'bg-yellow-500' };
+            const iconMap = { like: 'fa-heart', follow: 'fa-user-plus', comment: 'fa-comment', message: 'fa-envelope', marketplace: 'fa-store', match: 'fa-heart' };
+            const colorMap = { like: 'bg-red-500', follow: 'bg-blue-500', comment: 'bg-green-500', message: 'bg-purple-500', marketplace: 'bg-yellow-500', match: 'bg-pink-500' };
             if (!notifications.length) { container.innerHTML = '<div class="p-8 text-center text-gray-500"><i class="fas fa-bell text-3xl mb-3 block text-gray-300"></i>No notifications yet</div>'; return; }
             container.innerHTML = `
                 <div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
@@ -4937,7 +5360,7 @@
 
         // View Product Modal
         function viewProduct(productId) {
-            const product = products.find(p => p.id === productId);
+            const product = getMarketProducts().find(p => p.id === productId);
             if (!product) return;
             const convertedPrice = convertPrice(product.price, product.currency);
             const symbol = currencySymbols[currentCurrency];
@@ -4981,7 +5404,7 @@
         // Chat with seller — opens a real message thread (no bots)
         function chatWithSeller(productId) {
             if (!isLoggedIn) { showToast('⚠️ Please log in to message sellers'); return; }
-            const product = products.find(p => p.id === productId);
+            const product = getMarketProducts().find(p => p.id === productId);
             if (!product) return;
 
             // Create a contact entry keyed to the product seller name
@@ -5185,6 +5608,10 @@
                             style="padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600;font-size:11px;background:#7c3aed;color:white;">
                             👑 Tier
                         </button>
+                        <button onclick="adminToggleVerify('${u.handle}')"
+                            style="padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600;font-size:11px;background:${u.verified ? '#1d9bf0' : '#e0f2fe'};color:${u.verified ? 'white' : '#0369a1'};">
+                            ${u.verified ? '✓ Verified' : '✓ Verify'}
+                        </button>
                         <button onclick="adminDeleteUser('${u.handle}')"
                             style="padding:6px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600;font-size:11px;background:#f3f4f6;color:#ef4444;">
                             🗑️
@@ -5220,6 +5647,21 @@
             showToast(accounts[idx].restricted ? '⚠️ User restricted' : '✅ Restriction lifted');
         }
 
+        function adminToggleVerify(handle) {
+            let accounts = DB.getAccounts();
+            const idx = accounts.findIndex(a => a.handle === handle);
+            if (idx === -1) return;
+            accounts[idx].verified = !accounts[idx].verified;
+            DB.saveAccounts(accounts);
+            if (isLoggedIn && currentUser && currentUser.handle === handle) {
+                currentUser.verified = accounts[idx].verified;
+                DB.saveSession(currentUser);
+                updateProfileDisplay();
+            }
+            renderAdminUsers();
+            showToast(accounts[idx].verified ? '✅ Account verified ✓' : '🔵 Verification removed');
+        }
+
         function adminQuickMembership(handle) {
             const tiers = ['free','silver','gold','diamond'];
             const modalId = 'qmModal_' + Date.now();
@@ -5249,15 +5691,17 @@
             const idx = accounts.findIndex(a => a.handle === handle);
             if (idx === -1) return;
             accounts[idx].membership = tier;
+            accounts[idx].membershipStart = (tier !== 'free') ? Date.now() : 0;
             DB.saveAccounts(accounts);
-            // Update current user session if it's them
             if (isLoggedIn && currentUser && currentUser.handle === handle) {
                 currentUser.membership = tier;
+                currentUser.membershipStart = accounts[idx].membershipStart;
                 DB.saveSession(currentUser);
                 updateProfileDisplay();
+                updateChatLimitBanner();
             }
             loadAdminDashboard();
-            showToast(`👑 ${handle} upgraded to ${tier.toUpperCase()}`);
+            showToast('Membership set: ' + handle + ' -> ' + tier.toUpperCase());
         }
 
         function adminDeleteUser(handle) {
@@ -5704,6 +6148,28 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- Match Popup -->
+    <div id="matchPopup" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;">
+        <div style="background:white;border-radius:28px;padding:36px 28px;max-width:340px;width:90%;text-align:center;position:relative;" class="dark:bg-gray-800">
+            <div style="font-size:52px;margin-bottom:8px;">💞</div>
+            <h2 style="font-size:22px;font-weight:800;margin-bottom:4px;">It's a Match!</h2>
+            <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">You and <strong id="matchName"></strong> liked each other!</p>
+            <div style="display:flex;justify-content:center;gap:-16px;margin-bottom:24px;">
+                <img id="matchYourAvatar" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid white;box-shadow:0 2px 12px rgba(0,0,0,0.15);">
+                <div style="width:36px;height:36px;background:#ef4444;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;margin-top:18px;margin-left:-12px;margin-right:-12px;z-index:1;position:relative;">❤️</div>
+                <img id="matchTheirAvatar" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid white;box-shadow:0 2px 12px rgba(0,0,0,0.15);">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button onclick="goToMatchMessages()" style="padding:13px;background:linear-gradient(135deg,#ef4444,#f97316);color:white;border:none;border-radius:14px;font-weight:700;font-size:15px;cursor:pointer;">
+                    💬 Send a Message
+                </button>
+                <button onclick="closeMatchPopup()" style="padding:11px;background:#f3f4f6;color:#374151;border:none;border-radius:14px;font-weight:600;font-size:14px;cursor:pointer;">
+                    Keep Swiping
+                </button>
             </div>
         </div>
     </div>
