@@ -695,6 +695,330 @@
         @media (min-width: 768px) and (max-width: 1279px) {
             aside.hidden.xl\:block { display: none !important; }
         }
+
+        /* ═══════════════════════════════════════════════════
+           AFRICONNECT — PREMIUM GRAPHICS & ANIMATION SYSTEM
+        ═══════════════════════════════════════════════════ */
+
+        /* ── Keyframe Library ── */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.88); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes shimmer {
+            0%   { background-position: -400px 0; }
+            100% { background-position: 400px 0; }
+        }
+        @keyframes floatBob {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-8px); }
+        }
+        @keyframes spinGlow {
+            0%   { transform: rotate(0deg);   box-shadow: 0 0 8px #D4AF37; }
+            50%  { transform: rotate(180deg); box-shadow: 0 0 20px #D4AF37, 0 0 40px #E53E3E; }
+            100% { transform: rotate(360deg); box-shadow: 0 0 8px #D4AF37; }
+        }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            14%       { transform: scale(1.25); }
+            28%       { transform: scale(1); }
+            42%       { transform: scale(1.18); }
+            70%       { transform: scale(1); }
+        }
+        @keyframes ripple {
+            0%   { transform: scale(0); opacity: 0.6; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+        @keyframes gradientShift {
+            0%   { background-position: 0% 50%; }
+            50%  { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes popIn {
+            0%   { transform: scale(0.5); opacity: 0; }
+            80%  { transform: scale(1.08); }
+            100% { transform: scale(1);   opacity: 1; }
+        }
+        @keyframes glowPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(229,62,62,0.4); }
+            50%       { box-shadow: 0 0 0 10px rgba(229,62,62,0); }
+        }
+        @keyframes badgeBounce {
+            0%, 80%, 100% { transform: scale(1); }
+            40%            { transform: scale(1.3); }
+        }
+        @keyframes navGlow {
+            0%, 100% { filter: none; }
+            50%       { filter: drop-shadow(0 0 6px rgba(229,62,62,0.8)); }
+        }
+        @keyframes storyRingRotate {
+            from { background-position: 0% 50%; }
+            to   { background-position: 200% 50%; }
+        }
+        @keyframes messageIn {
+            from { opacity: 0; transform: translateX(-20px) scale(0.95); }
+            to   { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes messageSentIn {
+            from { opacity: 0; transform: translateX(20px) scale(0.95); }
+            to   { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30%            { transform: translateY(-6px); }
+        }
+
+        /* ── Page content entrance ── */
+        .page-content:not(.hidden) { animation: fadeIn 0.3s ease; }
+
+        /* ── Post cards ── */
+        .post-card {
+            animation: fadeUp 0.4s ease both;
+            border-radius: 18px !important;
+            border: 1.5px solid rgba(0,0,0,0.06) !important;
+            transition: transform 0.25s cubic-bezier(.22,.68,0,1.2),
+                        box-shadow 0.25s ease,
+                        border-color 0.25s ease !important;
+            overflow: hidden;
+            position: relative;
+        }
+        .dark .post-card { border-color: rgba(255,255,255,0.07) !important; }
+        .post-card:hover {
+            transform: translateY(-4px) scale(1.01) !important;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 0 0 1.5px rgba(229,62,62,0.15) !important;
+            border-color: rgba(229,62,62,0.2) !important;
+        }
+
+        /* ── Notification badge pop ── */
+        #notifBadge, #mobMsgBadge, #matchBadge, #deskMsgBadge {
+            transition: transform 0.2s cubic-bezier(.22,.68,0,1.5);
+        }
+
+        /* ── Sidebar navigation items ── */
+        .nav-item {
+            position: relative;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease !important;
+            border-radius: 14px !important;
+        }
+        .nav-item:hover { transform: translateX(4px) !important; }
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(229,62,62,0.1), rgba(212,175,55,0.06)) !important;
+            box-shadow: inset 0 0 0 1.5px rgba(229,62,62,0.18);
+        }
+        .nav-item.active i { animation: navGlow 2.5s ease infinite; }
+
+        /* ── Bottom mobile nav ── */
+        nav.fixed.bottom-0 button {
+            transition: transform 0.2s cubic-bezier(.22,.68,0,1.5), color 0.2s !important;
+            position: relative;
+        }
+        nav.fixed.bottom-0 button:active { transform: scale(0.82) !important; }
+        nav.fixed.bottom-0 button.active-nav { transform: translateY(-3px) !important; }
+        nav.fixed.bottom-0 button.active-nav::before {
+            content: '';
+            position: absolute;
+            bottom: -8px; left: 50%;
+            transform: translateX(-50%);
+            width: 28px; height: 3px;
+            background: #E53E3E;
+            border-radius: 2px 2px 0 0;
+        }
+
+        /* ── Story ring animated gradient ── */
+        .story-ring {
+            background: linear-gradient(90deg, #E53E3E, #F6AD55, #D4AF37, #E53E3E) !important;
+            background-size: 200% 100% !important;
+            animation: storyRingRotate 3s linear infinite !important;
+            transition: transform 0.2s cubic-bezier(.22,.68,0,1.3);
+        }
+        .story-ring:hover { transform: scale(1.1); }
+
+        /* ── Auth panel ── */
+        .auth-overlay.active { animation: fadeIn 0.4s ease; }
+        .auth-overlay.active .auth-panel { animation: scaleIn 0.45s cubic-bezier(.22,.68,0,1.1); }
+        .auth-hero {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1a00 50%, #1a1a1a 100%) !important;
+            background-size: 200% 200% !important;
+            animation: gradientShift 6s ease infinite !important;
+        }
+        .auth-panel input:focus, .auth-panel select:focus {
+            border-color: #D4AF37 !important;
+            box-shadow: 0 0 0 3px rgba(212,175,55,0.18) !important;
+            outline: none !important;
+        }
+
+        /* ── Marketplace cards ── */
+        #marketplaceGrid > div {
+            animation: fadeUp 0.4s ease both;
+            border-radius: 18px !important;
+            transition: transform 0.25s cubic-bezier(.22,.68,0,1.2), box-shadow 0.25s ease !important;
+            overflow: hidden;
+        }
+        #marketplaceGrid > div:hover {
+            transform: translateY(-6px) scale(1.02) !important;
+            box-shadow: 0 20px 48px rgba(0,0,0,0.15) !important;
+        }
+        #marketplaceGrid > div img {
+            transition: transform 0.4s ease !important;
+        }
+        #marketplaceGrid > div:hover img { transform: scale(1.08) !important; }
+
+        /* ── Global button micro-interactions ── */
+        button {
+            transition: transform 0.15s cubic-bezier(.22,.68,0,1.3), box-shadow 0.15s ease !important;
+        }
+        button:active { transform: scale(0.93) !important; }
+
+        /* ── Swipe cards ── */
+        .swipe-card {
+            border-radius: 24px !important;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08) !important;
+        }
+
+        /* ── Chat messages ── */
+        .message-received { animation: messageIn 0.3s cubic-bezier(.22,.68,0,1.1); }
+        .message-sent     { animation: messageSentIn 0.3s cubic-bezier(.22,.68,0,1.1); }
+
+        /* ── Membership cards ── */
+        .membership-card {
+            transition: transform 0.3s cubic-bezier(.22,.68,0,1.2), box-shadow 0.3s ease !important;
+            border-radius: 20px !important;
+        }
+        .membership-card:hover { transform: translateY(-8px) rotate(-1deg) !important; }
+        .membership-diamond:hover { box-shadow: 0 24px 60px rgba(139,92,246,0.3) !important; }
+        .membership-gold:hover    { box-shadow: 0 24px 60px rgba(212,175,55,0.35) !important; }
+        .membership-silver:hover  { box-shadow: 0 24px 60px rgba(192,192,192,0.3) !important; }
+
+        /* ── Notification items ── */
+        #notifList > div, #notificationsContainer > div {
+            animation: slideDown 0.3s ease both;
+            transition: background 0.2s ease, transform 0.2s ease !important;
+            border-radius: 14px !important;
+        }
+        #notifList > div:hover { transform: translateX(4px) !important; }
+
+        /* ── Profile avatar hover ── */
+        #profileAvatar, #sidebarAvatar {
+            transition: transform 0.25s cubic-bezier(.22,.68,0,1.3), box-shadow 0.25s ease !important;
+        }
+        #profileAvatar:hover, #sidebarAvatar:hover {
+            transform: scale(1.08) !important;
+            box-shadow: 0 0 0 4px rgba(229,62,62,0.3) !important;
+        }
+
+        /* ── Chat room cards ── */
+        .chat-room {
+            border-radius: 16px !important;
+            transition: transform 0.22s cubic-bezier(.22,.68,0,1.2), box-shadow 0.22s ease !important;
+        }
+        .chat-room:hover {
+            transform: translateY(-4px) scale(1.01) !important;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.12) !important;
+        }
+
+        /* ── Skeleton shimmer ── */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 400px 100%;
+            animation: shimmer 1.4s ease infinite;
+            border-radius: 8px;
+        }
+        .dark .skeleton {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 400px 100%;
+        }
+
+        /* ── Header glass ── */
+        header {
+            backdrop-filter: blur(16px) !important;
+            background: rgba(255,255,255,0.88) !important;
+        }
+        .dark header { background: rgba(30,41,59,0.88) !important; }
+
+        /* ── Modal entrance ── */
+        #postModal > div, #editProfileModal > div, #cartModal > div {
+            animation: scaleIn 0.3s cubic-bezier(.22,.68,0,1.1);
+        }
+
+        /* ── Match popup ── */
+        #matchPopup > div { animation: popIn 0.5s cubic-bezier(.22,.68,0,1.2) !important; }
+
+        /* ── Compose/input focus ── */
+        #postInput:focus, #modalPostInput:focus {
+            border-color: #E53E3E !important;
+            box-shadow: 0 0 0 3px rgba(229,62,62,0.12) !important;
+        }
+
+        /* ── Message list ── */
+        #messagesList > div {
+            animation: slideDown 0.3s ease both;
+            transition: background 0.2s ease, transform 0.15s ease !important;
+            border-radius: 14px !important;
+        }
+        #messagesList > div:hover { transform: translateX(3px) !important; }
+
+        /* ── Story items hover ── */
+        #storiesRow > div {
+            transition: transform 0.2s cubic-bezier(.22,.68,0,1.3) !important;
+        }
+        #storiesRow > div:hover { transform: scale(1.08) translateY(-3px) !important; }
+
+        /* ── Admin stats ── */
+        #adminStatsRow > div {
+            animation: fadeUp 0.4s ease both;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+            border-radius: 16px !important;
+        }
+        #adminStatsRow > div:hover {
+            transform: translateY(-4px) !important;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.1) !important;
+        }
+
+        /* ── Sidebar gold brand text animated gradient ── */
+        .auth-brand-gold {
+            background: linear-gradient(135deg, #D4AF37, #F5D769, #B8860B, #D4AF37) !important;
+            background-size: 200% 200% !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+            animation: gradientShift 4s ease infinite !important;
+        }
+
+        /* ── Who to follow ── */
+        #whoToFollowList > div {
+            animation: fadeUp 0.4s ease both;
+            transition: background 0.2s ease !important;
+            border-radius: 14px !important;
+        }
+        #whoToFollowList > div:hover { background: rgba(229,62,62,0.04) !important; }
+
+        /* ── Smooth theme toggle ── */
+        html { transition: color-scheme 0.3s ease; }
+
+        /* ── Accessibility: respect reduced-motion ── */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
@@ -3373,12 +3697,33 @@
         }
 
         function showToast(message) {
+            // Remove any existing toasts
+            document.querySelectorAll('.ac-toast').forEach(t => t.remove());
             const toast = document.createElement('div');
-            toast.textContent = message;
-            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:white;padding:12px 24px;border-radius:50px;font-size:14px;font-weight:600;z-index:10000;opacity:0;transition:all 0.3s;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,0.3);';
+            toast.className = 'ac-toast';
+            toast.innerHTML = '<span style="font-size:16px;flex-shrink:0;">' + (message.match(/^(\p{Emoji})/u)?.[0] || '✨') + '</span><span>' + message.replace(/^(\p{Emoji}\s?)/u, '') + '</span>';
+            toast.style.cssText = [
+                'position:fixed;bottom:88px;left:50%;',
+                'transform:translateX(-50%) translateY(30px) scale(0.9);',
+                'background:linear-gradient(135deg,#1a1a2e,#16213e);',
+                'color:white;padding:13px 22px;border-radius:40px;',
+                'font-size:14px;font-weight:600;z-index:10000;opacity:0;',
+                'white-space:nowrap;',
+                'box-shadow:0 12px 40px rgba(0,0,0,0.4),0 0 0 1px rgba(255,255,255,0.08);',
+                'display:flex;align-items:center;gap:8px;',
+                'transition:all 0.35s cubic-bezier(.22,.68,0,1.2);',
+                'backdrop-filter:blur(12px);max-width:90vw;',
+            ].join('');
             document.body.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '1'; toast.style.transform = 'translateX(-50%) translateY(0)'; }, 10);
-            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(-50%) translateY(20px)'; setTimeout(() => toast.remove(), 300); }, 2800);
+            requestAnimationFrame(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(-50%) translateY(0) scale(1)';
+            });
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(20px) scale(0.9)';
+                setTimeout(() => toast.remove(), 350);
+            }, 2800);
         }
 
         function switchProfileTab(tab) {
@@ -6422,6 +6767,114 @@
     <script async defer crossorigin="anonymous"
         src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v19.0"
         nonce="africonnect">
+
+        // ══════════════════════════════════════════════════════
+        //  ANIMATION SYSTEM — Ripple, entrance, page transitions
+        // ══════════════════════════════════════════════════════
+
+        // Ripple effect on primary buttons
+        function addRipple(e) {
+            const btn = e.currentTarget;
+            const rect = btn.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height) * 1.5;
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top  - size / 2;
+            const ripple = document.createElement('span');
+            ripple.style.cssText = [
+                'position:absolute;border-radius:50%;pointer-events:none;',
+                'background:rgba(255,255,255,0.3);',
+                'width:' + size + 'px;height:' + size + 'px;',
+                'left:' + x + 'px;top:' + y + 'px;',
+                'transform:scale(0);animation:ripple 0.55s ease-out forwards;',
+            ].join('');
+            btn.style.position = 'relative';
+            btn.style.overflow = 'hidden';
+            btn.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        }
+
+        // Attach ripple to all major buttons after render
+        function attachRipples() {
+            document.querySelectorAll('button[style*="background:linear-gradient"],button[style*="background:#E53E3E"],button[style*="background:#7c3aed"],button[style*="background:#22c55e"],.bg-red-500,.bg-blue-500,.bg-green-500').forEach(btn => {
+                if (!btn._rippleAttached) {
+                    btn.addEventListener('click', addRipple);
+                    btn._rippleAttached = true;
+                }
+            });
+        }
+
+        // Stagger-animate feed posts when rendered
+        function animateFeedItems() {
+            document.querySelectorAll('#feed .post-card').forEach((card, i) => {
+                card.style.animationDelay = (i * 0.06) + 's';
+                card.style.opacity = '0';
+                card.style.animation = 'none';
+                requestAnimationFrame(() => {
+                    card.style.animation = 'fadeUp 0.45s ease both';
+                    card.style.animationDelay = (i * 0.06) + 's';
+                    card.style.opacity = '';
+                });
+            });
+        }
+
+        // Animate marketplace grid items
+        function animateMarketItems() {
+            document.querySelectorAll('#marketplaceGrid > div').forEach((card, i) => {
+                card.style.opacity = '0';
+                card.style.animation = 'none';
+                requestAnimationFrame(() => {
+                    card.style.animation = 'fadeUp 0.4s ease both';
+                    card.style.animationDelay = (i * 0.05) + 's';
+                    card.style.opacity = '';
+                });
+            });
+        }
+
+        // Badge bounce when count changes
+        function pulseBadge(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.animation = 'none';
+            requestAnimationFrame(() => { el.style.animation = 'badgeBounce 0.5s ease'; });
+        }
+
+        // Page navigation entrance animation
+        const _origNavigateTo = navigateTo;
+        function navigateTo(page, addToHistory = true) {
+            _origNavigateTo(page, addToHistory);
+            const el = document.getElementById('page-' + page);
+            if (el) {
+                el.style.animation = 'none';
+                requestAnimationFrame(() => { el.style.animation = 'fadeIn 0.28s ease'; });
+            }
+            setTimeout(() => {
+                attachRipples();
+                if (page === 'home')        animateFeedItems();
+                if (page === 'marketplace') animateMarketItems();
+            }, 50);
+        }
+
+        // Intercept renderFeed to trigger animation
+        const _origRenderFeed = typeof renderFeed === 'function' ? renderFeed : null;
+
+        // Run once on DOMContentLoaded after everything
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                attachRipples();
+                animateFeedItems();
+                // Animate sidebar nav items on load
+                document.querySelectorAll('.nav-item').forEach((item, i) => {
+                    item.style.opacity = '0';
+                    item.style.animation = 'none';
+                    requestAnimationFrame(() => {
+                        item.style.animation = 'fadeUp 0.4s ease both';
+                        item.style.animationDelay = (0.1 + i * 0.04) + 's';
+                        item.style.opacity = '';
+                    });
+                });
+            }, 400);
+        }, { once: true });
+
     </script>
 </body>
 </html>
