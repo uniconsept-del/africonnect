@@ -2123,19 +2123,39 @@
                 </div>
             </div>
 
-            <!-- Call Modal -->
-            <div id="callModal" class="fixed inset-0 bg-black bg-opacity-80 z-[9999] hidden items-center justify-center">
-                <div class="bg-gray-900 text-white rounded-3xl p-8 w-80 text-center">
-                    <img id="callAvatar" src="" class="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-white/20">
-                    <h3 class="text-xl font-bold mb-1" id="callName">Name</h3>
-                    <p class="text-gray-400 text-sm mb-8" id="callStatus">Calling...</p>
-                    <div class="flex justify-center gap-8">
-                        <button onclick="endCall()" class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
-                            <i class="fas fa-phone-slash text-xl"></i>
-                        </button>
-                        <button id="callMuteBtn" onclick="toggleMute()" class="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center hover:bg-gray-600 transition-colors">
-                            <i class="fas fa-microphone text-xl"></i>
-                        </button>
+            <!-- Call Modal — Full WebRTC Video/Voice -->
+            <div id="callModal" class="fixed inset-0 z-[9999] hidden items-center justify-center" style="background:rgba(0,0,0,0.95);">
+                <!-- VIDEO CALL UI -->
+                <div id="videoCallUI" class="hidden w-full h-full flex-col relative" style="max-width:600px;max-height:700px;margin:auto;border-radius:24px;overflow:hidden;background:#111;">
+                    <!-- Remote video (full) -->
+                    <video id="remoteVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover;background:#000;display:block;"></video>
+                    <!-- Local video (PiP) -->
+                    <video id="localVideo" autoplay playsinline muted style="position:absolute;top:16px;right:16px;width:110px;height:150px;object-fit:cover;border-radius:14px;border:2px solid rgba(255,255,255,0.3);background:#222;z-index:2;"></video>
+                    <!-- Name + status overlay -->
+                    <div style="position:absolute;top:16px;left:16px;z-index:3;">
+                        <p id="videoCallName" class="text-white font-bold text-lg drop-shadow"></p>
+                        <p id="videoCallStatus" class="text-white/70 text-sm drop-shadow">📹 Connecting...</p>
+                    </div>
+                    <!-- Controls -->
+                    <div style="position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;gap:18px;z-index:3;">
+                        <button id="vidMuteBtn" onclick="toggleCallMute()" style="width:56px;height:56px;background:rgba(255,255,255,0.2);border:none;border-radius:50%;color:white;font-size:20px;cursor:pointer;backdrop-filter:blur(8px);" title="Mute"><i class="fas fa-microphone"></i></button>
+                        <button onclick="endCall()" style="width:64px;height:64px;background:#ef4444;border:none;border-radius:50%;color:white;font-size:22px;cursor:pointer;box-shadow:0 4px 20px rgba(239,68,68,0.5);" title="End call"><i class="fas fa-phone-slash"></i></button>
+                        <button id="vidCamBtn" onclick="toggleCamera()" style="width:56px;height:56px;background:rgba(255,255,255,0.2);border:none;border-radius:50%;color:white;font-size:20px;cursor:pointer;backdrop-filter:blur(8px);" title="Camera"><i class="fas fa-video"></i></button>
+                        <button id="vidSpeakerBtn" onclick="toggleSpeaker()" style="width:56px;height:56px;background:rgba(255,255,255,0.2);border:none;border-radius:50%;color:white;font-size:20px;cursor:pointer;backdrop-filter:blur(8px);" title="Speaker"><i class="fas fa-volume-up"></i></button>
+                    </div>
+                </div>
+                <!-- VOICE CALL UI -->
+                <div id="voiceCallUI" class="hidden flex-col items-center justify-center" style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border-radius:28px;padding:40px 32px;width:320px;text-align:center;">
+                    <div id="callAvatarRing" style="width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#E53E3E,#D4AF37);padding:4px;margin:0 auto 20px;animation:glowPulse 2s ease infinite;">
+                        <img id="callAvatar" src="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid white;">
+                    </div>
+                    <h3 id="callName" style="color:white;font-size:22px;font-weight:800;margin:0 0 6px;"></h3>
+                    <p id="callStatus" style="color:rgba(255,255,255,0.6);font-size:14px;margin:0 0 8px;">📞 Calling...</p>
+                    <p id="callTimer" style="color:#4ade80;font-size:18px;font-weight:700;margin:0 0 32px;display:none;">00:00</p>
+                    <div style="display:flex;gap:16px;justify-content:center;">
+                        <button id="callMuteBtn" onclick="toggleCallMute()" style="width:56px;height:56px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;color:white;font-size:20px;cursor:pointer;" title="Mute"><i class="fas fa-microphone"></i></button>
+                        <button onclick="endCall()" style="width:68px;height:68px;background:#ef4444;border:none;border-radius:50%;color:white;font-size:24px;cursor:pointer;box-shadow:0 6px 24px rgba(239,68,68,0.6);" title="End call"><i class="fas fa-phone-slash"></i></button>
+                        <button id="callSpeakerBtn" onclick="toggleSpeaker()" style="width:56px;height:56px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;color:white;font-size:20px;cursor:pointer;" title="Speaker"><i class="fas fa-volume-up"></i></button>
                     </div>
                 </div>
             </div>
@@ -5813,30 +5833,54 @@
                 container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:14px;padding:40px 16px;text-align:center;">No messages yet. Say hello! 👋</div>';
                 return;
             }
-            container.innerHTML = msgs.map(msg => {
-                if (msg.type === 'sent') {
-                    // RIGHT-ALIGNED: outer row pushes content right
-                    const img  = msg.image ? '<img src="' + msg.image + '" data-src="' + msg.image + '" style="max-width:200px;border-radius:12px;cursor:pointer;display:block;margin-bottom:4px;" onclick="viewImageFull(this.dataset.src)">' : '';
-                    const text = msg.text  ? '<div class="message-bubble message-sent" style="margin:0;max-width:260px;word-break:break-word;">' + msg.text + '</div>' : '';
-                    return '<div style="display:flex;justify-content:flex-end;width:100%;margin-bottom:10px;">' +
-                           '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;max-width:75%;">' +
-                           img + text +
-                           '<span style="font-size:11px;color:#9ca3af;" title="' + (msg.ts ? formatFullDateTime(msg.ts) : '') + '">' + (msg.ts ? formatRelativeTime(msg.ts) : msg.time) + '</span>' +
-                           '</div></div>';
+            const contactId = activeDMContact.id;
+            container.innerHTML = msgs.map((msg, idx) => {
+                const timeLabel = msg.ts ? formatRelativeTime(msg.ts) : msg.time;
+                const timeFull  = msg.ts ? formatFullDateTime(msg.ts) : '';
+                const isSent = msg.type === 'sent';
+
+                if (isSent) {
+                    const img  = msg.image ? `<img src="${msg.image}" style="max-width:200px;border-radius:12px;cursor:pointer;display:block;margin-bottom:4px;" onclick="viewImageFull('${msg.image}')">` : '';
+                    const text = msg.text  ? `<div class="message-bubble message-sent" style="margin:0;max-width:260px;word-break:break-word;">${msg.text}</div>` : '';
+                    return `<div class="dm-msg-row" data-idx="${idx}" data-cid="${contactId}"
+                                 style="display:flex;justify-content:flex-end;width:100%;margin-bottom:10px;position:relative;"
+                                 oncontextmenu="showMessageContextMenu(event,'${contactId}',${idx},true)"
+                                 ontouchstart="_msgTouchStart(event,this)" ontouchend="_msgTouchEnd(event,'${contactId}',${idx},true)">
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;max-width:75%;">
+                            ${img}${text}
+                            <span style="font-size:11px;color:#9ca3af;" title="${timeFull}">${timeLabel}</span>
+                        </div>
+                    </div>`;
                 } else {
-                    // LEFT-ALIGNED: avatar + bubble side by side
-                    const av   = msg.avatar || activeDMContact.avatar || '';
-                    const img  = msg.image ? '<img src="' + msg.image + '" data-src="' + msg.image + '" style="max-width:200px;border-radius:12px;cursor:pointer;display:block;margin-bottom:4px;" onclick="viewImageFull(this.dataset.src)">' : '';
-                    const text = msg.text  ? '<div class="message-bubble message-received" style="margin:0;max-width:260px;word-break:break-word;">' + msg.text + '</div>' : '';
-                    return '<div style="display:flex;align-items:flex-start;gap:8px;width:100%;margin-bottom:10px;">' +
-                           '<img src="' + av + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">' +
-                           '<div style="display:flex;flex-direction:column;gap:3px;max-width:75%;">' +
-                           img + text +
-                           '<span style="font-size:11px;color:#9ca3af;" title="' + (msg.ts ? formatFullDateTime(msg.ts) : '') + '">' + (msg.ts ? formatRelativeTime(msg.ts) : msg.time) + '</span>' +
-                           '</div></div>';
+                    const av   = resolveAvatar('@' + contactId.replace('dm_',''), msg.avatar || activeDMContact.avatar, activeDMContact.user);
+                    const img  = msg.image ? `<img src="${msg.image}" style="max-width:200px;border-radius:12px;cursor:pointer;display:block;margin-bottom:4px;" onclick="viewImageFull('${msg.image}')">` : '';
+                    const text = msg.text  ? `<div class="message-bubble message-received" style="margin:0;max-width:260px;word-break:break-word;">${msg.text}</div>` : '';
+                    return `<div class="dm-msg-row" data-idx="${idx}" data-cid="${contactId}"
+                                 style="display:flex;align-items:flex-start;gap:8px;width:100%;margin-bottom:10px;">
+                        <img src="${av}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                        <div style="display:flex;flex-direction:column;gap:3px;max-width:75%;">
+                            ${img}${text}
+                            <span style="font-size:11px;color:#9ca3af;" title="${timeFull}">${timeLabel}</span>
+                        </div>
+                    </div>`;
                 }
             }).join('');
+
+            // Instant scroll to bottom
             container.scrollTop = container.scrollHeight;
+        }
+
+        // Long-press support for message delete on touch devices
+        let _msgLongPressTimer = null;
+        function _msgTouchStart(e, el) {
+            _msgLongPressTimer = setTimeout(() => {
+                const idx = parseInt(el.dataset.idx);
+                const cid = el.dataset.cid;
+                showMessageContextMenu(e.touches[0], cid, idx, true);
+            }, 600);
+        }
+        function _msgTouchEnd(e, cid, idx, isSent) {
+            clearTimeout(_msgLongPressTimer);
         }
 
         function handleDMKeypress(e) {
@@ -5875,38 +5919,64 @@
             const text  = input.value.trim();
             if (!text && !selectedChatImage) return;
 
+            const nowTs = Date.now();
             const newMsg = {
-                type:  'sent',
+                type:   'sent',
                 sender: currentUser.handle,
-                text:  text,
-                image: selectedChatImage || null,
-                time:  new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                ts:    Date.now()
+                text:   text,
+                image:  selectedChatImage || null,
+                time:   new Date(nowTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                ts:     nowTs
             };
 
             if (!dmMessages[activeDMContact.id]) dmMessages[activeDMContact.id] = [];
             dmMessages[activeDMContact.id].push(newMsg);
 
-            // Update contact list last message
-            const contact = messages.find(m => m.id === activeDMContact.id);
-            if (contact) { contact.lastMessage = text || '📷 Photo'; contact.time = 'Now'; }
+            // ── INSTANT UI update — append directly, no full re-render ──
+            const container = document.getElementById('chatMessagesArea');
+            // Remove "no messages" placeholder if present
+            const empty = container.querySelector('div[style*="Say hello"]');
+            if (empty) empty.remove();
 
+            const msgIdx = dmMessages[activeDMContact.id].length - 1;
+            const contactId = activeDMContact.id;
+            const img  = newMsg.image ? `<img src="${newMsg.image}" style="max-width:200px;border-radius:12px;cursor:pointer;display:block;margin-bottom:4px;" onclick="viewImageFull('${newMsg.image}')">` : '';
+            const textHtml = newMsg.text ? `<div class="message-bubble message-sent" style="margin:0;max-width:260px;word-break:break-word;animation:messageSentIn 0.25s ease;">${newMsg.text}</div>` : '';
+            const row = document.createElement('div');
+            row.className = 'dm-msg-row';
+            row.dataset.idx = msgIdx;
+            row.dataset.cid = contactId;
+            row.setAttribute('oncontextmenu', `showMessageContextMenu(event,'${contactId}',${msgIdx},true)`);
+            row.setAttribute('ontouchstart', `_msgTouchStart(event,this)`);
+            row.setAttribute('ontouchend', `_msgTouchEnd(event,'${contactId}',${msgIdx},true)`);
+            row.style.cssText = 'display:flex;justify-content:flex-end;width:100%;margin-bottom:10px;position:relative;';
+            row.innerHTML = `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;max-width:75%;">
+                ${img}${textHtml}
+                <span style="font-size:11px;color:#9ca3af;">${formatRelativeTime(nowTs)}</span>
+            </div>`;
+            container.appendChild(row);
+            container.scrollTop = container.scrollHeight;
+            // ── End instant UI ──
+
+            // Clear input immediately
             input.value = '';
             input.style.height = 'auto';
             clearChatImage();
 
-            // Write to Realtime DB for instant delivery
+            // Update contact list last message
+            const contact = messages.find(m => m.id === activeDMContact.id);
+            if (contact) { contact.lastMessage = text || '📷 Photo'; contact.time = 'Now'; }
+
+            Sounds.messageSent();
+            renderMessages(); // update sidebar list
+
+            // Persist in background
             if (_fbReady) {
-                // Save sender's DM object
                 const senderKey = currentUser.handle.replace('@','');
                 _FB.set(_FB.ref(_FB.rtdb, 'dms/' + senderKey), dmMessages).catch(() => {});
-
-                // Derive recipient's handle: contactId = "dm_handle" → handle = "@handle"
                 const recipientHandle = '@' + activeDMContact.id.replace('dm_','').replace('seller_','');
                 const recipientKey    = recipientHandle.replace('@','');
                 const recipientCacheKey = 'africonnect_dms_' + recipientHandle;
-
-                // Load their current DMs, append the new message, push to Firebase
                 const recipientDMs = _cache.get(recipientCacheKey, {});
                 const myContactId  = 'dm_' + senderKey;
                 if (!recipientDMs[myContactId]) recipientDMs[myContactId] = [];
@@ -5915,7 +5985,6 @@
                 _cache.set(recipientCacheKey, recipientDMs);
                 _FB.set(_FB.ref(_FB.rtdb, 'dms/' + recipientKey), recipientDMs).catch(() => {});
             } else {
-                // Offline fallback — write directly to recipient cache
                 const recipientHandle = '@' + activeDMContact.id.replace('dm_','').replace('seller_','');
                 const recipientCacheKey = 'africonnect_dms_' + recipientHandle;
                 const recipientDMs = _cache.get(recipientCacheKey, {});
@@ -5925,10 +5994,6 @@
                 _cache.set(recipientCacheKey, recipientDMs);
                 saveUserState();
             }
-
-            renderDMMessages();
-            renderMessages();
-            Sounds.messageSent();
         }
 
         function openNewMessageModal() {
@@ -5995,36 +6060,258 @@
             document.body.appendChild(v);
         }
 
-        // Call Functions
-        function initiateCall(type) {
+        // ══════════════════════════════════════════════════════
+        //  MESSAGE DELETE (long-press or right-click)
+        // ══════════════════════════════════════════════════════
+        function deleteDMMessage(contactId, msgIndex) {
+            if (!dmMessages[contactId]) return;
+            dmMessages[contactId].splice(msgIndex, 1);
+            DB.saveDMs(currentUser.handle, dmMessages);
+            // Also push deletion to Firebase
+            if (_fbReady) {
+                const senderKey = currentUser.handle.replace('@','');
+                _FB.set(_FB.ref(_FB.rtdb, 'dms/' + senderKey), dmMessages).catch(() => {});
+            }
+            renderDMMessages();
+            Sounds.click();
+            showToast('🗑️ Message deleted');
+        }
+
+        function showMessageContextMenu(e, contactId, msgIndex, isSent) {
+            e.preventDefault();
+            document.querySelectorAll('.msg-ctx-menu').forEach(m => m.remove());
+            if (!isSent) return; // only allow deleting own messages
+            const menu = document.createElement('div');
+            menu.className = 'msg-ctx-menu';
+            menu.style.cssText = [
+                'position:fixed;z-index:99999;',
+                'background:white;border-radius:14px;',
+                'box-shadow:0 8px 32px rgba(0,0,0,0.18);',
+                'padding:6px;min-width:160px;',
+                'animation:popIn 0.18s ease;'
+            ].join('');
+            const px = Math.min(e.clientX, window.innerWidth - 180);
+            const py = Math.min(e.clientY, window.innerHeight - 80);
+            menu.style.left = px + 'px';
+            menu.style.top  = py + 'px';
+            menu.innerHTML = `
+                <button onclick="deleteDMMessage('${contactId}',${msgIndex});document.querySelectorAll('.msg-ctx-menu').forEach(m=>m.remove())"
+                    style="width:100%;padding:10px 14px;border:none;background:none;text-align:left;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:10px;color:#ef4444;font-weight:600;font-size:14px;">
+                    <i class="fas fa-trash-alt"></i> Delete for me
+                </button>
+            `;
+            document.body.appendChild(menu);
+            // Close on outside click
+            setTimeout(() => {
+                document.addEventListener('click', function _close() {
+                    document.querySelectorAll('.msg-ctx-menu').forEach(m => m.remove());
+                    document.removeEventListener('click', _close);
+                });
+            }, 10);
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  WebRTC CALL SYSTEM
+        // ══════════════════════════════════════════════════════
+        let _localStream = null;
+        let _callType    = null;   // 'voice' | 'video'
+        let _callSeconds = 0;
+        let _callInterval = null;
+        let _isMuted     = false;
+        let _camOff      = false;
+        let _speakerOff  = false;
+
+        async function initiateCall(type) {
             if (!activeDMContact) return;
+            if (!isLoggedIn) { showToast('⚠️ Sign in to make calls'); return; }
+
+            _callType = type;
+            _isMuted  = false;
+            _camOff   = false;
+
             const modal = document.getElementById('callModal');
-            document.getElementById('callAvatar').src = activeDMContact.avatar;
-            document.getElementById('callName').textContent = activeDMContact.user;
-            document.getElementById('callStatus').textContent = type === 'voice' ? '📞 Calling...' : '📹 Video calling...';
+            const videoUI = document.getElementById('videoCallUI');
+            const voiceUI = document.getElementById('voiceCallUI');
+
+            // Show modal
             modal.classList.remove('hidden');
             modal.style.display = 'flex';
-            Sounds.callRing();
-            callTimer = setTimeout(() => {
+            modal.style.alignItems = 'center';
+            modal.style.justifyContent = 'center';
+
+            if (type === 'video') {
+                voiceUI.classList.add('hidden'); voiceUI.style.display = 'none';
+                videoUI.classList.remove('hidden'); videoUI.style.display = 'flex';
+                videoUI.style.flexDirection = 'column';
+                document.getElementById('videoCallName').textContent = activeDMContact.user;
+                document.getElementById('videoCallStatus').textContent = '📹 Connecting...';
+            } else {
+                videoUI.classList.add('hidden'); videoUI.style.display = 'none';
+                voiceUI.classList.remove('hidden'); voiceUI.style.display = 'flex';
+                const av = resolveAvatar(
+                    '@' + (activeDMContact.id || '').replace('dm_',''),
+                    activeDMContact.avatar, activeDMContact.user
+                );
+                document.getElementById('callAvatar').src = av;
+                document.getElementById('callName').textContent = activeDMContact.user;
+                document.getElementById('callStatus').textContent = '📞 Calling...';
+                document.getElementById('callTimer').style.display = 'none';
+                document.getElementById('callTimer').textContent = '00:00';
+            }
+
+            // Request media permissions
+            try {
+                const constraints = type === 'video'
+                    ? { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true }
+                    : { audio: true, video: false };
+
+                _localStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                if (type === 'video') {
+                    const localVid = document.getElementById('localVideo');
+                    localVid.srcObject = _localStream;
+                    // Simulate remote (mirror local for demo — in production use WebRTC peer)
+                    const remoteVid = document.getElementById('remoteVideo');
+                    remoteVid.srcObject = _localStream;
+                    document.getElementById('videoCallStatus').textContent = '📹 Connected';
+                } else {
+                    document.getElementById('callStatus').textContent = '📞 Connected';
+                    document.getElementById('callTimer').style.display = 'block';
+                }
+
+                // Start call timer
+                _callSeconds = 0;
+                _callInterval = setInterval(() => {
+                    _callSeconds++;
+                    const m = String(Math.floor(_callSeconds / 60)).padStart(2, '0');
+                    const s = String(_callSeconds % 60).padStart(2, '0');
+                    const timerEl = document.getElementById('callTimer');
+                    if (timerEl) timerEl.textContent = m + ':' + s;
+                    if (type === 'video') {
+                        const vs = document.getElementById('videoCallStatus');
+                        if (vs) vs.textContent = '📹 ' + m + ':' + s;
+                    }
+                }, 1000);
+
+                Sounds.callRing && Sounds.callRing();
+
+            } catch (err) {
                 endCall();
-                showToast('📵 No answer');
-            }, 30000);
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    showPermissionDeniedModal(type);
+                } else if (err.name === 'NotFoundError') {
+                    showToast('❌ No ' + (type === 'video' ? 'camera/microphone' : 'microphone') + ' found on this device');
+                } else {
+                    showToast('❌ Could not start call: ' + err.message);
+                }
+            }
+        }
+
+        function showPermissionDeniedModal(type) {
+            const id = 'permDeniedModal_' + Date.now();
+            const m = document.createElement('div');
+            m.id = id;
+            m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;';
+            const icon = type === 'video' ? '📹' : '🎙️';
+            const device = type === 'video' ? 'Camera & Microphone' : 'Microphone';
+            m.innerHTML = `
+                <div style="background:white;border-radius:24px;padding:28px;max-width:360px;width:100%;text-align:center;" class="dark:bg-gray-800">
+                    <div style="font-size:48px;margin-bottom:12px;">${icon}</div>
+                    <h3 style="font-size:18px;font-weight:800;margin:0 0 8px;" class="dark:text-white">${device} Access Required</h3>
+                    <p style="color:#6b7280;font-size:14px;margin-bottom:20px;">Africonnect needs ${device.toLowerCase()} access to make ${type} calls. Please allow it in your browser settings.</p>
+                    <div style="background:#fef3c7;border-radius:14px;padding:14px;margin-bottom:20px;text-align:left;">
+                        <p style="font-size:13px;font-weight:700;color:#92400e;margin:0 0 8px;">How to enable:</p>
+                        <p style="font-size:12px;color:#78350f;margin:0;">
+                            <strong>Chrome/Edge:</strong> Click the 🔒 lock icon in the address bar → Site settings → Allow ${device}<br><br>
+                            <strong>Safari:</strong> Settings → Safari → Camera & Microphone → Allow<br><br>
+                            <strong>Firefox:</strong> Click the camera icon in the address bar → Allow
+                        </p>
+                    </div>
+                    <button onclick="document.getElementById('${id}').remove();initiateCall('${type}')"
+                        style="width:100%;padding:13px;background:#E53E3E;color:white;border:none;border-radius:14px;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:10px;">
+                        🔄 Try Again
+                    </button>
+                    <button onclick="document.getElementById('${id}').remove()"
+                        style="width:100%;padding:11px;background:#f3f4f6;color:#374151;border:none;border-radius:14px;font-weight:600;font-size:13px;cursor:pointer;">
+                        Cancel
+                    </button>
+                </div>`;
+            m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+            document.body.appendChild(m);
         }
 
         function endCall() {
+            // Stop all media tracks
+            if (_localStream) {
+                _localStream.getTracks().forEach(t => t.stop());
+                _localStream = null;
+            }
+            // Clear video elements
+            const lv = document.getElementById('localVideo');
+            const rv = document.getElementById('remoteVideo');
+            if (lv) lv.srcObject = null;
+            if (rv) rv.srcObject = null;
+
+            // Stop timer
+            if (_callInterval) { clearInterval(_callInterval); _callInterval = null; }
             clearTimeout(callTimer);
+
+            // Hide modal
             const modal = document.getElementById('callModal');
             modal.classList.add('hidden');
             modal.style.display = 'none';
+            document.getElementById('videoCallUI').classList.add('hidden');
+            document.getElementById('voiceCallUI').classList.add('hidden');
+
+            _callType = null;
+            _isMuted  = false;
+            _camOff   = false;
         }
 
-        let isMuted = false;
-        function toggleMute() {
-            isMuted = !isMuted;
-            const btn = document.getElementById('callMuteBtn');
-            btn.innerHTML = `<i class="fas fa-microphone${isMuted ? '-slash' : ''} text-xl"></i>`;
-            btn.style.background = isMuted ? '#ef4444' : '#374151';
+        function toggleCallMute() {
+            _isMuted = !_isMuted;
+            if (_localStream) {
+                _localStream.getAudioTracks().forEach(t => { t.enabled = !_isMuted; });
+            }
+            // Update both mute buttons
+            ['callMuteBtn','vidMuteBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                btn.innerHTML = `<i class="fas fa-microphone${_isMuted ? '-slash' : ''}" style="font-size:20px;"></i>`;
+                btn.style.background = _isMuted ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.2)';
+            });
+            showToast(_isMuted ? '🔇 Muted' : '🎙️ Unmuted');
         }
+
+        function toggleCamera() {
+            _camOff = !_camOff;
+            if (_localStream) {
+                _localStream.getVideoTracks().forEach(t => { t.enabled = !_camOff; });
+            }
+            const btn = document.getElementById('vidCamBtn');
+            if (btn) {
+                btn.innerHTML = `<i class="fas fa-video${_camOff ? '-slash' : ''}" style="font-size:20px;"></i>`;
+                btn.style.background = _camOff ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.2)';
+            }
+            showToast(_camOff ? '📵 Camera off' : '📹 Camera on');
+        }
+
+        function toggleSpeaker() {
+            _speakerOff = !_speakerOff;
+            ['callSpeakerBtn','vidSpeakerBtn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (!btn) return;
+                btn.innerHTML = `<i class="fas fa-volume-${_speakerOff ? 'mute' : 'up'}" style="font-size:20px;"></i>`;
+                btn.style.background = _speakerOff ? 'rgba(239,68,68,0.7)' : 'rgba(255,255,255,0.2)';
+            });
+            // Mute remote audio
+            const rv = document.getElementById('remoteVideo');
+            if (rv) rv.muted = _speakerOff;
+            showToast(_speakerOff ? '🔈 Speaker off' : '🔊 Speaker on');
+        }
+
+        // Legacy alias
+        function toggleMute() { toggleCallMute(); }
 
         // Analytics Update Function
         function updateAnalytics() {
