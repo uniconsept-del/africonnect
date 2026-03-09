@@ -1499,7 +1499,7 @@
                 <!-- Create Post -->
                 <div class="bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-4">
                     <div class="flex gap-3">
-                        <img id="composeAvatar" src="https://ui-avatars.com/api/?name=User&background=E53E3E&color=fff&size=100" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                        <img id="composeAvatar" src="https://ui-avatars.com/api/?name=You&background=E53E3E&color=fff&size=200&bold=true" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
                         <div class="flex-1">
                             <textarea id="postInput" placeholder="What's happening in your world?" class="w-full bg-transparent border-none resize-none text-base placeholder-gray-400 focus:outline-none dark:text-white" rows="2" oninput="document.getElementById('postBtn').disabled=!this.value.trim()"></textarea>
                             <!-- Image preview -->
@@ -3516,11 +3516,13 @@
             }
 
             const avatarEl = document.getElementById('profileAvatar');
-            if (avatarEl && currentUser.avatar) avatarEl.src = currentUser.avatar;
+            // Always resolve the latest avatar (in case it was recently updated)
+            const freshAv = resolveAvatar(currentUser.handle, currentUser.avatar, currentUser.name);
+            if (avatarEl) avatarEl.src = freshAv;
 
-            // Update compose box avatar
+            // Update compose box avatar — always show real photo
             const composeAv = document.getElementById('composeAvatar');
-            if (composeAv && currentUser.avatar) composeAv.src = currentUser.avatar;
+            if (composeAv) composeAv.src = freshAv;
 
             // Restore cover photo
             if (currentUser.coverPhoto) {
@@ -3532,7 +3534,7 @@
             if (photoTabCountEl) photoTabCountEl.textContent = (currentUser.photos || []).length;
 
             const sidebarAv = document.getElementById('sidebarAvatar');
-            if (sidebarAv && currentUser.avatar) sidebarAv.src = currentUser.avatar;
+            if (sidebarAv) sidebarAv.src = freshAv;
             const sidebarName = document.getElementById('sidebarName');
             if (sidebarName) sidebarName.textContent = currentUser.name;
             const sidebarHandle = document.getElementById('sidebarHandle');
@@ -5088,12 +5090,14 @@
         function addNewPost(content, image = null) {
             if (!isLoggedIn) { showToast('⚠️ Sign in to post'); return; }
             if (currentUser && currentUser.restricted) { showToast('⚠️ Your account is restricted. Contact support.'); Sounds.error(); return; }
+            // Always grab the freshest avatar from the live session/accounts
+            const freshAvatar = resolveAvatar(currentUser.handle, currentUser.avatar, currentUser.name);
             const newPost = {
                 id: Date.now(),
                 author: currentUser.name,
                 handle: currentUser.handle,
                 verified: currentUser.verified || false,
-                avatar: currentUser.avatar,
+                avatar: freshAvatar,
                 content,
                 image: image || null,
                 likes: 0,
@@ -5145,6 +5149,34 @@
             if (inp) inp.value = '';
         }
 
+        // ── Avatar resolver: always return the freshest avatar for a handle ──
+        function isRealAvatar(url) {
+            if (!url) return false;
+            // A real avatar is a base64 image or a non-ui-avatars URL
+            return url.startsWith('data:image') ||
+                   (!url.includes('ui-avatars.com') && url.startsWith('http'));
+        }
+
+        function resolveAvatar(handle, fallbackAvatar, name) {
+            // 1. Current logged-in user — prefer their live session avatar if it's a real photo
+            if (isLoggedIn && currentUser && currentUser.handle === handle) {
+                if (isRealAvatar(currentUser.avatar)) return currentUser.avatar;
+            }
+            // 2. Look up in accounts DB — may have a newer photo
+            const account = DB.findAccount(handle);
+            if (account && isRealAvatar(account.avatar)) return account.avatar;
+            // 3. Use whatever was stored on the post/message if it's real
+            if (isRealAvatar(fallbackAvatar)) return fallbackAvatar;
+            // 4. Fall back to current user's avatar even if ui-avatars (better than nothing)
+            if (isLoggedIn && currentUser && currentUser.handle === handle && currentUser.avatar) {
+                return currentUser.avatar;
+            }
+            if (account && account.avatar) return account.avatar;
+            // 5. Generate initials avatar as absolute last resort
+            const safeName = encodeURIComponent(name || handle || 'User');
+            return `https://ui-avatars.com/api/?name=${safeName}&background=E53E3E&color=fff&size=200&bold=true`;
+        }
+
         // Rendering
         function renderFeed() {
             const feed = document.getElementById('feed');
@@ -5159,13 +5191,15 @@
         function createPostHTML(post) {
             const isOwn = isLoggedIn && currentUser && post.handle === currentUser.handle;
             const isBookmarked = isLoggedIn && bookmarks.some(b => b.id === post.id);
+            // Always resolve the freshest avatar — never show stale initials
+            const avatarSrc = resolveAvatar(post.handle, post.avatar, post.author);
             return `
                 <article class="bg-white dark:bg-gray-800 p-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors border-b dark:border-gray-700">
                     <div class="flex gap-3">
-                        <img src="${post.avatar}" class="w-12 h-12 rounded-full object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                        <img src="${avatarSrc}" class="w-12 h-12 rounded-full object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                              onclick="openUserProfileModal('${post.handle}')"
                              title="View ${post.author}'s profile"
-                             onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=E53E3E&color=fff&size=100'">
+                             onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=E53E3E&color=fff&size=200&bold=true'">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center justify-between mb-1">
                                 <div class="flex items-center gap-2 flex-wrap">
@@ -5198,7 +5232,7 @@
                             </div>
                             <div id="commentBox_${post.id}" class="hidden mt-3">
                                 <div class="flex gap-2">
-                                    <img src="${isLoggedIn && currentUser ? currentUser.avatar : 'https://ui-avatars.com/api/?name=Guest&background=ccc&color=fff&size=50'}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
+                                    <img src="${isLoggedIn && currentUser ? resolveAvatar(currentUser.handle, currentUser.avatar, currentUser.name) : 'https://ui-avatars.com/api/?name=Guest&background=ccc&color=fff&size=50'}" class="w-8 h-8 rounded-full object-cover flex-shrink-0">
                                     <div class="flex-1 flex gap-2">
                                         <input id="commentInput_${post.id}" type="text" placeholder="Write a comment..." 
                                             class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2 text-sm outline-none dark:text-white"
