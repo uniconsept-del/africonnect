@@ -14,7 +14,7 @@
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22AFRICONNECT%22%2C%22short_name%22%3A%22AFRICONNECT%22%2C%22description%22%3A%22Africa%27s%20Social%20%26%20Trade%20Platform%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22theme_color%22%3A%22%23E53E3E%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fimages.unsplash.com%2Fphoto-1516026672322-bc52d61a55d5%3Fw%3D192%26h%3D192%26fit%3Dcrop%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fjpeg%22%7D%5D%7D">
     <!-- iOS icon -->
     <link rel="apple-touch-icon" href="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=180&h=180&fit=crop">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Google Maps removed: dummy API key caused script load errors blocking all JS -->
@@ -213,8 +213,26 @@
             background: rgba(229, 62, 62, 0.05);
         }
 
-        /* Mobile/Desktop Mode Toggle */
-        .device-mode-desktop {
+        /* ═══════════════════════════════════════════════════
+           AUTO-RESPONSIVE LAYOUT (mobile / tablet / desktop)
+        ═══════════════════════════════════════════════════ */
+        /* Tablet (768px–1023px): constrain & centre content */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            #mainContainer { max-width: 900px !important; margin: 0 auto !important; }
+            aside.hidden.xl\:block { display: none !important; }
+        }
+        /* Prevent any element from overflowing viewport width */
+        body { overflow-x: hidden; }
+        img, video { max-width: 100%; height: auto; }
+        /* Smooth font scaling across breakpoints */
+        html { font-size: clamp(13px, 1.5vw, 16px); }
+        @media (max-width: 480px) { html { font-size: 14px; } }
+
+        /* ── User profile modal slide-up ── */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
             max-width: 100%;
         }
         
@@ -3024,8 +3042,11 @@
                 document.documentElement.classList.add('dark');
             }
 
-            // Restore screen mode
-            if (window.innerWidth < 768) setDeviceMode('mobile');
+            // Auto-detect device size and apply responsive layout
+            applyAutoResponsive();
+            startTimestampTicker();
+            // Re-apply on resize (handles orientation change, window resize)
+            window.addEventListener('resize', () => applyAutoResponsive());
 
             // ── Restore session first (before Firebase, so UI isn't blocked) ──
             const session = DB.getSession();
@@ -3903,6 +3924,169 @@
             }).join('') || '<div class="p-4 text-center text-gray-500">No results found</div>';
         }
 
+        // ══════════════════════════════════════════════════════
+        //  REAL-TIME TIMESTAMP SYSTEM
+        // ══════════════════════════════════════════════════════
+        function formatRelativeTime(timestamp) {
+            if (!timestamp) return 'Just now';
+            const now = Date.now();
+            const diff = now - timestamp;
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(diff / 60000);
+            const hours   = Math.floor(diff / 3600000);
+            const days    = Math.floor(diff / 86400000);
+            const weeks   = Math.floor(diff / 604800000);
+
+            if (seconds < 10) return 'Just now';
+            if (seconds < 60) return seconds + 's';
+            if (minutes < 60) return minutes + 'm';
+            if (hours < 24)   return hours + 'h';
+            if (days < 7)     return days + 'd';
+            if (weeks < 5)    return weeks + 'w';
+            // Fall back to full date
+            const d = new Date(timestamp);
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
+        }
+
+        function formatFullDateTime(timestamp) {
+            if (!timestamp) return '';
+            const d = new Date(timestamp);
+            return d.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Live-tick all post timestamps every 30s
+        function startTimestampTicker() {
+            setInterval(() => {
+                document.querySelectorAll('[data-timestamp]').forEach(el => {
+                    const ts = parseInt(el.dataset.timestamp, 10);
+                    if (!isNaN(ts)) el.textContent = '· ' + formatRelativeTime(ts);
+                });
+            }, 30000);
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  AUTO DEVICE DETECTION
+        // ══════════════════════════════════════════════════════
+        function autoDetectDevice() {
+            const w = window.innerWidth;
+            if (w < 768) return 'mobile';
+            if (w < 1024) return 'tablet';
+            return 'desktop';
+        }
+
+        function applyAutoResponsive() {
+            const detected = autoDetectDevice();
+            const mode = detected === 'desktop' ? 'desktop' : 'mobile';
+            setDeviceMode(mode);
+            // Extra tablet tweaks
+            const mainContainer = document.getElementById('mainContainer');
+            if (mainContainer) {
+                if (detected === 'tablet') {
+                    mainContainer.style.maxWidth = '900px';
+                    mainContainer.style.margin = '0 auto';
+                } else if (detected === 'desktop') {
+                    mainContainer.style.maxWidth = '';
+                    mainContainer.style.margin = '';
+                }
+            }
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  USER PROFILE MODAL (tap avatar in feed)
+        // ══════════════════════════════════════════════════════
+        function openUserProfileModal(handle) {
+            const accounts = DB.getAccounts();
+            const user = accounts.find(a => a.handle === handle) ||
+                         (isLoggedIn && currentUser && currentUser.handle === handle ? currentUser : null);
+            if (!user) return;
+
+            // If it's the current user, just navigate to their profile page
+            if (isLoggedIn && currentUser && user.handle === currentUser.handle) {
+                navigateTo('profile');
+                return;
+            }
+
+            const existing = document.getElementById('userProfileModal');
+            if (existing) existing.remove();
+
+            const isFollowing = isLoggedIn && (currentUser.followingList || []).includes(user.handle);
+            const modal = document.createElement('div');
+            modal.id = 'userProfileModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9998;display:flex;align-items:flex-end;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:white;border-radius:24px 24px 0 0;width:100%;max-width:520px;padding:0 0 32px;overflow:hidden;animation:slideUp 0.3s ease;" class="dark:bg-gray-800">
+                    <!-- Cover / banner -->
+                    <div style="height:100px;background:linear-gradient(135deg,#E53E3E,#D4AF37);position:relative;">
+                        <button onclick="document.getElementById('userProfileModal').remove()" style="position:absolute;top:12px;right:14px;background:rgba(0,0,0,0.35);color:white;border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+                        <!-- Avatar -->
+                        <div style="position:absolute;bottom:-36px;left:20px;">
+                            <div class="story-ring" style="display:inline-block;padding:3px;border-radius:50%;">
+                                <img src="${user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=E53E3E&color=fff&size=200`}"
+                                     style="width:72px;height:72px;border-radius:50%;object-fit:cover;display:block;border:3px solid white;"
+                                     onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=E53E3E&color=fff&size=200'">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Body -->
+                    <div style="padding:48px 20px 0;">
+                        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+                            <div>
+                                <h3 style="font-size:18px;font-weight:800;margin:0;">${user.name}
+                                    ${user.verified ? '<span style="display:inline-flex;align-items:center;justify-content:center;background:#1d9bf0;color:white;border-radius:50%;width:16px;height:16px;font-size:9px;margin-left:4px;"><i class=\"fas fa-check\"></i></span>' : ''}
+                                </h3>
+                                <p style="color:#6b7280;font-size:13px;margin:2px 0 0;">${user.handle}</p>
+                                ${user.location ? `<p style="color:#9ca3af;font-size:12px;margin-top:2px;"><i class="fas fa-map-marker-alt" style="color:#E53E3E;margin-right:4px;"></i>${user.location}</p>` : ''}
+                            </div>
+                            <button id="modalFollowBtn"
+                                onclick="toggleFollow('${user.handle}', this); updateModalFollowBtn('${user.handle}')"
+                                style="padding:8px 20px;border-radius:20px;border:none;font-weight:700;font-size:13px;cursor:pointer;
+                                       background:${isFollowing ? '#e5e7eb' : '#E53E3E'};color:${isFollowing ? '#374151' : 'white'};">
+                                ${isFollowing ? 'Following' : 'Follow'}
+                            </button>
+                        </div>
+                        ${user.bio ? `<p style="font-size:14px;color:#374151;margin-bottom:12px;" class="dark:text-gray-300">${user.bio}</p>` : ''}
+                        <div style="display:flex;gap:20px;font-size:13px;color:#6b7280;border-top:1px solid #f3f4f6;padding-top:12px;" class="dark:border-gray-700">
+                            <span><strong style="color:#111;font-weight:700;" class="dark:text-white">${user.totalPosts || 0}</strong> Posts</span>
+                            <span><strong style="color:#111;font-weight:700;" class="dark:text-white">${user.followers || 0}</strong> Followers</span>
+                            <span><strong style="color:#111;font-weight:700;" class="dark:text-white">${user.following || 0}</strong> Following</span>
+                        </div>
+                        <div style="display:flex;gap:10px;margin-top:16px;">
+                            <button onclick="startDMWithUser('${user.handle}');document.getElementById('userProfileModal').remove();"
+                                style="flex:1;padding:10px;background:#f3f4f6;border:none;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;" class="dark:bg-gray-700 dark:text-white">
+                                <i class="fas fa-envelope" style="margin-right:6px;color:#E53E3E;"></i> Message
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+            document.body.appendChild(modal);
+        }
+
+        function updateModalFollowBtn(handle) {
+            const btn = document.getElementById('modalFollowBtn');
+            if (!btn || !isLoggedIn) return;
+            const isFollowing = (currentUser.followingList || []).includes(handle);
+            btn.style.background = isFollowing ? '#e5e7eb' : '#E53E3E';
+            btn.style.color = isFollowing ? '#374151' : 'white';
+            btn.textContent = isFollowing ? 'Following' : 'Follow';
+        }
+
+        function startDMWithUser(handle) {
+            const accounts = DB.getAccounts();
+            const user = accounts.find(a => a.handle === handle);
+            if (!user || !isLoggedIn) { showToast('Sign in to send messages'); return; }
+            // Open or create DM contact
+            let contact = messages.find(m => m.id === 'dm_' + handle.replace('@',''));
+            if (!contact) {
+                contact = { id: 'dm_' + handle.replace('@',''), user: user.name, avatar: user.avatar || '', lastMessage: '', time: '', unread: false };
+                messages.unshift(contact);
+                DB.saveContacts(currentUser.handle, messages);
+            }
+            navigateTo('messages');
+            setTimeout(() => openDMConversation(contact), 150);
+        }
+
         // Device Mode Management
         function setDeviceMode(mode) {
             deviceMode = mode;
@@ -4697,9 +4881,11 @@
                 if (msg.type === 'system') {
                     return `<div class="text-center text-xs text-gray-500 my-2">${msg.text}</div>`;
                 } else if (msg.type === 'sent') {
-                    return `<div class="flex justify-end"><div class="message-bubble message-sent">${msg.text}<div class="text-xs opacity-75 mt-1">${msg.time}</div></div></div>`;
+                    const displayTime = msg.timestamp ? formatRelativeTime(msg.timestamp) : msg.time;
+                    return `<div class="flex justify-end"><div class="message-bubble message-sent">${msg.text}<div class="text-xs opacity-75 mt-1" title="${msg.timestamp ? formatFullDateTime(msg.timestamp) : ''}">${displayTime}</div></div></div>`;
                 } else {
-                    return `<div class="flex items-start gap-2"><img src="${msg.avatar}" class="w-8 h-8 rounded-full"><div><div class="text-xs text-gray-500 mb-1">${msg.user}</div><div class="message-bubble message-received">${msg.text}<div class="text-xs opacity-75 mt-1">${msg.time}</div></div></div></div>`;
+                    const displayTime = msg.timestamp ? formatRelativeTime(msg.timestamp) : msg.time;
+                    return `<div class="flex items-start gap-2"><img src="${msg.avatar}" class="w-8 h-8 rounded-full"><div><div class="text-xs text-gray-500 mb-1">${msg.user}</div><div class="message-bubble message-received">${msg.text}<div class="text-xs opacity-75 mt-1" title="${msg.timestamp ? formatFullDateTime(msg.timestamp) : ''}">${displayTime}</div></div></div></div>`;
                 }
             }).join('');
             
@@ -4787,6 +4973,7 @@
                 avatar: currentUser.avatar,
                 text: text,
                 type: 'sent',
+                timestamp: Date.now(),
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
 
@@ -4975,14 +5162,17 @@
             return `
                 <article class="bg-white dark:bg-gray-800 p-4 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors border-b dark:border-gray-700">
                     <div class="flex gap-3">
-                        <img src="${post.avatar}" class="w-12 h-12 rounded-full object-cover flex-shrink-0">
+                        <img src="${post.avatar}" class="w-12 h-12 rounded-full object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                             onclick="openUserProfileModal('${post.handle}')"
+                             title="View ${post.author}'s profile"
+                             onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(post.author)}&background=E53E3E&color=fff&size=100'">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center justify-between mb-1">
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <span class="font-bold text-sm">${post.author}</span>
+                                    <span class="font-bold text-sm cursor-pointer hover:underline" onclick="openUserProfileModal('${post.handle}')">${post.author}</span>
                                     ${post.verified ? '<span style="display:inline-flex;align-items:center;justify-content:center;background:#1d9bf0;color:white;border-radius:50%;width:16px;height:16px;font-size:9px;" title="Verified"><i class=\"fas fa-check\"></i></span>' : ''}
                                     <span class="text-gray-500 text-xs">${post.handle}</span>
-                                    <span class="text-gray-400 text-xs">· ${post.time}</span>
+                                    <span class="text-gray-400 text-xs" data-timestamp="${post.timestamp || ''}" title="${post.timestamp ? formatFullDateTime(post.timestamp) : post.time}">· ${post.timestamp ? formatRelativeTime(post.timestamp) : post.time}</span>
                                 </div>
                                 ${isOwn ? `<button onclick="deletePost(${post.id})" class="text-gray-400 hover:text-red-500 transition-colors text-xs p-1" title="Delete post"><i class="fas fa-trash-alt"></i></button>` : ''}
                             </div>
@@ -5597,7 +5787,7 @@
                     return '<div style="display:flex;justify-content:flex-end;width:100%;margin-bottom:10px;">' +
                            '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;max-width:75%;">' +
                            img + text +
-                           '<span style="font-size:11px;color:#9ca3af;">' + msg.time + '</span>' +
+                           '<span style="font-size:11px;color:#9ca3af;" title="' + (msg.ts ? formatFullDateTime(msg.ts) : '') + '">' + (msg.ts ? formatRelativeTime(msg.ts) : msg.time) + '</span>' +
                            '</div></div>';
                 } else {
                     // LEFT-ALIGNED: avatar + bubble side by side
@@ -5608,7 +5798,7 @@
                            '<img src="' + av + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">' +
                            '<div style="display:flex;flex-direction:column;gap:3px;max-width:75%;">' +
                            img + text +
-                           '<span style="font-size:11px;color:#9ca3af;">' + msg.time + '</span>' +
+                           '<span style="font-size:11px;color:#9ca3af;" title="' + (msg.ts ? formatFullDateTime(msg.ts) : '') + '">' + (msg.ts ? formatRelativeTime(msg.ts) : msg.time) + '</span>' +
                            '</div></div>';
                 }
             }).join('');
