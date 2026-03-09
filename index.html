@@ -2049,9 +2049,14 @@
                     <div class="w-full md:w-80 bg-white dark:bg-gray-800 border-r dark:border-gray-700 flex flex-col" id="msgConversationList">
                         <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center">
                             <h2 class="text-xl font-bold">Messages</h2>
-                            <button onclick="openNewMessageModal()" class="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
-                                <i class="fas fa-pen text-sm"></i>
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button id="inboxRefreshBtn" onclick="refreshInbox()" title="Refresh inbox" class="p-2 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" style="line-height:1;">
+                                    <i id="inboxRefreshIcon" class="fas fa-sync-alt text-sm"></i>
+                                </button>
+                                <button onclick="openNewMessageModal()" class="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
+                                    <i class="fas fa-pen text-sm"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="overflow-y-auto flex-1" id="messagesList"></div>
                     </div>
@@ -4290,6 +4295,9 @@
             document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
+            // Stop inbox auto-refresh when leaving messages page
+            if (currentPage === 'messages' && page !== 'messages') _stopInboxAutoRefresh();
+
             const pageEl = document.getElementById(`page-${page}`);
             if (!pageEl) return;
             pageEl.classList.remove('hidden');
@@ -4323,6 +4331,7 @@
                 // Clear all unread flags when user opens messages page
                 messages.forEach(m => { m.unread = false; });
                 updateMsgBadge();
+                _startInboxAutoRefresh();
             } else if (page === 'notifications') {
                 markAllNotifsRead();
             } else if (page === 'matches') {
@@ -5924,6 +5933,80 @@
             `).join('');
             updateMsgBadge();
         }
+
+        // ── Inbox refresh (manual + auto) ────────────────────────────────
+        let _inboxRefreshInterval = null;
+
+        async function refreshInbox() {
+            const icon = document.getElementById('inboxRefreshIcon');
+            const btn  = document.getElementById('inboxRefreshBtn');
+            if (icon) { icon.style.transition = 'transform 0.6s linear'; icon.style.transform = 'rotate(360deg)'; }
+            if (btn)  btn.disabled = true;
+
+            try {
+                // Re-fetch from Firebase if available
+                if (_fbReady) {
+                    const fresh = await DB.getDMsAsync(currentUser.handle);
+                    if (fresh && typeof fresh === 'object') {
+                        dmMessages = fresh;
+                        // Rebuild messages sidebar list from fresh data
+                        Object.keys(fresh).forEach(contactId => {
+                            const arr = fresh[contactId];
+                            if (!Array.isArray(arr) || !arr.length) return;
+                            const last = arr[arr.length - 1];
+                            const existing = messages.find(m => m.id === contactId);
+                            if (existing) {
+                                existing.lastMessage = last.text || (last.image ? '📷 Image' : '');
+                                existing.time = last.time || existing.time;
+                            } else {
+                                messages.push({
+                                    id: contactId,
+                                    user: last.sender || contactId.replace('dm_',''),
+                                    avatar: last.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(last.sender||'User')}&background=ef4444&color=fff`,
+                                    lastMessage: last.text || (last.image ? '📷 Image' : ''),
+                                    time: last.time || '',
+                                    unread: false
+                                });
+                            }
+                        });
+                    }
+                } else {
+                    // Offline: re-read from localStorage cache
+                    const cached = _cache.get(`africonnect_dms_${currentUser.handle}`);
+                    if (cached && typeof cached === 'object') dmMessages = cached;
+                    const cachedContacts = _cache.get(`africonnect_contacts_${currentUser.handle}`);
+                    if (Array.isArray(cachedContacts)) {
+                        cachedContacts.forEach(c => {
+                            if (!messages.find(m => m.id === c.id)) messages.push(c);
+                        });
+                    }
+                    // Also poll for any incoming DMs written by other users
+                    _pollIncomingDMs && _pollIncomingDMs({});
+                }
+            } catch(e) { console.warn('refreshInbox error', e); }
+
+            renderMessages();
+            if (activeDMContact) renderDMMessages();
+            updateMsgBadge();
+
+            // Reset spinner after animation
+            setTimeout(() => {
+                if (icon) { icon.style.transition = 'none'; icon.style.transform = 'rotate(0deg)'; }
+                if (btn)  btn.disabled = false;
+            }, 650);
+        }
+
+        function _startInboxAutoRefresh() {
+            _stopInboxAutoRefresh();
+            _inboxRefreshInterval = setInterval(() => {
+                if (currentPage === 'messages') refreshInbox();
+            }, 20000); // every 20 seconds
+        }
+
+        function _stopInboxAutoRefresh() {
+            if (_inboxRefreshInterval) { clearInterval(_inboxRefreshInterval); _inboxRefreshInterval = null; }
+        }
+        // ─────────────────────────────────────────────────────────────────
 
         function openDMChat(msgId) {
             const contact = messages.find(m => m.id == msgId);  // == allows string/number match
