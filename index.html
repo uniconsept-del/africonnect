@@ -2830,22 +2830,61 @@
                 } catch(e) { return this.getBookmarks(handle); }
             },
 
-            // ── Contacts ──
+            // ── Contacts — RTDB for realtime delivery ──
             getContacts(handle) { return _cache.get(`africonnect_contacts_${handle}`, []); },
             saveContacts(handle, c) {
                 _cache.set(`africonnect_contacts_${handle}`, c);
                 if (!_fbReady) return;
                 const key = handle.replace('@','');
-                _FB.setDoc(_FB.doc(_FB.fs, 'contacts', key), { items: c }).catch(()=>{});
+                _FB.set(_FB.ref(_FB.rtdb, `contacts/${key}`), c).catch(()=>{});
             },
             async getContactsAsync(handle) {
                 if (!_fbReady) return this.getContacts(handle);
                 try {
                     const key = handle.replace('@','');
-                    const snap = await _FB.getDoc(_FB.doc(_FB.fs, 'contacts', key));
-                    if (snap.exists()) { const c = snap.data().items || []; _cache.set(`africonnect_contacts_${handle}`, c); return c; }
+                    const snap = await _FB.get(_FB.ref(_FB.rtdb, `contacts/${key}`));
+                    if (snap.exists()) {
+                        const raw = snap.val() || [];
+                        const c = Array.isArray(raw) ? raw : Object.values(raw).filter(Boolean);
+                        _cache.set(`africonnect_contacts_${handle}`, c);
+                        return c;
+                    }
                     return this.getContacts(handle);
                 } catch(e) { return this.getContacts(handle); }
+            },
+            // Real-time contacts listener — fires when someone new messages you
+            listenContacts(handle, callback) {
+                if (!_fbReady) return;
+                const key = handle.replace('@','');
+                let _cinit = false;
+                _FB.onValue(_FB.ref(_FB.rtdb, `contacts/${key}`), snap => {
+                    const raw = snap.exists() ? (snap.val() || []) : [];
+                    const c = Array.isArray(raw) ? raw : Object.values(raw).filter(Boolean);
+                    _cache.set(`africonnect_contacts_${handle}`, c);
+                    if (!_cinit) { _cinit = true; return; } // skip initial load (already loaded above)
+                    if (callback) callback(c);
+                });
+            },
+            // ── Call Signaling via RTDB signals/{recipientKey}/{callId} ──
+            sendCallSignal(toHandle, signal) {
+                if (!_fbReady) return;
+                const key = toHandle.replace('@','');
+                const callId = signal.callId || (currentUser.handle.replace('@','') + '_' + Date.now());
+                _FB.set(_FB.ref(_FB.rtdb, `signals/${key}/${callId}`), { ...signal, callId }).catch(()=>{});
+            },
+            listenCallSignals(handle, callback) {
+                if (!_fbReady) return;
+                const key = handle.replace('@','');
+                _FB.onValue(_FB.ref(_FB.rtdb, `signals/${key}`), snap => {
+                    if (!snap.exists()) return;
+                    const sigs = snap.val() || {};
+                    Object.entries(sigs).forEach(([callId, signal]) => {
+                        if (!signal) return;
+                        // Clear immediately so it won't re-fire on reconnect
+                        _FB.set(_FB.ref(_FB.rtdb, `signals/${key}/${callId}`), null).catch(()=>{});
+                        if (callback) callback(signal, callId);
+                    });
+                });
             },
 
             // ── DMs (Realtime Database for live delivery) ──
@@ -2870,91 +2909,90 @@
             listenDMs(handle, callback) {
                 if (!_fbReady) return;
                 const key = handle.replace('@','');
-                let _firstFire = true;  // skip first snapshot (initial load)
+                let _dminit = false;
+
                 _FB.onValue(_FB.ref(_FB.rtdb, `dms/${key}`), (snap) => {
-                    if (snap.exists()) {
-                        const dms = snap.val() || {};
-                        _cache.set(`africonnect_dms_${handle}`, dms);
+                    const dms = snap.exists() ? (snap.val() || {}) : {};
+                    _cache.set(`africonnect_dms_${handle}`, dms);
 
-                        if (_firstFire) {
-                            // Initial load — just populate, don't alert
-                            dmMessages = dms;
-                            _firstFire = false;
-                            if (callback) callback(dms);
-                            return;
-                        }
-
-                        // Detect any new messages not in current dmMessages
-                        let newMsgCount = 0;
-                        let latestSender = null;
-                        let latestText = '';
-
-                        Object.keys(dms).forEach(contactId => {
-                            const incoming = dms[contactId] || [];
-                            const existing = dmMessages[contactId] || [];
-                            if (incoming.length > existing.length) {
-                                const newOnes = incoming.slice(existing.length);
-                                newOnes.forEach(m => {
-                                    // Only count messages NOT sent by current user
-                                    if (m.sender !== handle && m.type !== 'sent') {
-                                        newMsgCount++;
-                                        latestSender = m.sender || contactId;
-                                        latestText = m.text || '📷 Photo';
-                                    }
-                                });
-                            }
-                        });
-
+                    if (!_dminit) {
+                        // First fire: load data, render if chat open
+                        const prev = dmMessages;
                         dmMessages = dms;
+                        _dminit = true;
+                        if (activeDMContact && dms[activeDMContact.id]) renderDMMessages();
+                        renderMessages();
+                        if (callback) callback(dms);
+                        return;
+                    }
 
-                        if (newMsgCount > 0) {
-                            // Mark conversation as unread in messages list
-                            Object.keys(dms).forEach(contactId => {
-                                const incoming = dms[contactId] || [];
-                                const existing = (dmMessages[contactId] || []);
-                                // Find contact in messages list and mark unread
-                                // (only if this chat is not currently open)
-                                if (!activeDMContact || activeDMContact.id !== contactId) {
-                                    const contact = messages.find(m => m.id === contactId);
-                                    if (contact) {
-                                        contact.unread = true;
-                                        contact.lastMessage = latestText;
-                                        contact.time = 'Now';
-                                    } else {
-                                        // Create new conversation entry
-                                        const senderHandle = '@' + contactId.replace('dm_','');
-                                        const senderAccount = DB.findAccount(senderHandle) || {};
-                                        messages.unshift({
-                                            id: contactId,
-                                            user: senderAccount.name || latestSender || 'Someone',
-                                            avatar: senderAccount.avatar || 'https://ui-avatars.com/api/?name=User&background=E53E3E&color=fff&size=80',
-                                            lastMessage: latestText,
-                                            time: 'Now',
-                                            unread: true
-                                        });
+                    // Subsequent fires: find new incoming messages
+                    let hasNew = false;
+                    let latestSender = null;
+                    let latestText = '';
+                    let latestContactId = null;
+
+                    Object.keys(dms).forEach(contactId => {
+                        const incoming = Array.isArray(dms[contactId]) ? dms[contactId] : [];
+                        const existing = Array.isArray(dmMessages[contactId]) ? dmMessages[contactId] : [];
+                        if (incoming.length > existing.length) {
+                            const newOnes = incoming.slice(existing.length);
+                            newOnes.forEach(m => {
+                                if (m && m.sender !== handle && m.type !== 'sent') {
+                                    hasNew = true;
+                                    latestSender   = m.sender || contactId;
+                                    latestText     = m.text || '📷 Photo';
+                                    latestContactId = contactId;
+
+                                    // If this chat is currently open → append message instantly
+                                    if (activeDMContact && activeDMContact.id === contactId) {
+                                        _appendIncomingMessage(m, contactId);
                                     }
                                 }
                             });
+                        }
+                    });
 
-                            // Push notification
-                            notifications.unshift({
-                                id: Date.now(),
-                                type: 'message',
-                                user: latestSender || 'Someone',
-                                text: (latestSender || 'Someone') + ': ' + latestText.slice(0, 60),
-                                time: 'Just now',
-                                avatar: null,
-                                read: false
-                            });
-                            if (isLoggedIn) DB.saveNotifications(currentUser.handle, notifications);
-                            updateNotifBadge();
-                            updateMsgBadge();
-                            // Play notification sound
-                            Sounds.notification();
+                    dmMessages = dms;
+
+                    if (hasNew) {
+                        // Mark conversation unread if not currently open
+                        if (!activeDMContact || activeDMContact.id !== latestContactId) {
+                            const senderHandle = '@' + latestContactId.replace('dm_','');
+                            const senderAccount = DB.findAccount(senderHandle) || {};
+                            let contact = messages.find(m => m.id === latestContactId);
+                            if (contact) {
+                                contact.unread = true;
+                                contact.lastMessage = latestText;
+                                contact.time = 'Now';
+                            } else {
+                                messages.unshift({
+                                    id: latestContactId,
+                                    user: senderAccount.name || latestSender || 'Someone',
+                                    avatar: senderAccount.avatar || resolveAvatar(senderHandle, '', senderAccount.name || latestSender || 'User'),
+                                    lastMessage: latestText,
+                                    time: 'Now',
+                                    unread: true
+                                });
+                            }
+                            // Show floating in-app alert
+                            _showInAppMsgAlert(senderAccount.name || latestSender, latestText, latestContactId, senderAccount.avatar || '');
                         }
 
-                        if (callback) callback(dms);
+                        notifications.unshift({
+                            id: Date.now(), type: 'message',
+                            user: latestSender || 'Someone',
+                            text: (latestSender || 'Someone') + ': ' + latestText.slice(0, 60),
+                            time: 'Just now', avatar: null, read: false
+                        });
+                        if (isLoggedIn) DB.saveNotifications(currentUser.handle, notifications);
+                        updateNotifBadge();
+                        updateMsgBadge();
+                        renderMessages();
+                        Sounds.notification();
                     }
+
+                    if (callback) callback(dms);
                 });
             }
         };
@@ -3409,6 +3447,7 @@
                 DB.saveSession(currentUser);
 
                 if (_fbReady) DB.listenDMs(currentUser.handle, () => { renderMessages(); if (activeDMContact) renderDMMessages(); updateMsgBadge(); });
+                _startSignalListeners();
 
                 document.body.style.overflow = '';
                 closeAuthPanel();
@@ -3469,6 +3508,7 @@
                         dmMessages    = await DB.getDMsAsync(currentUser.handle);
                         bookmarks     = await DB.getBookmarksAsync(currentUser.handle);
                         DB.listenDMs(currentUser.handle, () => { renderMessages(); if (activeDMContact) renderDMMessages(); updateMsgBadge(); });
+                        _startSignalListeners();
                     } catch(e) { loadUserState(); }
                 } else {
                     loadUserState();
@@ -5970,30 +6010,110 @@
             Sounds.messageSent();
             renderMessages(); // update sidebar list
 
-            // Persist in background
+            // ── Persist: write ONLY the specific array for each party, never overwrite whole object ──
+            const senderKey    = currentUser.handle.replace('@','');
+            const recipientHandle = '@' + activeDMContact.id.replace('dm_','').replace('seller_','');
+            const recipientKey = recipientHandle.replace('@','');
+            const myContactKey = 'dm_' + senderKey;
+            const receivedMsg  = Object.assign({}, newMsg, { type: 'received', avatar: resolveAvatar(currentUser.handle, currentUser.avatar, currentUser.name) });
+
             if (_fbReady) {
-                const senderKey = currentUser.handle.replace('@','');
-                _FB.set(_FB.ref(_FB.rtdb, 'dms/' + senderKey), dmMessages).catch(() => {});
-                const recipientHandle = '@' + activeDMContact.id.replace('dm_','').replace('seller_','');
-                const recipientKey    = recipientHandle.replace('@','');
-                const recipientCacheKey = 'africonnect_dms_' + recipientHandle;
-                const recipientDMs = _cache.get(recipientCacheKey, {});
-                const myContactId  = 'dm_' + senderKey;
-                if (!recipientDMs[myContactId]) recipientDMs[myContactId] = [];
-                const receivedMsg = Object.assign({}, newMsg, { type: 'received', avatar: currentUser.avatar });
-                recipientDMs[myContactId].push(receivedMsg);
-                _cache.set(recipientCacheKey, recipientDMs);
-                _FB.set(_FB.ref(_FB.rtdb, 'dms/' + recipientKey), recipientDMs).catch(() => {});
+                // Sender's own log: dms/{senderKey}/{contactId}  (array)
+                const senderRef = _FB.ref(_FB.rtdb, `dms/${senderKey}/${contactId}`);
+                _FB.get(senderRef).then(snap => {
+                    const arr = (snap.exists() && Array.isArray(snap.val())) ? snap.val() : [];
+                    arr.push(newMsg);
+                    return _FB.set(senderRef, arr);
+                }).catch(() => {});
+
+                // Recipient's inbox: dms/{recipientKey}/dm_{senderKey}  (array) — this triggers their onValue listener
+                const recipientRef = _FB.ref(_FB.rtdb, `dms/${recipientKey}/${myContactKey}`);
+                _FB.get(recipientRef).then(snap => {
+                    const arr = (snap.exists() && Array.isArray(snap.val())) ? snap.val() : [];
+                    arr.push(receivedMsg);
+                    return _FB.set(recipientRef, arr);
+                }).then(() => {
+                    // Also ensure recipient sees sender as a contact in their list
+                    _ensureRecipientContact(recipientKey, senderKey, text);
+                }).catch(() => {});
             } else {
-                const recipientHandle = '@' + activeDMContact.id.replace('dm_','').replace('seller_','');
-                const recipientCacheKey = 'africonnect_dms_' + recipientHandle;
+                // Offline fallback
+                const recipientCacheKey = `africonnect_dms_${recipientHandle}`;
                 const recipientDMs = _cache.get(recipientCacheKey, {});
-                const myContactId  = 'dm_' + currentUser.handle.replace('@','');
-                if (!recipientDMs[myContactId]) recipientDMs[myContactId] = [];
-                recipientDMs[myContactId].push(Object.assign({}, newMsg, { type: 'received', avatar: currentUser.avatar }));
+                if (!Array.isArray(recipientDMs[myContactKey])) recipientDMs[myContactKey] = [];
+                recipientDMs[myContactKey].push(receivedMsg);
                 _cache.set(recipientCacheKey, recipientDMs);
+                _cache.set(`africonnect_dms_${currentUser.handle}`, dmMessages);
                 saveUserState();
             }
+        }
+
+        // Ensure the recipient has sender as a contact entry so their sidebar updates
+        function _ensureRecipientContact(recipientKey, senderKey, lastText) {
+            if (!_fbReady) return;
+            const myContactKey = 'dm_' + senderKey;
+            const contactsRef  = _FB.ref(_FB.rtdb, `contacts/${recipientKey}`);
+            _FB.get(contactsRef).then(snap => {
+                const raw = snap.exists() ? (snap.val() || []) : [];
+                let contacts = Array.isArray(raw) ? raw : Object.values(raw).filter(Boolean);
+                const existing = contacts.find(c => c && c.id === myContactKey);
+                const av = resolveAvatar(currentUser.handle, currentUser.avatar, currentUser.name);
+                if (!existing) {
+                    contacts.unshift({ id: myContactKey, user: currentUser.name, avatar: av, lastMessage: lastText || '', time: 'Now', unread: true });
+                } else {
+                    existing.lastMessage = lastText || '';
+                    existing.time = 'Now';
+                    existing.unread = true;
+                    existing.avatar = av;
+                }
+                return _FB.set(contactsRef, contacts);
+            }).catch(() => {});
+        }
+
+        // Instantly append one incoming message bubble to the open chat (no full re-render)
+        function _appendIncomingMessage(msg, contactId) {
+            const container = document.getElementById('chatMessagesArea');
+            if (!container) return;
+            const ph = container.querySelector('[data-empty="1"], div[style*="Say hello"]');
+            if (ph) ph.remove();
+            const av = resolveAvatar('@' + contactId.replace('dm_',''), msg.avatar || (activeDMContact && activeDMContact.avatar) || '', activeDMContact ? activeDMContact.user : 'User');
+            const imgHtml  = msg.image ? `<img src="${msg.image}" style="max-width:200px;border-radius:12px;cursor:pointer;display:block;margin-bottom:4px;" onclick="viewImageFull('${msg.image}')">` : '';
+            const textHtml = msg.text  ? `<div class="message-bubble message-received" style="margin:0;max-width:260px;word-break:break-word;">${msg.text}</div>` : '';
+            const timeLabel = msg.ts ? formatRelativeTime(msg.ts) : (msg.time || '');
+            const row = document.createElement('div');
+            row.className = 'dm-msg-row';
+            row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;width:100%;margin-bottom:10px;';
+            row.innerHTML = `<img src="${av}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                <div style="display:flex;flex-direction:column;gap:3px;max-width:75%;">${imgHtml}${textHtml}
+                    <span style="font-size:11px;color:#9ca3af;">${timeLabel}</span></div>`;
+            container.appendChild(row);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Floating toast banner when a message arrives and the chat isn't open
+        function _showInAppMsgAlert(senderName, text, contactId, senderAvatar) {
+            const existing = document.getElementById('inAppMsgAlert');
+            if (existing) existing.remove();
+            const senderHandle = '@' + contactId.replace('dm_','');
+            const acc = DB.findAccount(senderHandle) || {};
+            const av  = resolveAvatar(senderHandle, senderAvatar || acc.avatar, senderName);
+            const el  = document.createElement('div');
+            el.id = 'inAppMsgAlert';
+            el.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:linear-gradient(135deg,#1a1a2e,#16213e);color:white;padding:12px 16px;border-radius:20px;z-index:99999;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);max-width:320px;width:90%;cursor:pointer;opacity:0;transition:all 0.3s ease;';
+            el.innerHTML = `<img src="${av}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                <div style="flex:1;min-width:0;"><p style="font-weight:700;font-size:13px;margin:0;">${acc.name || senderName}</p>
+                <p style="font-size:12px;color:rgba(255,255,255,0.7);margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${text}</p></div>
+                <i class="fas fa-times" style="color:rgba(255,255,255,0.5);font-size:14px;flex-shrink:0;" onclick="event.stopPropagation();document.getElementById('inAppMsgAlert').remove()"></i>`;
+            el.addEventListener('click', () => {
+                let c = messages.find(m => m.id === contactId);
+                if (!c) { c = { id: contactId, user: acc.name || senderName, avatar: av, lastMessage: text, time: 'Now', unread: false }; messages.unshift(c); }
+                navigateTo('messages');
+                setTimeout(() => openDMChat(contactId), 200);
+                el.remove();
+            });
+            document.body.appendChild(el);
+            requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateX(-50%) translateY(0)'; });
+            setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(-50%) translateY(20px)'; setTimeout(() => el.remove(), 300); }, 5000);
         }
 
         function openNewMessageModal() {
@@ -6121,6 +6241,8 @@
         let _camOff      = false;
         let _speakerOff  = false;
 
+        let _activeCallId = null;
+
         async function initiateCall(type) {
             if (!activeDMContact) return;
             if (!isLoggedIn) { showToast('⚠️ Sign in to make calls'); return; }
@@ -6128,6 +6250,22 @@
             _callType = type;
             _isMuted  = false;
             _camOff   = false;
+
+            // ── Send ring signal to recipient via Firebase ──
+            _activeCallId = currentUser.handle.replace('@','') + '_' + Date.now();
+            const recipientHandle = '@' + activeDMContact.id.replace('dm_','').replace('seller_','');
+            if (_fbReady) {
+                const av = resolveAvatar(currentUser.handle, currentUser.avatar, currentUser.name);
+                DB.sendCallSignal(recipientHandle, {
+                    callId:       _activeCallId,
+                    type:         'offer',
+                    callType:     type,
+                    from:         currentUser.handle,
+                    callerName:   currentUser.name,
+                    callerAvatar: av,
+                    ts:           Date.now()
+                });
+            }
 
             const modal = document.getElementById('callModal');
             const videoUI = document.getElementById('videoCallUI');
@@ -6241,6 +6379,12 @@
         }
 
         function endCall() {
+            // ── Notify other party that call ended ──
+            if (_activeCallId && activeDMContact && _fbReady) {
+                const recipientHandle = '@' + activeDMContact.id.replace('dm_','').replace('seller_','');
+                DB.sendCallSignal(recipientHandle, { callId: _activeCallId + '_end', type: 'end', from: currentUser.handle, ts: Date.now() });
+                _activeCallId = null;
+            }
             // Stop all media tracks
             if (_localStream) {
                 _localStream.getTracks().forEach(t => t.stop());
@@ -6312,6 +6456,92 @@
 
         // Legacy alias
         function toggleMute() { toggleCallMute(); }
+        // ── Incoming call UI ──
+        function _showIncomingCallUI(signal) {
+            const existing = document.getElementById('incomingCallModal');
+            if (existing) existing.remove();
+            if (_localStream) return; // already in a call
+
+            const callId = signal.callId;
+            const icon   = signal.callType === 'video' ? '📹' : '📞';
+            const modal  = document.createElement('div');
+            modal.id = 'incomingCallModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99998;display:flex;align-items:flex-end;justify-content:center;';
+            modal.innerHTML = `
+                <div style="background:linear-gradient(135deg,#1a1a2e,#0f3460);color:white;border-radius:28px 28px 0 0;padding:36px 28px 48px;width:100%;max-width:420px;text-align:center;animation:slideUp 0.3s ease;">
+                    <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#E53E3E,#D4AF37);padding:3px;margin:0 auto 18px;animation:glowPulse 1.5s ease infinite;">
+                        <img src="${signal.callerAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid white;">
+                    </div>
+                    <p style="color:rgba(255,255,255,0.65);font-size:13px;margin:0 0 6px;">${icon} Incoming ${signal.callType} call</p>
+                    <h3 style="font-size:24px;font-weight:800;margin:0 0 32px;">${signal.callerName}</h3>
+                    <div style="display:flex;justify-content:center;gap:48px;">
+                        <div style="text-align:center;">
+                            <button onclick="_handleDeclineCall('${signal.from}','${callId}')"
+                                style="width:68px;height:68px;background:#ef4444;border:none;border-radius:50%;color:white;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(239,68,68,0.5);margin:0 auto 8px;">
+                                <i class="fas fa-phone-slash"></i></button>
+                            <span style="font-size:12px;color:rgba(255,255,255,0.6);">Decline</span>
+                        </div>
+                        <div style="text-align:center;">
+                            <button onclick="_handleAcceptCall('${signal.from}','${callId}','${signal.callType}')"
+                                style="width:68px;height:68px;background:#22c55e;border:none;border-radius:50%;color:white;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(34,197,94,0.5);margin:0 auto 8px;animation:glowPulse 1.5s ease infinite;">
+                                <i class="fas fa-${signal.callType === 'video' ? 'video' : 'phone'}"></i></button>
+                            <span style="font-size:12px;color:rgba(255,255,255,0.6);">Accept</span>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            Sounds.callRing && Sounds.callRing();
+            // Auto-dismiss after 30s
+            setTimeout(() => { if (document.getElementById('incomingCallModal')) { modal.remove(); } }, 30000);
+        }
+
+        function _handleAcceptCall(callerHandle, callId, callType) {
+            document.getElementById('incomingCallModal')?.remove();
+            // Send accept signal back to caller
+            if (_fbReady) DB.sendCallSignal(callerHandle, { callId: callId + '_accept', type: 'accept', from: currentUser.handle, ts: Date.now() });
+            // Set activeDMContact if needed
+            if (!activeDMContact) {
+                const acc = DB.findAccount(callerHandle) || {};
+                const contactId = 'dm_' + callerHandle.replace('@','');
+                activeDMContact = { id: contactId, user: acc.name || callerHandle, avatar: acc.avatar || '' };
+            }
+            initiateCall(callType);
+        }
+
+        function _handleDeclineCall(callerHandle, callId) {
+            document.getElementById('incomingCallModal')?.remove();
+            if (_fbReady) DB.sendCallSignal(callerHandle, { callId: callId + '_decline', type: 'decline', from: currentUser.handle, ts: Date.now() });
+        }
+
+        // Start listening for incoming signals (call + message-related)
+        function _startSignalListeners() {
+            if (!_fbReady || !isLoggedIn) return;
+            // Incoming call signals
+            DB.listenCallSignals(currentUser.handle, (signal) => {
+                if (!signal || !signal.type) return;
+                if (signal.type === 'offer') {
+                    _showIncomingCallUI(signal);
+                } else if (signal.type === 'accept') {
+                    // Our outgoing call was accepted — mark connected
+                    const statusEl = document.getElementById(_callType === 'video' ? 'videoCallStatus' : 'callStatus');
+                    if (statusEl) statusEl.textContent = (_callType === 'video' ? '📹' : '📞') + ' Connected';
+                    const timerEl = document.getElementById('callTimer');
+                    if (timerEl) timerEl.style.display = 'block';
+                } else if (signal.type === 'decline') {
+                    endCall();
+                    showToast('📵 ' + (signal.from || 'User') + ' declined the call');
+                } else if (signal.type === 'end') {
+                    endCall();
+                    showToast('📞 Call ended');
+                }
+            });
+            // New contacts (someone messaged you for the first time)
+            DB.listenContacts(currentUser.handle, (newContacts) => {
+                messages = newContacts;
+                renderMessages();
+                updateMsgBadge();
+            });
+        }
 
         // Analytics Update Function
         function updateAnalytics() {
